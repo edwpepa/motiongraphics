@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { AbsoluteFill, staticFile, useCurrentFrame } from "remotion";
 import { seeded } from "../lib/anim";
 import { useLayout } from "../layout";
+import { BlurBlob } from "./BlurBlob";
 import { Grid } from "./Grid";
 
 /**
@@ -38,6 +39,7 @@ export const Stage: React.FC<{ light?: number; lightX?: number }> = ({ light = 1
           background: `radial-gradient(ellipse ${L.vertical ? "60% 30%" : "35% 45%"} at ${lightX * 100}% -4%, rgba(160,255,200,${0.12 * light}) 0%, rgba(0,0,0,0) 70%)`,
         }}
       />
+      <BlurBlob t={frame} />
       <Grid color="rgba(160,255,200,0.05)" />
       <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.65) 100%)" }} />
       <AbsoluteFill

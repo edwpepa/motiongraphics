@@ -91,54 +91,37 @@ const LogoPop: React.FC = () => {
 };
 
 /**
- * Cold open: a point of light with a soft anamorphic flare drifts in on a slow, mystical curve, then
- * traces the handly heart with its trail; the heart glows for a beat and dissolves as the words begin.
+ * Cold open: a point of light with a fine anamorphic flare drifts in on a slow, curving path to the
+ * centre, opens into a soft bloom and fades — and the first words begin.
  */
 const IntroLight: React.FC = () => {
   const frame = useCurrentFrame();
   const L = useLayout();
-  if (frame > PRE_ROLL + 10) return null;
-  const S = L.vertical ? 15 : 13;
-  const heart = (u: number) => {
-    const t = u * Math.PI * 2;
-    return { x: 16 * Math.pow(Math.sin(t), 3) * S, y: -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * S - 30 };
-  };
-  // drift in from the lower left, then trace the heart from its top notch
-  const drift = ease.inOutCubic(clamp01(frame / 12));
-  const trace = ease.inOutCubic(clamp01((frame - 10) / 22));
-  const start = heart(0);
-  let dot = trace > 0 ? heart(trace) : { x: lerp(-L.W * 0.32, start.x, drift) + Math.sin(frame / 3) * 20 * (1 - drift), y: lerp(L.H * 0.22, start.y, drift) };
-  const glow = ease.outCubic(clamp01((frame - 30) / 6));
-  const fade = ease.inOutCubic(clamp01((frame - (PRE_ROLL - 6)) / 12));
+  if (frame > PRE_ROLL + 8) return null;
+  const p = ease.inOutCubic(clamp01(frame / 30));
+  // a gentle S-curve from the lower left to the centre
+  const x = lerp(-L.W * 0.34, 0, p) + Math.sin(p * Math.PI) * 60;
+  const y = lerp(L.H * 0.2, 0, p) - Math.sin(p * Math.PI * 2) * 50;
   const appear = ease.outCubic(clamp01(frame / 6));
-  const N = 140;
-  const path = Array.from({ length: Math.max(2, Math.floor(trace * N) + 1) }, (_, i) => {
-    const p = heart(Math.min(trace, i / N));
-    return `${i ? "L" : "M"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
-  }).join(" ");
-  if (trace >= 1) dot = heart(1);
+  const bloom = ease.outCubic(clamp01((frame - 28) / 10));
+  const fade = ease.inOutCubic(clamp01((frame - (PRE_ROLL - 8)) / 14));
+  const flare = 1 + 0.25 * Math.sin(frame / 3);
   return (
     <AbsoluteFill style={{ opacity: 1 - fade }}>
       <svg width={L.W} height={L.H} viewBox={`${-L.cx} ${-L.cy} ${L.W} ${L.H}`} style={{ position: "absolute", inset: 0, overflow: "visible" }}>
-        {/* soft bloom when the heart closes */}
-        <circle cx={0} cy={-30} r={260 + 60 * glow} fill="url(#il-bloom)" opacity={0.6 * glow} />
         <defs>
           <radialGradient id="il-bloom">
-            <stop offset="0%" stopColor="#00e676" stopOpacity={0.35} />
+            <stop offset="0%" stopColor="#b9ffd6" stopOpacity={0.5} />
+            <stop offset="35%" stopColor="#00e676" stopOpacity={0.18} />
             <stop offset="100%" stopColor="#00e676" stopOpacity={0} />
           </radialGradient>
         </defs>
-        {trace > 0 && (
-          <>
-            <path d={path} fill="none" stroke="#00e676" strokeWidth={14} strokeLinecap="round" strokeLinejoin="round" opacity={0.35 + 0.3 * glow} style={{ filter: "blur(10px)" }} />
-            <path d={path} fill="none" stroke="#c9ffe0" strokeWidth={3 + 1.5 * glow} strokeLinecap="round" strokeLinejoin="round" />
-          </>
-        )}
-        {/* the point of light + anamorphic streak */}
-        <g transform={`translate(${dot.x} ${dot.y})`} opacity={appear * (1 - glow * 0.6)}>
-          <ellipse rx={150} ry={3} fill="rgba(200,255,225,0.55)" style={{ filter: "blur(2px)" }} />
-          <circle r={28} fill="rgba(0,230,118,0.35)" style={{ filter: "blur(10px)" }} />
-          <circle r={7} fill="#ffffff" />
+        <circle cx={0} cy={0} r={120 + 380 * bloom} fill="url(#il-bloom)" opacity={bloom * (1 - 0.4 * bloom)} />
+        <g transform={`translate(${x} ${y})`} opacity={appear * (1 - bloom)}>
+          <ellipse rx={170 * flare} ry={2.5} fill="rgba(200,255,225,0.6)" style={{ filter: "blur(2px)" }} />
+          <ellipse rx={40} ry={1.5} fill="#ffffff" />
+          <circle r={30} fill="rgba(0,230,118,0.32)" style={{ filter: "blur(10px)" }} />
+          <circle r={6.5} fill="#ffffff" />
         </g>
       </svg>
     </AbsoluteFill>

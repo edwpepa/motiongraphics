@@ -1,6 +1,7 @@
 import React from "react";
 import { AbsoluteFill, staticFile, useCurrentFrame } from "remotion";
 import { textWidth } from "../components/AppleText";
+import { BlurBlob } from "../components/BlurBlob";
 import { IconTile } from "../components/Icons";
 import { INK_DARK, KineticText, SHADOW_DARK } from "../components/KineticText";
 import { ACCENT, PhraseSeq } from "../components/Phrase";
@@ -8,7 +9,7 @@ import { DirBlur } from "../lib/Blur";
 import { clamp01, ease, lerp, mixColor } from "../lib/anim";
 import { useLayout } from "../layout";
 import { BOLD, FONT } from "../theme";
-import { f, MUSIC_LIFT_FRAME, VO } from "../timing";
+import { f, MUSIC_LIFT_FRAME, PRE_ROLL, VO } from "../timing";
 
 /**
  * Problem half on a dark set:
@@ -129,12 +130,14 @@ const LeftFace: React.FC<{ w: number; h: number; idx?: number }> = ({ w, h, idx 
 /** dark set: near-black, one soft green light from the top, a faint grid that drifts with the camera */
 const DarkSet: React.FC<{ shift: number }> = ({ shift }) => {
   const L = useLayout();
+  const frame = useCurrentFrame();
   const cell = L.vertical ? 90 : 96;
   const grid = "rgba(160,255,200,0.045)";
   const mask = `radial-gradient(ellipse ${L.vertical ? "95% 60%" : "70% 85%"} at 50% 50%, #000 30%, transparent 100%)`;
   return (
     <AbsoluteFill style={{ background: "#030504" }}>
       <AbsoluteFill style={{ background: `radial-gradient(ellipse ${L.vertical ? "90% 45%" : "55% 70%"} at 50% -8%, rgba(0,191,99,0.26) 0%, rgba(0,140,72,0.09) 38%, rgba(0,0,0,0) 72%)` }} />
+      <BlurBlob t={frame + PRE_ROLL} />
       <AbsoluteFill
         style={{
           backgroundImage: `linear-gradient(${grid} 1.5px, transparent 1.5px), linear-gradient(90deg, ${grid} 1.5px, transparent 1.5px)`,
@@ -376,16 +379,11 @@ export const Problem: React.FC = () => {
   const base: Cam = V ? { s: 1.5, x: PGW / 2, y: 0 } : { s: 1, x: 0, y: 0 };
   const lean: Cam = V ? { s: 1.95, x: PGW * 0.5, y: -PGH * 0.02 } : { s: 1.55, x: PGW * 0.46, y: -PGH * 0.02 };
   const camAt = (fr: number): Cam => {
-    const c = { ...base };
-    CHORES.forEach((_, i) => {
-      const into = ease.inOutCubic(clamp01((fr - (arrive(i) + 1)) / 12));
-      const back = ease.inOutCubic(clamp01((fr - ((i < 2 ? arrive(i + 1) : END) - 11)) / 9));
-      const k = into * (1 - back);
-      c.s = lerp(c.s, lean.s, k);
-      c.x = lerp(c.x, lean.x, k);
-      c.y = lerp(c.y, lean.y, k);
-    });
-    return c;
+    // lean in on the first chore and stay close while the pages turn; pull back only for the riffle
+    const into = ease.inOutCubic(clamp01((fr - (arrive(0) + 1)) / 12));
+    const back = ease.inOutCubic(clamp01((fr - (RIFFLE_FROM - 2)) / 14));
+    const k = into * (1 - back);
+    return { s: lerp(base.s, lean.s, k), x: lerp(base.x, lean.x, k), y: lerp(base.y, lean.y, k) };
   };
   const cam = camAt(frame);
   const camPrev = camAt(frame - 1);

@@ -420,7 +420,10 @@ export const Problem: React.FC = () => {
               const z = ease.outExpo(clamp01((frame - (at - 2)) / 12));
               return (
                 <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", transform: `scale(${(0.25 + 0.75 * z) * (1 + 0.25 * ease.inCubic(t))})`, opacity: clamp01(z * 3) * (1 - ease.inCubic(t)), filter: t > 0 || z < 0.9 ? `blur(${Math.max(t * 20, (1 - z) * 16)}px)` : undefined }}>
-                  <Tired frame={frame} at={at} sag={at + 12} fs={HUGE} />
+                  {/* a long exhale: the letters drift apart, the word swells a touch and dims */}
+                  <div style={{ transform: `scale(${1 + 0.06 * ease.inOutCubic(clamp01((frame - at - 8) / 22))})`, opacity: 1 - 0.35 * ease.inOutCubic(clamp01((frame - at - 10) / 18)) }}>
+                    <KineticText words={[{ text: VO.hook[6][0], at, color: ACCENT }]} fontSize={HUGE} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: `${lerp(-0.05, 0.06, ease.inOutCubic(clamp01((frame - at - 8) / 22)))}em` }} />
+                  </div>
                 </AbsoluteFill>
               );
             })()}

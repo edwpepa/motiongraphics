@@ -61,7 +61,7 @@ const LightWorld: React.FC = () => {
   const solid = t >= 0 ? 1 - ease.inOutCubic(clamp01((t / EXPAND - 0.45) / 0.4)) : 0;
   return (
     <AbsoluteFill>
-      <AbsoluteFill style={{ background: "#030504", ...mask }}>
+      <AbsoluteFill style={{ background: "#030504", ...mask, opacity: t >= 0 ? 1 - ease.inOutCubic(clamp01((t / EXPAND - 0.62) / 0.3)) : 1 }}>
         <Sequence from={PRE_ROLL} durationInFrames={MUSIC_LIFT_FRAME + 10} layout="none">
           <Problem />
         </Sequence>

@@ -33,53 +33,61 @@ const CHIPS: ChipDef[] = [
 const phoneMotion = (frame: number, vertical: boolean) => {
   const inT = ease.outExpo(clamp01((frame - ENTER) / 20));
   const outT = ease.inCubic(clamp01((frame - EXIT) / 13));
-  const rotY = keys(frame, [
-    [ENTER, -4],
-    [ENTER + 22, -14],
-    [EXIT, 9],
-  ], ease.outCubic) - 26 * outT;
-  // rises out of the bottom of the frame, tilted back like a phone lifted in your hand, then squares up
+  // a full turn as it rises in from depth, a calm hold, then half a turn away on the exit
+  const spin = ease.outCubic(clamp01((frame - ENTER) / 30));
+  const rotY = -360 * (1 - spin) - 12 + 4 * Math.sin((frame - ENTER) / 30) - 180 * outT;
   return {
     x: 0,
     rotY,
-    rotX: 5 + 42 * (1 - inT) + 60 * outT,
-    rotZ: -8 * (1 - inT),
-    y: (vertical ? 1500 : 1150) * (1 - inT) + 300 * outT + drift(frame, 7, 120),
+    rotX: 5 + 22 * (1 - inT) + 20 * outT,
+    rotZ: -6 * (1 - inT),
+    y: (vertical ? 900 : 700) * (1 - inT) + 120 * outT + drift(frame, 7, 120),
     scale: (vertical ? 1.12 : 0.92) * (1.6 - 0.6 * inT) * (1 - 0.18 * outT) * keys(frame, [[SUCCESS + 2, 1], [SUCCESS + 16, vertical ? 0.8 : 0.76]], ease.inOutCubic),
-    opacity: 1 - clamp01((frame - EXIT - 9) / 5),
+    opacity: 1 - clamp01((frame - EXIT - 6) / 7),
   };
 };
 
 /**
- * A ribbon of green light looping around the phone (Visa-reference): a bright comet that runs
- * round an ellipse; the upper half sits behind the phone, the lower half in front of it.
+ * Thin orbit rings around the phone, tilted in real 3D so they pass behind and in front of it: each
+ * draws itself on, then turns slowly with a few glowing beads riding along it.
  */
-const Ribbon: React.FC<{ half: "back" | "front"; frame: number; a: number; boost: number }> = ({ half, frame, a, boost }) => {
-  const rx = PHONE_W * 1.05;
-  const ry = PHONE_H * 0.26;
-  const W = rx * 2 + 200;
-  const H = ry * 2 + 200;
-  const run = (frame - ENTER) / 34;
-  const id = `rb${half}`;
-  const d = `M ${-rx} 0 A ${rx} ${ry} 0 1 0 ${rx} 0 A ${rx} ${ry} 0 1 0 ${-rx} 0`;
+const Orbits: React.FC<{ frame: number; a: number; boost: number }> = ({ frame, a, boost }) => {
+  const rings = [
+    { r: 560, tx: 74, ty: -16, sp: 0.55, beads: [0, 0.55], delay: 0 },
+    { r: 700, tx: 70, ty: 14, sp: -0.4, beads: [0.25, 0.8], delay: 4 },
+    { r: 840, tx: 78, ty: -4, sp: 0.3, beads: [0.6], delay: 8 },
+  ];
   return (
-    <svg width={W} height={H} viewBox={`${-W / 2} ${-H / 2} ${W} ${H}`} style={{ position: "absolute", left: -W / 2, top: -H / 2, overflow: "visible", transform: `translateZ(${half === "front" ? 90 : -90}px) rotate(-16deg)`, opacity: a }}>
-      <defs>
-        <clipPath id={`${id}c`}>
-          {half === "front" ? <rect x={-W} y={0} width={W * 2} height={H} /> : <rect x={-W} y={-H} width={W * 2} height={H} />}
-        </clipPath>
-        <linearGradient id={`${id}g`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#00c46a" stopOpacity={0.2} />
-          <stop offset="50%" stopColor="#d9ffe9" />
-          <stop offset="100%" stopColor="#00c46a" stopOpacity={0.2} />
-        </linearGradient>
-      </defs>
-      <g clipPath={`url(#${id}c)`}>
-        <path d={d} fill="none" stroke="#00e676" strokeWidth={70} strokeLinecap="round" pathLength={1} strokeDasharray="0.42 0.58" strokeDashoffset={-run} opacity={0.35 + 0.3 * boost} style={{ filter: "blur(28px)" }} />
-        <path d={d} fill="none" stroke={`url(#${id}g)`} strokeWidth={16} strokeLinecap="round" pathLength={1} strokeDasharray="0.42 0.58" strokeDashoffset={-run} />
-        <path d={d} fill="none" stroke="#ffffff" strokeWidth={4} strokeLinecap="round" pathLength={1} strokeDasharray="0.18 0.82" strokeDashoffset={-run - 0.12} opacity={0.9} />
-      </g>
-    </svg>
+    <>
+      {rings.map((g, i) => {
+        const draw = ease.inOutCubic(clamp01((frame - ENTER - 6 - g.delay) / 22));
+        const D = g.r * 2;
+        return (
+          <div key={i} style={{ position: "absolute", left: -g.r, top: -g.r, width: D, height: D, transformStyle: "preserve-3d", transform: `rotateX(${g.tx}deg) rotateY(${g.ty}deg) rotateZ(${(frame - ENTER) * g.sp}deg)`, opacity: a }}>
+            <svg width={D} height={D} viewBox={`${-g.r} ${-g.r} ${D} ${D}`} style={{ position: "absolute", inset: 0, overflow: "visible" }}>
+              <defs>
+                <linearGradient id={`orb${i}`} x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#b9ffd6" stopOpacity={0.9} />
+                  <stop offset="50%" stopColor="#00c46a" stopOpacity={0.25} />
+                  <stop offset="100%" stopColor="#b9ffd6" stopOpacity={0.8} />
+                </linearGradient>
+              </defs>
+              <circle r={g.r - 2} fill="none" stroke={`url(#orb${i})`} strokeWidth={2.2 + 1.5 * boost} pathLength={1} strokeDasharray={`${draw} 1`} transform="rotate(-90)" />
+              {g.beads.map((b, k) => {
+                const ang = (b * 360 - 90) * (Math.PI / 180);
+                const vis = draw > b ? 1 : 0;
+                return (
+                  <g key={k} opacity={vis}>
+                    <circle cx={Math.cos(ang) * (g.r - 2)} cy={Math.sin(ang) * (g.r - 2)} r={16} fill="#2be38a" opacity={0.35} style={{ filter: "blur(8px)" }} />
+                    <circle cx={Math.cos(ang) * (g.r - 2)} cy={Math.sin(ang) * (g.r - 2)} r={6} fill="#e9fff2" />
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+        );
+      })}
+    </>
   );
 };
 
@@ -151,39 +159,6 @@ export const S4Post: React.FC = () => {
           />
         </AbsoluteFill>
       )}
-      {/* a giant ghost word behind the phone, drifting slowly (Visa reference) */}
-      {(() => {
-        const word = frame < f(VO.dureaza) - 4 ? "POSTEZI" : "SECUNDE";
-        const swap = frame < f(VO.dureaza) - 4 ? 0 : clamp01((frame - (f(VO.dureaza) - 4)) / 10);
-        const inA = ease.outCubic(clamp01((frame - (ENTER + 4)) / 16)) * (1 - clamp01((frame - EXIT) / 8));
-        const gfs = V ? 330 : 520;
-        return (
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              top: L.cy - gfs * 0.62 + (V ? -380 : 0),
-              textAlign: "center",
-              whiteSpace: "nowrap",
-              fontFamily: FONT,
-              fontWeight: BOLD,
-              fontSize: gfs,
-              letterSpacing: "-0.06em",
-              lineHeight: 1.2,
-              backgroundImage: `linear-gradient(180deg, rgba(220,255,236,${V ? 0.16 : 0.1}) 0%, rgba(220,255,236,0.01) 85%)`,
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
-              opacity: inA * (swap > 0 ? swap : 1),
-              transform: `translateX(${(V ? 0 : OX * 0.4) - (frame - ENTER) * 2.2}px) scale(${1.06 - 0.06 * inA})`,
-              filter: swap > 0 && swap < 1 ? `blur(${(1 - swap) * 14}px)` : undefined,
-            }}
-          >
-            {word}
-          </div>
-        );
-      })()}
       {/* one soft pool of green light under the phone (Google reference) */}
       <div
         style={{
@@ -199,6 +174,12 @@ export const S4Post: React.FC = () => {
         }}
       />
     <AbsoluteFill style={{ opacity: m.opacity, transform: `translate(${OX}px, ${OY}px)` }}>
+      {/* orbit rings on their own 3D layer behind the phone (sharing its camera, never cutting through it) */}
+      <div style={{ position: "absolute", inset: 0, perspective: 1900 }}>
+        <div style={{ position: "absolute", left: "50%", top: "50%", transformStyle: "preserve-3d", transform: `scale(${zoom}) translateY(${camY}px) translate(${m.x}px, ${m.y}px) scale(${m.scale}) translateZ(-120px)` }}>
+          <Orbits frame={frame} a={ribbonA} boost={ribbonBoost} />
+        </div>
+      </div>
       <DirBlur x={blurX} y={blurY} style={{ position: "absolute", inset: 0, perspective: 1900 }}>
         <div
           style={{
@@ -209,13 +190,11 @@ export const S4Post: React.FC = () => {
             transform: `scale(${zoom}) translateY(${camY}px) translate(${m.x}px, ${m.y}px) scale(${m.scale}) rotateX(${m.rotX}deg) rotateY(${m.rotY}deg) rotateZ(${m.rotZ}deg)`,
           }}
         >
-          <Ribbon half="back" frame={frame} a={ribbonA} boost={ribbonBoost} />
           <div style={{ position: "absolute", left: -PHONE_W / 2, top: -PHONE_H / 2, transformStyle: "preserve-3d" }}>
             <Phone glare={clamp01((frame - ENTER) / 110)}>
               <AppScreen s={app} />
             </Phone>
           </div>
-          <Ribbon half="front" frame={frame} a={ribbonA} boost={ribbonBoost} />
 
           {CHIPS.map((c, i) => {
             const p = pop(frame, c.at, 12, 160);

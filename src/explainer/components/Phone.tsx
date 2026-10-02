@@ -1,4 +1,5 @@
 import React from "react";
+import { staticFile } from "remotion";
 
 export const PHONE_W = 430;
 export const PHONE_H = 884;
@@ -25,6 +26,30 @@ export const Phone: React.FC<{ children: React.ReactNode; glare?: number }> = ({
         }}
       />
     ))}
+    {/* the back: dark glass, camera module, logo (seen when the phone spins) */}
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        borderRadius: RADIUS,
+        transform: `translateZ(${-(DEPTH_LAYERS + 0.5) * 2.2}px) rotateY(180deg)`,
+        background: "linear-gradient(160deg, #2b3532 0%, #121715 45%, #0a0d0c 100%)",
+        boxShadow: "inset 0 0 0 5px #3a4440",
+        overflow: "hidden",
+      }}
+    >
+      <div style={{ position: "absolute", left: 34, top: 34, width: 170, height: 170, borderRadius: 48, background: "linear-gradient(160deg, #39433f, #1a201d)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+        {[
+          [22, 22],
+          [92, 58],
+          [22, 94],
+        ].map(([x, y], i) => (
+          <div key={i} style={{ position: "absolute", left: x, top: y, width: 56, height: 56, borderRadius: "50%", background: "radial-gradient(circle at 40% 35%, #3a4a6a 0%, #0b0f18 55%, #000 100%)", boxShadow: "0 0 0 6px #262d2a" }} />
+        ))}
+      </div>
+      <div style={{ position: "absolute", left: "50%", top: "50%", width: 120, height: 120, marginLeft: -60, marginTop: -60, background: `url(${staticFile("images/logo.webp")}) center / contain no-repeat`, opacity: 0.9 }} />
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0) 60%)" }} />
+    </div>
     {/* titanium frame */}
     <div
       style={{

@@ -17,87 +17,83 @@ export const f = (sec: number) => Math.round((sec + VO_OFFSET) * FPS);
 export type TimedWord = [text: string, sec: number];
 
 export const VO = {
+  // "Te tot gândești / la treaba aia / obositoare / prin casă..."
   hook: [
     ["Te", 0.1],
-    ["tot", 0.3],
-    ["gândești", 0.45],
-    ["la", 1.0],
-    ["treaba", 1.08],
-    ["aia", 1.3],
-    ["obositoare", 1.65],
-    ["prin", 2.55],
-    ["casă...", 2.75],
+    ["tot", 0.37],
+    ["gândești", 0.52],
+    ["la", 1.34],
+    ["treaba", 1.4],
+    ["aia", 1.6],
+    ["obositoare", 1.95],
+    ["prin", 2.83],
+    ["casă...", 2.95],
   ] as TimedWord[],
-  hookEnd: 3.45,
+  hookEnd: 3.6,
 
   // "pe care o tot amâni?" — one calendar hop per syllable
-  postponeSyllables: [3.47, 3.6, 3.75, 3.97, 4.13, 4.3],
-  postponeEnd: 4.65,
+  postpone: [
+    ["pe", 3.69],
+    ["care", 3.8],
+    ["o", 4.0],
+    ["tot", 4.2],
+    ["amâni?", 4.37],
+  ] as TimedWord[],
+  postponeSyllables: [3.69, 3.8, 4.0, 4.2, 4.37, 4.55],
+  postponeEnd: 4.77,
 
-  chores: [5.17, 6.92, 8.57],
-  choresEnd: 10.1,
+  chores: [5.41, 7.01, 8.52],
+  choresEnd: 9.87,
 
-  // [long pause] then the energetic half
-  postezi: 11.59,
-  taskul: 12.2,
-  peHandly: 12.61,
-  postEnd: 13.21,
-  dureaza: 13.42,
-  cateva: 13.95,
-  secunde: 14.35,
-  secundeEnd: 14.87,
+  // [long pause] → the energetic half
+  postezi: 10.79,
+  taskul: 11.36,
+  peHandly: 11.6,
+  handlyWord: 11.78,
+  postEnd: 12.35,
+  dureaza: 12.7,
+  cateva: 13.17,
+  secunde: 13.73,
+  secundeEnd: 14.03,
 
-  taskerii: 15.18,
-  dinZona: 15.6,
-  vad: 16.17,
-  vadTaskul: 16.7,
-  radarEnd: 17.17,
+  taskerii: 14.42,
+  dinZona: 14.85,
+  vad: 15.41,
+  vadTaskul: 15.95,
+  radarEnd: 16.39,
 
-  tuAlegi: 17.39,
-  cuCine: 17.88,
-  lucrezi: 18.3,
-  laPretul: 18.73,
-  stabilit: 18.99,
-  chiar: 19.94,
-  voiDoi: 20.3,
-  doi: 20.5,
-  pretEnd: 20.75,
+  tuAlegi: 16.67,
+  cuCine: 17.15,
+  lucrezi: 17.63,
+  laPretul: 18.14,
+  stabilit: 18.38,
+  chiar: 19.37,
+  voiDoi: 19.7,
+  doi: 19.9,
+  pretEnd: 20.17,
 
   noFees: [
-    ["Fără", 20.95],
-    ["tarife", 21.25],
-    ["de", 21.65],
-    ["firmă.", 21.75],
+    ["Fără", 20.47],
+    ["tarife", 20.75],
+    ["de", 21.1],
+    ["firmă.", 21.2],
   ] as TimedWord[],
   noMiddlemen: [
-    ["Fără", 22.26],
-    ["intermediari.", 22.55],
+    ["Fără", 21.75],
+    ["intermediari.", 22.05],
   ] as TimedWord[],
-  noMiddlemenEnd: 23.33,
+  noMiddlemenEnd: 23.0,
 
-  handly: 23.62,
-  postezi2: 24.36,
-  seRezolva: 25.15,
-  rezolva: 25.35,
-  voEnd: 26.0,
+  handly: 23.39,
+  postezi2: 24.12,
+  seRezolva: 24.88,
+  rezolva: 25.05,
+  voEnd: 25.71,
 };
 
-// Original score: 112 BPM; the drop lands on "Postează" (frame 360), the logo hit 7 bars later.
-export const BPM = 112;
-export const MUSIC_LIFT_FRAME = 360;
-export const LOGO_HIT_FRAME = 810;
+// Score: 124 BPM; the drop lands on "Postează" (frame 336), the logo hit 8 bars later.
+export const BPM = 124;
+export const MUSIC_LIFT_FRAME = 336;
+export const LOGO_HIT_FRAME = 800;
 
-export const DURATION_IN_FRAMES = 915;
-
-// Scene windows (frames, inclusive start / exclusive end incl. transition overlaps)
-export const SCENES = {
-  hook: [0, 122],
-  calendar: [112, 175],
-  chores: [158, 372],
-  post: [348, 472],
-  radar: [452, 548],
-  choose: [524, 656],
-  noFees: [640, 730],
-  words: [712, 796],
-  logo: [796, DURATION_IN_FRAMES],
-} as const;
+export const DURATION_IN_FRAMES = 895;

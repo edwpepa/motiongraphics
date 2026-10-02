@@ -2,122 +2,115 @@ import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { LiquidGlass } from "../components/Glass";
 import { GlyphName, IconTile, TileColor } from "../components/Icons";
-import { KineticText } from "../components/KineticText";
-import { clamp01, drift, ease, keys, lerp, pop } from "../lib/anim";
+import { Orb } from "../components/Orb";
+import { PhraseSeq } from "../components/Phrase";
+import { clamp01, drift, ease, lerp, pop } from "../lib/anim";
 import { useLayout } from "../layout";
-import { BOLD, C, FONT } from "../theme";
-import { f, VO } from "../timing";
+import { BOLD, FONT } from "../theme";
+import { f, MUSIC_LIFT_FRAME, VO } from "../timing";
 
 const LEAD = 3;
-const CARD_H = 172;
-const GAP = 26;
-
-const ITEMS: { icon: GlyphName; tile: TileColor; words: [string, number][]; sub: string; ago: string }[] = [
-  { icon: "droplet", tile: "blue", words: [["Robinet", 5.32], ["care", 5.62], ["curge", 5.85]], sub: "Amânat de 2 săptămâni", ago: "2 săpt." },
-  { icon: "hammer", tile: "indigo", words: [["Dulap", 7.05], ["de", 7.35], ["montat", 7.45]], sub: "Amânat de o lună", ago: "1 lună" },
-  { icon: "roller", tile: "orange", words: [["Perete", 8.7], ["de", 9.05], ["zugrăvit", 9.15]], sub: "Amânat din primăvară", ago: "3 luni" },
+const ITEMS: { icon: GlyphName; tile: TileColor; title: string; words: [string, number][]; days: number; unit: string }[] = [
+  { icon: "droplet", tile: "blue", title: "Robinet care curge", words: [["Un", 5.41], ["robinet", 5.55], ["care", 5.95], ["curge.", 6.2]], days: 14, unit: "zile" },
+  { icon: "hammer", tile: "indigo", title: "Dulap de montat", words: [["Un", 7.01], ["dulap", 7.13], ["de", 7.5], ["montat.", 7.62]], days: 31, unit: "zile" },
+  { icon: "roller", tile: "orange", title: "Perete de zugrăvit", words: [["Un", 8.52], ["perete", 8.65], ["de", 9.05], ["zugrăvit.", 9.18]], days: 92, unit: "zile" },
 ];
-
 const arrive = (i: number) => f(VO.chores[i]) - LEAD;
+const END = f(VO.choresEnd);
+const DROP = MUSIC_LIFT_FRAME;
 
-/** One iOS-style notification in liquid glass. */
-const Note: React.FC<{ i: number; frame: number; width: number }> = ({ i, frame, width }) => {
-  const item = ITEMS[i];
-  const sub = clamp01((frame - (f(item.words[2][1]) + 4)) / 8);
+const Widget: React.FC<{ i: number; frame: number; w: number; h: number }> = ({ i, frame, w, h }) => {
+  const it = ITEMS[i];
+  const count = Math.round(1 + (it.days - 1) * ease.outCubic(clamp01((frame - arrive(i) - 6) / 22)));
   return (
-    <LiquidGlass width={width} height={CARD_H} radius={46} strength={60} frost={14}>
-      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", padding: "0 34px", gap: 28, fontFamily: FONT, fontWeight: BOLD }}>
-        <IconTile name={item.icon} color={item.tile} size={104} />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
-          <KineticText words={item.words.map(([text, sec]) => ({ text, at: f(sec) - LEAD }))} fontSize={48} style={{ alignItems: "flex-start" }} />
-          <div style={{ fontSize: 28, color: "rgba(20,40,30,0.55)", opacity: sub, transform: `translateY(${(1 - sub) * 8}px)` }}>{item.sub}</div>
+    <LiquidGlass width={w} height={h} radius={52} tone="dark" strength={60} frost={20}>
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", gap: 36, padding: "0 44px", fontFamily: FONT, fontWeight: BOLD }}>
+        <IconTile name={it.icon} color={it.tile} size={h * 0.52} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ fontSize: h * 0.21, color: "#f4f7f5", letterSpacing: "-0.025em" }}>{it.title}</div>
+          <div style={{ fontSize: h * 0.13, color: "rgba(255,255,255,0.5)" }}>
+            Amânat de <span style={{ color: "#3ff09a" }}>{count} {it.unit}</span>
+          </div>
         </div>
-        <div style={{ alignSelf: "flex-start", marginTop: 30, fontSize: 24, color: "rgba(20,40,30,0.45)" }}>{item.ago}</div>
       </div>
     </LiquidGlass>
   );
 };
 
-// "Un robinet care curge. Un dulap de montat. Un perete de zugrăvit." … [long pause]
+// "Un robinet care curge. Un dulap de montat. Un perete de zugrăvit." … [long pause] → drop
 export const S3Chores: React.FC = () => {
   const frame = useCurrentFrame();
   const L = useLayout();
   const V = L.vertical;
-  const enter = 158;
-  const W = V ? 940 : 1000;
+  const w = V ? 900 : 860;
+  const h = V ? 250 : 240;
+  const widgetY = V ? 160 : 120;
 
-  // enter: out of the calendar's focus pull
-  const inT = ease.outCubic(clamp01((frame - enter) / 14));
+  const phrases = ITEMS.map((it, i) => ({
+    words: it.words.map(([text, sec]) => ({ text, at: f(sec) - LEAD })),
+    out: i < 2 ? arrive(i + 1) - 4 : END + 2,
+    breaks: V ? [1] : [],
+  }));
 
-  // the pause builds tension: the stack squeezes together, then the camera punches through it
-  const squeeze = ease.inOutCubic(clamp01((frame - (f(VO.choresEnd) + 2)) / 28));
-  const punch = ease.inExpo(clamp01((frame - 346) / 14));
-  const camScale = keys(frame, [
-    [enter, 1.08],
-    [f(VO.choresEnd), 1.0],
-  ], ease.outCubic) * (1 - 0.1 * squeeze) * (1 + 2.2 * punch);
-  const flash = clamp01((frame - 350) / 8) * (1 - clamp01((frame - 362) / 8));
+  // pause: the last widget folds into three drops of light that melt into one charging orb
+  const fold = ease.inOutCubic(clamp01((frame - (END + 2)) / 10));
+  const gather = ease.inOutCubic(clamp01((frame - (END + 10)) / 16));
+  const charge = clamp01((frame - (END + 10)) / (DROP - END - 10));
+  const burst = ease.inExpo(clamp01((frame - (DROP - 4)) / 6));
+  const flash = clamp01((frame - (DROP - 3)) / 4) * (1 - clamp01((frame - (DROP + 3)) / 7));
 
-  const count = ITEMS.filter((_, i) => frame >= arrive(i) - 1).length;
+  const size = 700;
+  const cOrb = size / 2;
+  const spread = (1 - gather) * 240;
+  const pulse = 1 + 0.06 * Math.sin(frame / 2.2) * charge;
+  const rr = (34 + 46 * charge) * pulse;
+  const blobs = [
+    { x: cOrb - spread, y: cOrb, r: rr },
+    { x: cOrb, y: cOrb, r: rr },
+    { x: cOrb + spread, y: cOrb, r: rr },
+  ];
 
   return (
-    <AbsoluteFill style={{ opacity: clamp01((frame - enter) / 6) }}>
-      <AbsoluteFill
-        style={{
-          transform: `scale(${(0.86 + 0.14 * inT) * camScale}) rotate(${drift(frame, 0.6, 160)}deg)`,
-          filter: inT < 1 || punch > 0 ? `blur(${(1 - inT) * 22 + punch * 30}px)` : undefined,
-          opacity: 1 - clamp01((frame - 352) / 8),
-        }}
-      >
-        {ITEMS.map((_, i) => {
-          if (frame < arrive(i) - 1) return null;
-          const p = pop(frame, arrive(i), 13, 150);
-          // newest on top; older ones are pushed down the list as new ones land
-          const newer = ITEMS.filter((__, j) => j > i && frame >= arrive(j)).length;
-          let slot = 0;
-          for (let j = i + 1; j < ITEMS.length; j++) slot += ease.outExpo(clamp01((frame - arrive(j)) / 14));
-          const listY = (slot - (count - 1) / 2) * (CARD_H + GAP);
-          const stackY = slot * 22 - 20;
-          const y = lerp(listY, stackY, squeeze) + drift(frame, 5, 90 + i * 17, i);
-          const depth = lerp(1 - 0.03 * newer, 1 - 0.06 * slot, squeeze);
-          return (
-            <div
-              key={i}
-              style={{
-                position: "absolute",
-                left: L.cx - W / 2,
-                top: L.cy - CARD_H / 2 + y - (1 - p) * 140,
-                transform: `scale(${(0.9 + 0.1 * p) * depth})`,
-                opacity: clamp01(p * 2.5) * lerp(1, i === ITEMS.length - 1 ? 1 : 0.85, squeeze),
-                filter: p < 0.96 ? `blur(${(1 - Math.min(1, p)) * 10}px)` : undefined,
-                zIndex: 10 + i,
-              }}
-            >
-              <Note i={i} frame={frame} width={W} />
-            </div>
-          );
-        })}
-        {/* small header above the stack */}
+    <AbsoluteFill>
+      <PhraseSeq phrases={phrases} fontSize={V ? 108 : 104} y={V ? -330 : -200} />
+
+      {ITEMS.map((_, i) => {
+        const a = arrive(i);
+        const next = i < 2 ? arrive(i + 1) : END + 2;
+        if (frame < a - 1 || frame > next + 2) return null;
+        const p = pop(frame, a, 14, 140);
+        const out = i < 2 ? ease.inCubic(clamp01((frame - (next - 7)) / 7)) : fold;
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: L.cx - w / 2,
+              top: L.cy + widgetY - h / 2 + drift(frame, 5, 80, i),
+              transform: `translateY(${(1 - p) * 90 - out * 70}px) scale(${(0.92 + 0.08 * p) * (1 - 0.4 * out)})`,
+              opacity: 1 - out,
+            }}
+          >
+            <Widget i={i} frame={frame} w={w} h={h} />
+          </div>
+        );
+      })}
+
+      {frame >= END + 8 && (
         <div
           style={{
             position: "absolute",
-            left: 0,
-            right: 0,
-            top: L.cy - ((CARD_H + GAP) * 3) / 2 - (V ? 110 : 90),
-            textAlign: "center",
-            fontFamily: FONT,
-            fontWeight: BOLD,
-            fontSize: V ? 40 : 34,
-            color: "rgba(20,40,30,0.5)",
-            opacity: clamp01((frame - enter - 4) / 10) * (1 - squeeze),
-            letterSpacing: "0.02em",
+            left: L.cx - size / 2,
+            top: L.cy - size / 2,
+            width: size,
+            height: size,
+            transform: `scale(${(0.6 + 0.4 * clamp01((frame - END - 8) / 6)) * (1 + 5 * burst)})`,
           }}
         >
-          De făcut prin casă · {count}
+          <Orb blobs={blobs} size={size} glow={0.6 + 0.6 * charge} />
         </div>
-      </AbsoluteFill>
-      <AbsoluteFill style={{ background: "radial-gradient(circle at 50% 50%, #ffffff 0%, rgba(255,255,255,0.85) 40%, rgba(255,255,255,0) 75%)", opacity: flash }} />
-      <AbsoluteFill style={{ background: C.white, opacity: flash * 0.6 }} />
+      )}
+      <AbsoluteFill style={{ background: "radial-gradient(circle at 50% 50%, #eafff3 0%, #6dffb0 30%, rgba(0,200,100,0.6) 60%, rgba(0,0,0,0) 85%)", opacity: flash }} />
     </AbsoluteFill>
   );
 };

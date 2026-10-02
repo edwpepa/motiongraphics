@@ -25,7 +25,7 @@ from scipy import signal
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SR = 44100
 FPS = 30
-DUR = 915 / FPS
+DUR = 895 / FPS
 N = int(DUR * SR)
 VO_OFFSET = 0.4
 
@@ -373,11 +373,11 @@ def glitch(dur=0.36):
 
 # ----------------------------------------------------------------------------- score
 
-BPM = 112
+BPM = 124
 BEAT = 60 / BPM
 BAR = 4 * BEAT
-LIFT = 12.0
-HIT = LIFT + 7 * BAR  # = frame 758 (logo lands)
+LIFT = 336 / FPS  # drop on "Postează"
+HIT = LIFT + 8 * BAR  # logo lands (frame ~800)
 
 
 def bar_t(k):
@@ -385,18 +385,31 @@ def bar_t(k):
 
 
 CHORDS = {
+    "Am": (45, [57, 60, 64, 69]),
     "Am9": (45, [57, 60, 64, 67, 71]),
+    "F": (41, [53, 57, 60, 65]),
     "Fmaj7": (41, [53, 57, 60, 64]),
-    "Gsus": (43, [55, 60, 62, 67]),
-    "G": (43, [55, 59, 62, 67]),
-    "Cadd9": (48, [55, 60, 64, 74]),
     "C": (48, [55, 60, 64, 67]),
-    "Am7": (45, [57, 60, 64, 67]),
+    "G": (43, [55, 59, 62, 67]),
+    "Gsus": (43, [55, 60, 62, 67]),
 }
 
-INTRO = ["Am9", "Fmaj7", "Am9", "Fmaj7", "G"]  # bars -5 .. -1
-MAIN = ["Cadd9", "G", "Am7", "Fmaj7", "Cadd9", "G"]  # bars 0 .. 5
-BREAK = "Fmaj7"  # bar 6
+INTRO = ["Am9", "Fmaj7", "Am9", "Fmaj7", "Gsus"]  # bars -5 .. -1 (ambient, the problem)
+MAIN = ["Am", "F", "C", "G", "Am", "F", "C", "G"]  # bars 0 .. 7 (the energetic half)
+
+
+def supersaw(notes, dur, detune=14.0, voices=5, attack=0.004, release=0.12):
+    n = int(dur * SR)
+    out = np.zeros((2, n))
+    for m in notes:
+        base = midi(m)
+        for v in range(voices):
+            cents = (v - (voices - 1) / 2) / ((voices - 1) / 2) * detune
+            pan = (v / (voices - 1)) * 2 - 1
+            y = saw(base * 2 ** (cents / 1200), n, harmonics=24, phase=rng.uniform(0, 6.28))
+            out += stereo(y, pan * 0.8)
+    out *= env_asr(n, attack, release)
+    return out / (len(notes) * voices) * 2.2
 
 
 def build_music():
@@ -404,91 +417,78 @@ def build_music():
     plk = np.zeros((2, N))
     bass = np.zeros((2, N))
     drums = np.zeros((2, N))
+    stabs = np.zeros((2, N))
     fx = np.zeros((2, N))
 
-    # pad: swell in on the intro chord, then one chord per bar
-    place(pad, pad_chord(CHORDS["Am9"][1], bar_t(-5) + 0.25, attack=0.45, release=0.4), 0.0, 0.9)
+    # ---- the problem: dark ambient pad + slow pulses
+    place(pad, pad_chord(CHORDS["Am9"][1], bar_t(-5) + 0.3, attack=1.0, release=0.4), 0.0, 0.8)
     for k, name in enumerate(INTRO):
-        place(pad, pad_chord(CHORDS[name][1], BAR + 0.5, attack=0.35, release=0.6), bar_t(k - 5))
-    for k, name in enumerate(MAIN):
-        place(pad, pad_chord(CHORDS[name][1], BAR + 0.5, attack=0.15, release=0.5), bar_t(k), 1.1)
-    place(pad, pad_chord(CHORDS[BREAK][1], BAR + 0.3, attack=0.25, release=0.2), bar_t(6), 1.15)
-    place(pad, pad_chord([48, 55, 60, 64, 67, 72], DUR - HIT, attack=0.01, release=2.2), HIT, 1.5)
-
-    # pad filter: muffled under the problem, opens at the lift, sweeps up through the riser
-    nb = int(math.ceil(N / 256))
-    tb = np.arange(nb) * 256 / SR
-    cut = np.interp(tb, [0, LIFT - 0.4, LIFT, bar_t(6), HIT - 0.05, HIT, DUR], [700, 1100, 2600, 2600, 6000, 3400, 2000])
-    pad = np.stack([swept(pad[c], "lowpass", cut) for c in range(2)])
-
-    # plucks: sparse in the intro, arpeggiated after the lift
-    for k, name in enumerate(INTRO):
+        place(pad, pad_chord(CHORDS[name][1], BAR + 0.5, attack=0.4, release=0.6), bar_t(k - 5), 0.9)
+        place(bass, bass_note(CHORDS[name][0], BAR - 0.05, attack=0.3, release=0.4), bar_t(k - 5), 0.45)
         tones = CHORDS[name][1]
         for b, idx in enumerate((0, 2, 1, 3)):
-            place(plk, stereo(pluck(tones[idx] + 12, 1.2, tau=0.3, bright=0.6), (-0.3, 0.3)[b % 2]), bar_t(k - 5) + b * BEAT, 0.5 if k < 4 else 0.25)
-    pattern = (0, 2, 3, 1, 2, 3, 1, 2)
-    for k, name in enumerate(MAIN):
-        tones = CHORDS[name][1]
-        for s, idx in enumerate(pattern):
-            m = tones[idx % len(tones)] + 12
-            place(plk, stereo(pluck(m, 0.6, tau=0.17), (-0.45, 0.45)[s % 2]), bar_t(k) + s * BEAT / 2, 0.55 if s % 2 else 0.7)
-    plk = delay_pingpong(plk, BEAT * 0.75, feedback=0.38, taps=4)
-
-    # bass
-    for k, name in enumerate(INTRO):
-        place(bass, bass_note(CHORDS[name][0], BAR - 0.05, attack=0.25, release=0.4), bar_t(k - 5), 0.55 if k < 4 else 0.3)
-    for k, name in enumerate(MAIN):
-        root = CHORDS[name][0]
+            place(plk, stereo(pluck(tones[idx] + 12, 1.3, tau=0.35, bright=0.5), (-0.35, 0.35)[b % 2]), bar_t(k - 5) + b * BEAT, 0.42 if k < 4 else 0.2)
+    for k in (-4, -3):
         for s in range(8):
-            place(bass, bass_note(root + (12 if s in (3, 7) else 0), BEAT / 2 - 0.02), bar_t(k) + s * BEAT / 2, 0.75)
-    place(bass, bass_note(CHORDS[BREAK][0], BAR, attack=0.1, release=0.3), bar_t(6), 0.45)
-    place(bass, bass_note(36, DUR - HIT, attack=0.005, release=2.0), HIT, 0.7)
+            place(drums, stereo(shaker(), 0.25 if s % 2 else -0.15), bar_t(k) + s * BEAT / 2, 0.16 + 0.1 * (s % 2))
 
-    # drums: shaker builds in the intro, half-time groove after the lift
-    for k in (-3, -2):
-        for s in range(8):
-            place(drums, stereo(shaker(), 0.25 if s % 2 else -0.15), bar_t(k) + s * BEAT / 2, 0.22 + 0.12 * (s % 2) + (0.08 if k == -2 else 0))
+    # ---- the drop: four-on-the-floor, pumping offbeat bass, supersaw stabs, claps, 16th hats, lead arp
     sidechain = np.ones(N)
-    for k in range(6):
+    for k, name in enumerate(MAIN):
         t0 = bar_t(k)
-        for beat in (0, 2):
-            place(drums, kick(), t0 + beat * BEAT, 0.9)
-            i = int((t0 + beat * BEAT) * SR)
-            dip = 1 - 0.55 * np.exp(-np.arange(int(0.25 * SR)) / SR / 0.07)
+        root, tones = CHORDS[name]
+        for beat in range(4):
+            tb = t0 + beat * BEAT
+            place(drums, kick(), tb, 1.0)
+            i = int(tb * SR)
+            dip = 1 - 0.8 * np.exp(-np.arange(int(0.3 * SR)) / SR / 0.09)
             sidechain[i:i + len(dip)] = np.minimum(sidechain[i:i + len(dip)], dip[: N - i])
-        if k % 2 == 1:
-            place(drums, kick(), t0 + 3.5 * BEAT, 0.55)
+            # offbeat bass + stab
+            place(bass, bass_note(root, BEAT / 2 - 0.03, attack=0.004, release=0.05), tb + BEAT / 2, 0.95)
+            place(bass, bass_note(root + 12, BEAT / 4 - 0.02, attack=0.004, release=0.04), tb + BEAT * 0.75, 0.45)
+            place(stabs, supersaw([m + 12 for m in tones], BEAT * 0.42), tb + BEAT / 2, 0.55)
         for beat in (1, 3):
-            place(drums, stereo(clap(), 0.05), t0 + beat * BEAT, 0.55)
-        for s in range(8):
-            place(drums, stereo(hat(open_=(s == 7 and k % 2 == 1)), 0.3), t0 + s * BEAT / 2, 0.42 if s % 2 else 0.22)
-    # snare roll into the hit
-    roll_t = bar_t(6) + 2 * BEAT
-    n_roll = 16
-    for i in range(n_roll):
-        tt = roll_t + (2 * BEAT) * (i / n_roll) ** 0.85
-        place(drums, stereo(clap(), 0.0), tt, 0.12 + 0.35 * (i / n_roll) ** 1.5)
+            place(drums, stereo(clap(), 0.0), t0 + beat * BEAT, 0.75)
+        for s in range(16):
+            place(drums, stereo(hat(open_=(s % 4 == 2)), 0.25 if s % 2 else -0.2), t0 + s * BEAT / 4, (0.32 if s % 4 == 2 else 0.14 + 0.06 * (s % 2)))
+        for s, idx in enumerate((0, 1, 2, 3, 2, 1, 2, 3)):
+            place(plk, stereo(pluck(tones[idx % len(tones)] + 24, 0.4, tau=0.12, bright=1.2), (-0.5, 0.5)[s % 2]), t0 + s * BEAT / 2, 0.45)
+        place(pad, pad_chord([m + 12 for m in tones], BAR + 0.3, attack=0.05, release=0.3), t0, 0.7)
+    # last bar before the logo: snare roll + riser on top of the groove
+    roll_t = bar_t(7)
+    for i in range(24):
+        tt = roll_t + BAR * (i / 24) ** 0.9
+        place(drums, stereo(clap(), 0.0), tt, 0.1 + 0.4 * (i / 24) ** 1.6)
+    place(fx, stereo(riser(BAR, 300, 9000, 1.0), 0.0), bar_t(7), 0.55)
 
-    # transitions / impacts in the score
-    # the long pause before "Postează": a big riser + reverse swell, then an explosive drop
-    place(fx, reverse_swell(1.9), LIFT - 1.9, 0.75)
-    place(fx, stereo(riser(2.4, 200, 9000, 1.0), 0.0), LIFT - 2.4, 0.75)
-    place(fx, stereo(sub_drop(2.0), 0.0), LIFT, 0.85)
-    place(fx, stereo(crash(), -0.2), LIFT, 0.6)
-    place(fx, stereo(riser(BAR, 250, 7500, 1.0), 0.0), bar_t(6), 0.6)
-    place(fx, reverse_swell(1.8), HIT - 1.8, 0.7)
-    place(fx, stereo(sub_drop(2.6), 0.0), HIT, 0.95)
-    place(fx, stereo(crash(3.2), 0.0), HIT, 0.55)
-    for m, g in ((72, 0.32), (76, 0.24), (79, 0.22), (84, 0.16)):
-        place(fx, stereo(bell(m, 3.2, ratio=3.5, index=1.6, tau=1.4), 0.0), HIT, g)
+    # ---- the pause before "Postează": reverse swell + big riser, then an explosive drop
+    place(fx, reverse_swell(1.8), LIFT - 1.8, 0.85)
+    place(fx, stereo(riser(2.2, 200, 10000, 1.0), 0.0), LIFT - 2.2, 0.85)
+    place(fx, stereo(sub_drop(2.0), 0.0), LIFT, 1.0)
+    place(fx, stereo(crash(), -0.2), LIFT, 0.7)
 
-    pad *= sidechain[None, :] ** 0.6
+    # ---- logo hit: big chord, sub, crash, bells, ringing out
+    place(pad, pad_chord([48, 55, 60, 64, 67, 72], DUR - HIT, attack=0.01, release=2.0), HIT, 1.6)
+    place(stabs, supersaw([60, 64, 67, 72], 1.6, release=1.4), HIT, 0.7)
+    place(bass, bass_note(36, DUR - HIT, attack=0.005, release=2.0), HIT, 0.8)
+    place(fx, stereo(sub_drop(2.6), 0.0), HIT, 1.0)
+    place(fx, stereo(crash(3.2), 0.0), HIT, 0.7)
+    for m, g in ((72, 0.3), (76, 0.22), (79, 0.2), (84, 0.15)):
+        place(fx, stereo(bell(m, 3.0, ratio=3.5, index=1.6, tau=1.3), 0.0), HIT, g)
+
+    nb = int(math.ceil(N / 256))
+    tb_ = np.arange(nb) * 256 / SR
+    cut = np.interp(tb_, [0, LIFT - 2.2, LIFT - 0.05, LIFT, HIT, DUR], [650, 900, 5000, 3800, 4500, 2200])
+    pad = np.stack([swept(pad[c], "lowpass", cut) for c in range(2)])
+    stabs = np.stack([swept(stabs[c], "lowpass", np.interp(tb_, [0, LIFT, HIT - BAR, HIT, DUR], [3000, 3200, 3200, 7000, 2500])) for c in range(2)])
+
+    pad *= sidechain[None, :] ** 0.8
     plk *= sidechain[None, :] ** 0.4
     bass *= sidechain[None, :]
+    stabs *= sidechain[None, :] ** 0.6
 
-    wet = reverb(pad * 0.5 + plk * 0.6 + drums * 0.12 + fx * 0.5, IR_HALL)
-    music = pad * 0.55 + plk * 0.42 + bass * 0.5 + drums * 0.55 + fx * 0.6 + wet * 0.32
-    # gentle tail fade
+    wet = reverb(pad * 0.45 + plk * 0.5 + stabs * 0.25 + drums * 0.08 + fx * 0.45, IR_HALL)
+    music = pad * 0.5 + plk * 0.38 + bass * 0.62 + drums * 0.62 + stabs * 0.5 + fx * 0.6 + wet * 0.3
     fade = np.clip((DUR - np.arange(N) / SR) / 1.4, 0, 1) ** 1.5
     return music * fade[None, :]
 
@@ -497,77 +497,68 @@ def build_music():
 
 def build_sfx():
     sfx = np.zeros((2, N))
+    sw = lambda at, g=0.12: place(sfx, whoosh(0.32, 700, 5500, 0.55, (0.15, -0.15), air=0.7), fr(at) - 0.06, g)
 
-    # light bloom + liquid glass drop at the very start
-    place(sfx, whoosh(0.55, 300, 2400, 0.9, (-0.2, 0.2), air=0.7), 0.0, 0.2)
-    place(sfx, chime([84, 91], gap=0.09, tau=0.5), fr(4), 0.08)
-    # S1 → S2: whip left / calendar in from the right
-    place(sfx, whoosh(0.5, 300, 4200, 0.6, (0.7, -0.7)), fr(115) - 0.22, 0.5)
-    # calendar hops ("pe care o tot amâni?")
-    for s in (3.47, 3.6, 3.75, 3.97, 4.13, 4.3):
-        place(sfx, stereo(flip(), 0.15), fr(f(s) + 1), 0.32)
-    # calendar dissolves into the notification stack
-    place(sfx, whoosh(0.55, 220, 3000, 0.55, (0.0, 0.0), low=0.5), fr(160) - 0.2, 0.42)
-    # notifications land + their "postponed for…" subtitles
-    for s in (5.17, 6.92, 8.57):
-        place(sfx, stereo(pop_sfx(1150, 700), -0.1), fr(f(s) - 3), 0.26)
-        place(sfx, chime([86], tau=0.3), fr(f(s) - 2), 0.05)
-    for s in (5.85, 7.45, 9.15):
-        place(sfx, stereo(tick(2600), 0.2), fr(f(s) + 4), 0.14)
-    # stack squeezes, camera punches through, white flash, phone slams in on the drop
-    place(sfx, whoosh(0.9, 5000, 400, 0.85, (0.0, 0.0), low=0.4), fr(346) - 0.5, 0.45)
-    place(sfx, whoosh(0.6, 250, 5000, 0.4, (0.8, -0.4), low=0.5), fr(352), 0.6)
+    # opening: three drops of light melt into one orb
+    place(sfx, whoosh(0.9, 200, 2600, 0.8, (-0.3, 0.3), air=0.6, low=0.3), 0.0, 0.25)
+    place(sfx, chime([81, 88], gap=0.12, tau=0.7), fr(16), 0.07)
+    for i in (3, 6, 7):
+        sw(f(VO_HOOK[i]) - 5, 0.08)
+    # day strip + hops ("pe care o tot amâni?")
+    place(sfx, whoosh(0.5, 300, 4200, 0.6, (0.7, -0.7)), fr(118) - 0.1, 0.3)
+    for s_ in (3.69, 3.8, 4.0, 4.2, 4.37, 4.55):
+        place(sfx, stereo(tick(2200), 0.15), fr(f(s_) + 1), 0.22)
+    # chores widgets
+    for s_ in (5.41, 7.01, 8.52):
+        place(sfx, stereo(pop_sfx(1150, 700), -0.1), fr(f(s_) - 3), 0.24)
+        place(sfx, whoosh(0.4, 400, 3000, 0.5, (0.0, 0.0), air=0.6), fr(f(s_) - 4), 0.1)
+    # pause: drops gather and charge, then the drop
+    place(sfx, whoosh(1.1, 5000, 300, 0.9, (0.0, 0.0), low=0.4), fr(336) - 1.1, 0.4)
+    place(sfx, whoosh(0.7, 250, 6000, 0.35, (0.8, -0.4), low=0.6), fr(332), 0.55)
     # typing "Robinet care curge"
-    type_start = f(11.59) + 1
+    type_start = f(10.79) + 1
     for i in range(18):
-        place(sfx, stereo(key_click(), 0.05), fr(type_start + 16 * (i + 1) / 18), 0.13 + 0.04 * rng.random())
-    category = f(12.2) + 9
-    press = f(12.61) + 4
+        place(sfx, stereo(key_click(), 0.05), fr(type_start + 16 * (i + 1) / 18), 0.12 + 0.04 * rng.random())
+    category = f(11.36) + 4
+    press = f(11.78) + 2
     success = press + 10
-    place(sfx, stereo(tap(), 0.0), fr(category), 0.28)
-    place(sfx, whoosh(0.35, 500, 2500, 0.5, (0.0, 0.0), air=0.6), fr(category) - 0.1, 0.12)
-    place(sfx, stereo(tap(), 0.0), fr(press), 0.42)
+    place(sfx, stereo(tap(), 0.0), fr(category), 0.26)
+    place(sfx, stereo(tap(), 0.0), fr(press), 0.4)
     place(sfx, chime([88, 95]), fr(success), 0.2)
-    for at, pan in ((category + 4, -0.5), (press + 2, 0.5), (success + 5, 0.55), (f(13.95) - 2, -0.55)):
-        place(sfx, stereo(pop_sfx(1100, 600), pan), fr(at), 0.2)
-    # phone drops away, radar reveal + pings
-    place(sfx, whoosh(0.55, 260, 2600, 0.45, (0.0, 0.0), low=0.4), fr(449) - 0.05, 0.4)
-    rings = (f(15.18) - 1, f(15.18) + 17, f(16.17) + 1)
+    for at, pan in ((category + 4, -0.5), (press + 2, 0.5), (success + 5, 0.55), (f(13.17) - 2, -0.55)):
+        place(sfx, stereo(pop_sfx(1100, 600), pan), fr(at), 0.18)
+    # radar
+    place(sfx, whoosh(0.55, 260, 2600, 0.45, (0.0, 0.0), low=0.4), fr(436) - 0.05, 0.35)
+    rings = (f(14.42) - 1, f(14.42) + 17, f(15.41) + 1)
     for i, r in enumerate(rings):
-        place(sfx, reverb(sonar(1180 if i != 2 else 1320), IR_HALL) * 0.6 + stereo(sonar(1180 if i != 2 else 1320)), fr(r), 0.22 if i == 0 else 0.15)
+        place(sfx, reverb(sonar(1180 if i != 2 else 1320), IR_HALL) * 0.6 + stereo(sonar(1180 if i != 2 else 1320)), fr(r), 0.2 if i == 0 else 0.13)
     for k, (x, y) in enumerate(((-520, -215), (430, -255), (-330, 240), (560, 175), (-770, 30), (195, 320))):
         d = math.hypot(x, y)
-        tt = (1 - (1 - (d - 40) / 960) ** (1 / 3)) * 50  # inverse of ease-out-cubic ring growth
-        place(sfx, stereo(tick(1500 + 160 * k), x / 900), fr(rings[0] + tt), 0.11)
-    place(sfx, stereo(pop_sfx(1000, 650), 0.0), fr(f(16.17) - 6), 0.16)
-    # radar slides out, tasker cards slide in
-    place(sfx, whoosh(0.5, 300, 3600, 0.55, (0.6, -0.6)), fr(526) - 0.08, 0.32)
+        tt = (1 - (1 - (d - 40) / 960) ** (1 / 3)) * 50
+        place(sfx, stereo(tick(1500 + 160 * k), x / 900), fr(rings[0] + tt), 0.1)
+    # tasker cards
+    place(sfx, whoosh(0.5, 300, 3600, 0.55, (0.6, -0.6)), fr(512) - 0.08, 0.3)
     for i in range(3):
-        place(sfx, whoosh(0.3, 600, 4500, 0.5, (0.8, 0.0), air=0.8), fr(528 + i * 5) - 0.05, 0.14)
-    select = f(18.3) - 3
-    place(sfx, stereo(tap(), 0.0), fr(select), 0.3)
+        place(sfx, whoosh(0.3, 600, 4500, 0.5, (0.8, 0.0), air=0.8), fr(514 + i * 5) - 0.05, 0.12)
+    select = f(17.63) - 3
+    place(sfx, stereo(tap(), 0.0), fr(select), 0.28)
     place(sfx, chime([84]), fr(select + 2), 0.12)
-    split = f(18.73) - 3
-    place(sfx, whoosh(0.45, 300, 3800, 0.5, (0.0, 0.0)), fr(split) - 0.05, 0.3)
-    place(sfx, whoosh(0.35, 500, 4200, 0.5, (0.8, 0.2)), fr(split + 4), 0.16)
-    price = f(18.99)
-    place(sfx, stereo(pop_sfx(1200, 700), 0.0), fr(price), 0.28)
-    place(sfx, chime([91, 96], gap=0.06, tau=0.4), fr(price + 1), 0.1)
-    deal = f(20.3)
-    place(sfx, chime([79, 84, 88], gap=0.07, tau=0.7), fr(deal - 1), 0.17)
-    # dark → light glitch cut
-    place(sfx, stereo(glitch(), 0.0), fr(641), 0.22)
-    place(sfx, whoosh(0.35, 400, 5000, 0.6, (0.4, -0.4)), fr(641) - 0.05, 0.22)
-    # text beats (the last three punch in)
-    place(sfx, whoosh(0.32, 700, 5500, 0.55, (0.15, -0.15), air=0.7), fr(f(22.26) - 4) - 0.06, 0.12)
-    for at in (f(23.62) - 3, f(24.36) - 3, f(25.15) - 3):
-        place(sfx, whoosh(0.3, 900, 6000, 0.6, (0.1, -0.1), air=0.8), fr(at) - 0.07, 0.16)
-        place(sfx, stereo(kick() * 0.6, 0.0), fr(at), 0.35)
-    place(sfx, stereo(pop_sfx(900, 600), 0.0), fr(f(25.15)), 0.18)
-    # frame collapses into the logo → hit (score carries the impact)
-    place(sfx, whoosh(0.5, 5500, 300, 0.85, (0.0, 0.0), low=0.3), fr(794), 0.38)
-    place(sfx, whoosh(0.6, 500, 4000, 0.5, (-0.3, 0.3), air=0.6), fr(830) - 0.1, 0.1)
+    split = f(18.14) - 3
+    place(sfx, whoosh(0.45, 300, 3800, 0.5, (0.0, 0.0)), fr(split) - 0.05, 0.28)
+    price = f(18.38)
+    place(sfx, stereo(pop_sfx(1200, 700), 0.0), fr(price), 0.26)
+    place(sfx, chime([79, 84, 88], gap=0.07, tau=0.7), fr(f(19.7) - 1), 0.16)
+    # statements + final beats
+    for at in (f(20.47) - 3, f(21.75) - 3, f(23.39) - 3, f(24.12) - 3, f(24.88) - 3):
+        sw(at, 0.16)
+    place(sfx, stereo(pop_sfx(900, 600), 0.0), fr(f(24.88)), 0.18)
+    # drops gather into the logo
+    place(sfx, whoosh(0.5, 5500, 300, 0.85, (0.0, 0.0), low=0.3), fr(800) - 0.5, 0.35)
+    place(sfx, whoosh(0.6, 500, 4000, 0.5, (-0.3, 0.3), air=0.6), fr(822) - 0.1, 0.1)
     return sfx
+
+
+VO_HOOK = [0.1, 0.37, 0.52, 1.34, 1.4, 1.6, 1.95, 2.83, 2.95]
 
 
 # ----------------------------------------------------------------------------- mix + master
@@ -643,12 +634,14 @@ def main():
     # duck music under the voice (and a touch under the loudest sfx)
     env = follower(vo, 0.02, 0.38)
     env /= np.max(env) + 1e-9
-    duck_db = -8.0 * np.clip(env * 4.0, 0, 1)
+    tt0 = np.arange(N) / SR
+    depth = np.where(tt0 < LIFT, -8.0, -5.0)
+    duck_db = depth * np.clip(env * 4.0, 0, 1)
     music *= (10 ** (duck_db / 20))[None, :]
 
     # let the score open up once the voice is done (logo hit + end card)
     tt = np.arange(N) / SR
-    music *= np.interp(tt, [VO_OFFSET + 10.1, VO_OFFSET + 10.4, VO_OFFSET + 11.5, LIFT, VO_OFFSET + 26.0, HIT - 0.1], [1.0, 1.9, 1.9, 1.15, 1.15, 1.7])[None, :]
+    music *= np.interp(tt, [VO_OFFSET + 9.9, VO_OFFSET + 10.2, LIFT - 0.05, LIFT, VO_OFFSET + 25.7, HIT - 0.1], [1.0, 1.8, 1.8, 1.22, 1.22, 1.6])[None, :]
 
     mix = vo_st + music + sfx
     mix *= 10 ** ((-14.5 - lufs(mix)) / 20)

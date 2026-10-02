@@ -7,6 +7,7 @@ import { DirBlur } from "../lib/Blur";
 import { clamp01, drift, ease, keys, pop } from "../lib/anim";
 import { useLayout } from "../layout";
 import { BOLD, C, FONT } from "../theme";
+import { PhraseSeq } from "../components/Phrase";
 import { f, VO } from "../timing";
 
 const RING_STARTS = [f(VO.taskerii) - 1, f(VO.taskerii) + 17, f(VO.vad) + 1];
@@ -45,10 +46,10 @@ const Pin: React.FC = () => (
 export const S5Radar: React.FC = () => {
   const frame = useCurrentFrame();
   const L = useLayout();
-  const exitStart = 526;
+  const exitStart = 512;
 
   const camScale = keys(frame, [
-    [452, 1.16],
+    [436, 1.16],
     [exitStart, 1.0],
   ], ease.outCubic);
   const exitX = -L.W * 0.47 * ease.inCubic(clamp01((frame - exitStart) / 14));
@@ -57,10 +58,8 @@ export const S5Radar: React.FC = () => {
 
   const positions = TASKERS.map((t) => (L.vertical ? t.vpos : t.pos));
   const lits = positions.map(([x, y]) => litFrame(Math.hypot(x, y)));
-  const seen = lits.filter((l) => frame >= l + 3).length;
-  const label = pop(frame, f(VO.vad) - 6, 13, 150);
-
-  const pinDrop = pop(frame, 458, 11, 140);
+  
+  const pinDrop = pop(frame, 442, 11, 140);
 
   return (
     <AbsoluteFill style={{ opacity: exitFade }}>
@@ -109,7 +108,7 @@ export const S5Radar: React.FC = () => {
           {/* taskers nearby */}
           {TASKERS.map((t, i) => {
             const [x, y] = positions[i];
-            const appear = pop(frame, 457 + i * 2, 14, 150);
+            const appear = pop(frame, 441 + i * 2, 14, 150);
             const lit = clamp01((frame - lits[i]) / 6);
             const bump = 1 + 0.14 * Math.sin(clamp01((frame - lits[i]) / 9) * Math.PI);
             const badge = pop(frame, lits[i] + 3, 11, 190);
@@ -163,7 +162,7 @@ export const S5Radar: React.FC = () => {
               position: "absolute",
               left: L.cx,
               top: L.cy - 150,
-              transform: `translate(-50%, -100%) scale(${pop(frame, 464, 12, 160)})`,
+              transform: `translate(-50%, -100%) scale(${pop(frame, 448, 12, 160)})`,
             }}
           >
             <GlassPill tone="dark" icon={<IconTile name="droplet" color="blue" size={44} />} label="Robinet care curge" size={30} />
@@ -171,18 +170,14 @@ export const S5Radar: React.FC = () => {
         </AbsoluteFill>
       </DirBlur>
 
-      {/* live counter */}
-      <div
-        style={{
-          position: "absolute",
-          left: "50%",
-          top: L.vertical ? 250 : 92,
-          transform: `translateX(-50%) translateY(${(1 - label) * -30}px) scale(${0.9 + 0.1 * label})`,
-          opacity: clamp01(label * 2) * (1 - clamp01((frame - exitStart + 2) / 8)),
-        }}
-      >
-        <GlassPill tone="dark" icon={<Glyph name="eye" size={32} color={C.green} weight={2.4} />} iconSize={32} label={`${Math.max(1, seen)} taskeri din zona ta au văzut task-ul`} size={30} />
-      </div>
+      <PhraseSeq
+        phrases={[
+          { words: [{ text: "Taskerii", at: f(VO.taskerii) - 3 }, { text: "din", at: f(VO.dinZona) - 3 }, { text: "zona", at: f(VO.dinZona) }, { text: "ta", at: f(VO.dinZona) + 3 }], out: f(VO.vad) - 4 },
+          { words: [{ text: "văd", at: f(VO.vad) - 3 }, { text: "task-ul", at: f(VO.vadTaskul) - 3 }], out: exitStart },
+        ]}
+        fontSize={L.vertical ? 96 : 80}
+        y={L.vertical ? -720 : -415}
+      />
     </AbsoluteFill>
   );
 };

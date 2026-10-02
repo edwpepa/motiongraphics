@@ -7,22 +7,23 @@ import { GlassPill } from "../components/Pill";
 import { useLayout } from "../layout";
 import { DirBlur } from "../lib/Blur";
 import { clamp01, drift, ease, keys, pop } from "../lib/anim";
+import { ACCENT, PhraseSeq } from "../components/Phrase";
 import { f, VO } from "../timing";
 
-const ENTER = 348;
+const ENTER = 330;
 const TYPE_START = f(VO.postezi) + 1;
-const CATEGORY = f(VO.taskul) + 9;
-const PRESS = f(VO.peHandly) + 4;
+const CATEGORY = f(VO.taskul) + 4;
+const PRESS = f(VO.handlyWord) + 2;
 const SUCCESS = PRESS + 10;
 const SECONDS_CHIP = f(VO.cateva) - 2;
-const EXIT = 449;
+const EXIT = 436;
 
 type ChipDef = { icon: GlyphName; tile: TileColor; label: string; at: number; pos: [number, number]; vpos: [number, number]; z: number; size?: number };
 const CHIPS: ChipDef[] = [
-  { icon: "wrench", tile: "blue", label: "Instalații", at: CATEGORY + 4, pos: [-470, -250], vpos: [-200, -545], z: 120 },
-  { icon: "pin", tile: "red", label: "În zona ta", at: PRESS + 2, pos: [450, -175], vpos: [225, -470], z: 90 },
-  { icon: "check", tile: "green", label: "Task postat", at: SUCCESS + 5, pos: [470, 225], vpos: [230, 470], z: 140 },
-  { icon: "timer", tile: "orange", label: "Gata în câteva secunde", at: SECONDS_CHIP, pos: [-520, 205], vpos: [-95, 565], z: 170, size: 34 },
+  { icon: "wrench", tile: "blue", label: "Instalații", at: CATEGORY + 4, pos: [-330, -330], vpos: [-200, -545], z: 120 },
+  { icon: "pin", tile: "red", label: "În zona ta", at: PRESS + 2, pos: [340, -200], vpos: [225, -470], z: 90 },
+  { icon: "check", tile: "green", label: "Task postat", at: SUCCESS + 5, pos: [330, 250], vpos: [230, 470], z: 140 },
+  { icon: "timer", tile: "orange", label: "Gata în câteva secunde", at: SECONDS_CHIP, pos: [-300, 360], vpos: [-95, 565], z: 170, size: 34 },
 ];
 
 const phoneMotion = (frame: number, vertical: boolean) => {
@@ -75,8 +76,44 @@ export const S4Post: React.FC = () => {
   const blurX = Math.min(28, Math.abs(m.x - mp.x) * 0.3 + Math.abs(m.rotY - mp.rotY) * 1.3);
   const blurY = Math.min(28, Math.abs(m.y - mp.y) * 0.35);
 
+  const V = L.vertical;
+  const OX = V ? 0 : 430;
+  const OY = V ? 170 : 20;
+  const halo = clamp01((frame - ENTER) / 10) * (1 - clamp01((frame - EXIT) / 10)) * (1 + 0.6 * Math.max(0, 1 - (frame - ENTER - 6) / 14));
+  const phrases = [
+    { words: [{ text: "Postează", at: f(VO.postezi) - 3 }, { text: "task-ul", at: f(VO.taskul) - 3 }], out: f(VO.peHandly) - 4 },
+    { words: [{ text: "pe", at: f(VO.peHandly) - 3 }, { text: "handly.ro", at: f(VO.handlyWord) - 3, color: ACCENT }], out: f(VO.dureaza) - 4 },
+    {
+      words: [
+        { text: "Durează", at: f(VO.dureaza) - 3 },
+        { text: "câteva", at: f(VO.cateva) - 3 },
+        { text: "secunde", at: f(VO.secunde) - 3 },
+      ],
+      out: EXIT - 2,
+      breaks: [0],
+    },
+  ];
+
   return (
-    <AbsoluteFill style={{ opacity: m.opacity }}>
+    <AbsoluteFill>
+      <div style={{ position: "absolute", inset: 0, transform: `translateX(${V ? 0 : -470}px)` }}>
+        <PhraseSeq phrases={phrases} fontSize={V ? 108 : 96} y={V ? -700 : 0} />
+      </div>
+      {/* glow behind the phone */}
+      <div
+        style={{
+          position: "absolute",
+          left: L.cx + OX - 520,
+          top: L.cy + OY - 520,
+          width: 1040,
+          height: 1040,
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(0,230,118,0.55) 0%, rgba(0,191,99,0.25) 35%, rgba(0,0,0,0) 68%)",
+          opacity: halo,
+          transform: `scale(${0.9 + 0.1 * Math.sin(frame / 18)})`,
+        }}
+      />
+    <AbsoluteFill style={{ opacity: m.opacity, transform: `translate(${OX}px, ${OY}px)` }}>
       <DirBlur x={blurX} y={blurY} style={{ position: "absolute", inset: 0, perspective: 1900 }}>
         <div
           style={{
@@ -111,12 +148,13 @@ export const S4Post: React.FC = () => {
                   opacity: clamp01(p * 3),
                 }}
               >
-                <GlassPill icon={<IconTile name={c.icon} color={c.tile} size={(c.size ?? 30) * 1.45} />} label={c.label} size={c.size ?? 30} />
+                <GlassPill tone="dark" icon={<IconTile name={c.icon} color={c.tile} size={(c.size ?? 30) * 1.45} />} label={c.label} size={c.size ?? 30} />
               </DirBlur>
             );
           })}
         </div>
       </DirBlur>
+    </AbsoluteFill>
     </AbsoluteFill>
   );
 };

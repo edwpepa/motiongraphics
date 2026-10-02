@@ -1,193 +1,94 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
-import { IconTile } from "../components/Icons";
-import { Pill } from "../components/Pill";
-import { useLayout } from "../layout";
+import { PhraseSeq } from "../components/Phrase";
 import { DirBlur } from "../lib/Blur";
-import { clamp01, ease, keys, lerp } from "../lib/anim";
-import { BOLD, C, FONT } from "../theme";
+import { clamp01, ease, keys } from "../lib/anim";
+import { useLayout } from "../layout";
+import { BOLD, FONT } from "../theme";
 import { f, VO } from "../timing";
 
-const CELL_W = 250;
-const CELL_H = 205;
-const COLS = 7;
-const FIRST_DAY = 15;
-const HOP_DUR = 4;
 const HOPS = VO.postponeSyllables.map((s) => f(s));
-const WEEKDAYS = ["L", "M", "M", "J", "V", "S", "D"];
+const FIRST = 15;
 
-const cellCenter = (day: number) => {
-  const i = day - 1;
-  return { x: (i % COLS) * CELL_W + CELL_W / 2, y: Math.floor(i / COLS) * CELL_H + CELL_H / 2 };
+const dayAt = (frame: number, dur: number, lag = 0) => {
+  let d = FIRST;
+  for (const h of HOPS) d += ease.inOutCubic(clamp01((frame - lag - h) / dur));
+  return d;
 };
 
-/** Fractional "day" the red marker sits on: hops one day per syllable of "pe care o tot amâni?". */
-const markerDay = (frame: number) => {
-  let day = FIRST_DAY;
-  for (const h of HOPS) day += ease.inOutCubic(clamp01((frame - h) / HOP_DUR));
-  return day;
-};
-
-const markerPos = (frame: number) => {
-  const d = markerDay(frame);
-  const a = cellCenter(Math.floor(d));
-  const b = cellCenter(Math.floor(d) + 1);
-  const t = d - Math.floor(d);
-  return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) };
-};
-
-const Numbers: React.FC<{ color?: string; muted?: string }> = ({ color = C.ink, muted = "#c8cdca" }) => (
-  <>
-    {Array.from({ length: 35 }, (_, i) => {
-      const day = i + 1;
-      const label = day > 31 ? day - 31 : day;
-      const { x, y } = cellCenter(day);
-      return (
-        <div
-          key={day}
-          style={{
-            position: "absolute",
-            left: x - CELL_W / 2,
-            top: y - CELL_H / 2,
-            width: CELL_W,
-            height: CELL_H,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: FONT,
-            fontWeight: BOLD,
-            fontSize: 112,
-            letterSpacing: "-0.04em",
-            color: day > 31 ? muted : color,
-          }}
-        >
-          {label}
-        </div>
-      );
-    })}
-  </>
-);
-
-// "pe care o tot amâni?" — the chore keeps sliding to tomorrow on a tilted calendar
+// "pe care o tot amâni?" — a strip of days; the green ring keeps sliding to tomorrow
 export const S2Calendar: React.FC = () => {
   const frame = useCurrentFrame();
   const L = useLayout();
-  const enter = 112;
-  const exitStart = 160;
+  const V = L.vertical;
+  const enter = 118;
+  const exit = f(VO.postponeEnd) + 4;
+  const cell = V ? 200 : 230;
 
-  const m = markerPos(frame);
-  const mPrev = markerPos(frame - 1);
-  const markerVel = Math.abs(m.x - mPrev.x);
+  const day = dayAt(frame, 5);
+  const vel = Math.abs(day - dayAt(frame - 1, 5)) * cell;
+  const camDay = dayAt(frame, 7, 3); // camera trails the ring
 
-  // camera trails the marker a few frames behind so each hop reads as a jolt
-  const cam = markerPos(frame - 3);
-  const chip = markerPos(frame - 1.5);
-  const enterX = L.W * 0.9 * (1 - ease.outExpo(clamp01((frame - enter) / 12)));
-  const enterXPrev = L.W * 0.9 * (1 - ease.outExpo(clamp01((frame - 1 - enter) / 12)));
-  // exit: the camera dives through the calendar — it swells, softens and dissolves (no streaks)
-  const out = ease.inCubic(clamp01((frame - exitStart) / 9));
-  const zoomOut = 1 + 0.75 * out;
-  const scale = keys(frame, [
-    [enter, 1.5],
-    [HOPS[5] + 6, 1.32],
-    [exitStart, 1.18],
-  ], ease.inOutCubic) * (L.vertical ? 0.78 : 1) * zoomOut;
-  const rotY = keys(frame, [
-    [enter, -26],
-    [exitStart, -12],
-  ], ease.outCubic);
-
-  const gridW = COLS * CELL_W;
-  // reel: aim a little right of the marker so the chore tag riding on it stays in frame
-  const tx = -cam.x + gridW / 2 - (L.vertical ? 190 : 0);
-  const ty = -cam.y + CELL_H * 0.2;
-
-  const R = 92;
-  const lift = 1 - clamp01(markerVel / 30) * 0.06;
+  const inT = ease.outCubic(clamp01((frame - enter) / 12));
+  const outT = ease.inCubic(clamp01((frame - exit) / 10));
+  const stripY = V ? 140 : 110;
 
   return (
-    <AbsoluteFill>
-      <DirBlur
-        x={Math.abs(enterX - enterXPrev) * 0.35}
+    <AbsoluteFill style={{ opacity: inT * (1 - outT), filter: outT > 0 ? `blur(${outT * 20}px)` : undefined }}>
+      <PhraseSeq
+        phrases={[{ words: VO.postpone.map(([text, sec]) => ({ text, at: f(sec) - 3 })), out: exit, breaks: V ? [2] : [] }]}
+        fontSize={V ? 112 : 104}
+        y={V ? -300 : -190}
+      />
+      <div
         style={{
           position: "absolute",
-          inset: 0,
-          transform: `translateX(${enterX}px)`,
-          opacity: 1 - out,
-          filter: out > 0.01 ? `blur(${26 * out}px)` : undefined,
+          left: L.cx,
+          top: L.cy + stripY,
+          transform: `translateX(${-(camDay - FIRST) * cell - (1 - inT) * 200}px) scale(${keys(frame, [[enter, 1.08], [exit, 1]], ease.outCubic)})`,
         }}
       >
-        <AbsoluteFill style={{ perspective: 2200, overflow: "hidden" }}>
+        {Array.from({ length: 16 }, (_, i) => {
+          const d = 10 + i;
+          const near = Math.max(0, 1 - Math.abs(d - day) / 1.2);
+          const dist = Math.abs(d - camDay);
+          return (
+            <div
+              key={d}
+              style={{
+                position: "absolute",
+                left: (d - FIRST) * cell - cell / 2,
+                top: -cell / 2,
+                width: cell,
+                height: cell,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: FONT,
+                fontWeight: BOLD,
+                fontSize: cell * 0.42,
+                letterSpacing: "-0.04em",
+                color: `rgba(255,255,255,${Math.max(0.08, 0.5 - dist * 0.11) + near * 0.5})`,
+                filter: dist > 2.5 ? `blur(${(dist - 2.5) * 2}px)` : undefined,
+              }}
+            >
+              {d}
+            </div>
+          );
+        })}
+        {/* the glowing ring, smeared along its hop */}
+        <DirBlur x={vel * 0.45} style={{ position: "absolute", left: (day - FIRST) * cell - cell * 0.42, top: -cell * 0.42 }}>
           <div
             style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              width: 0,
-              height: 0,
-              transformStyle: "preserve-3d",
-              transform: `scale(${scale}) rotateX(18deg) rotateY(${rotY}deg) rotateZ(-5deg)`,
+              width: cell * 0.84,
+              height: cell * 0.84,
+              borderRadius: "50%",
+              border: `${cell * 0.035}px solid #22e07f`,
+              boxShadow: "0 0 30px rgba(0,230,118,0.65), inset 0 0 24px rgba(0,230,118,0.35)",
             }}
-          >
-            <div style={{ position: "absolute", transform: `translate(${tx - gridW / 2}px, ${ty}px)` }}>
-              {/* the sheet extends well past the frame so the tilt never shows an edge */}
-              <div style={{ position: "absolute", left: -1600, top: -1400, width: gridW + 3200, height: 5 * CELL_H + 2800, background: "rgba(247,250,248,0.78)" }} />
-              {WEEKDAYS.map((d, i) => (
-                <div
-                  key={i}
-                  style={{
-                    position: "absolute",
-                    left: i * CELL_W,
-                    top: -110,
-                    width: CELL_W,
-                    textAlign: "center",
-                    fontFamily: FONT,
-                    fontWeight: BOLD,
-                    fontSize: 44,
-                    color: "#a5aca8",
-                  }}
-                >
-                  {d}
-                </div>
-              ))}
-              <div style={{ position: "absolute", left: 0, top: -150, width: gridW, height: 2, background: "#e1e5e2" }} />
-              <Numbers />
-
-              {/* red day marker, smeared along its hop */}
-              <DirBlur x={markerVel * 0.55} style={{ position: "absolute", left: m.x - R, top: m.y - R }}>
-                <div
-                  style={{
-                    width: R * 2,
-                    height: R * 2,
-                    borderRadius: "50%",
-                    background: "radial-gradient(circle at 35% 28%, #ff8a80 0%, #ff3b30 45%, #d91e14 100%)",
-                    transform: `scale(${lift})`,
-                    boxShadow: "inset 0 3px 0 rgba(255,255,255,0.45), inset 0 -6px 14px rgba(120,0,0,0.25), 0 22px 44px rgba(255,59,48,0.38)",
-                  }}
-                />
-              </DirBlur>
-              {/* the same numbers in white, clipped to the marker */}
-              <div style={{ position: "absolute", left: 0, top: 0, clipPath: `circle(${R * lift}px at ${m.x}px ${m.y}px)` }}>
-                <Numbers color={C.white} muted={C.white} />
-              </div>
-
-              {/* the chore riding along with the marker */}
-              <div
-                style={{
-                  position: "absolute",
-                  left: chip.x + 38,
-                  top: chip.y - 172,
-                  transform: `rotate(${(m.x - chip.x) * -0.08}deg)`,
-                  transformOrigin: "0% 100%",
-                  opacity: clamp01((frame - enter - 6) / 6),
-                }}
-              >
-                <Pill icon={<IconTile name="wrench" color="blue" size={58} />} label="Repară robinetul" size={40} />
-              </div>
-            </div>
-          </div>
-        </AbsoluteFill>
-      </DirBlur>
+          />
+        </DirBlur>
+      </div>
     </AbsoluteFill>
   );
 };

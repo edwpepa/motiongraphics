@@ -1,8 +1,8 @@
 import React from "react";
 import { AbsoluteFill, Audio, staticFile, useCurrentFrame } from "remotion";
-import { LightBackground } from "./components/Backgrounds";
-import { DarkStage } from "./components/DarkStage";
+import { Stage } from "./components/Stage";
 import { useExplainerFonts } from "./fonts";
+import { clamp01 } from "./lib/anim";
 import { S1Hook } from "./scenes/S1Hook";
 import { S2Calendar } from "./scenes/S2Calendar";
 import { S3Chores } from "./scenes/S3Chores";
@@ -12,53 +12,52 @@ import { S6Choose } from "./scenes/S6Choose";
 import { S7NoFees } from "./scenes/S7NoFees";
 import { S8Words } from "./scenes/S8Words";
 import { S9Logo } from "./scenes/S9Logo";
-import { SCENES } from "./timing";
+import { MUSIC_LIFT_FRAME } from "./timing";
 
 /** Mounts a scene only inside its window. Scenes read the absolute frame, so every beat is authored in VO frames. */
-const Window: React.FC<{ range: readonly [number, number]; children: React.ReactNode }> = ({ range, children }) => {
+const Window: React.FC<{ from: number; to: number; children: React.ReactNode }> = ({ from, to, children }) => {
   const frame = useCurrentFrame();
-  return frame >= range[0] && frame < range[1] ? <>{children}</> : null;
+  return frame >= from && frame < to ? <>{children}</> : null;
 };
 
 export const HandlyExplainer: React.FC = () => {
   useExplainerFonts();
+  const frame = useCurrentFrame();
+  // the top light is dim during the problem, opens up on the drop
+  const light = 0.55 + 0.45 * clamp01((frame - MUSIC_LIFT_FRAME + 4) / 10) - 0.2 * clamp01((frame - 790) / 10);
 
   return (
     <AbsoluteFill style={{ background: "#000" }}>
-      <LightBackground />
-      <Window range={SCENES.hook}>
+      <Stage light={light} />
+      <Window from={0} to={124}>
         <S1Hook />
       </Window>
-      <Window range={SCENES.calendar}>
+      <Window from={116} to={182}>
         <S2Calendar />
       </Window>
-      <Window range={SCENES.chores}>
+      <Window from={168} to={344}>
         <S3Chores />
       </Window>
-      <Window range={SCENES.post}>
+      <Window from={328} to={452}>
         <S4Post />
       </Window>
-      <Window range={SCENES.noFees}>
+      <Window from={436} to={526}>
+        <S5Radar />
+      </Window>
+      <Window from={508} to={630}>
+        <S6Choose />
+      </Window>
+      <Window from={616} to={716}>
         <S7NoFees />
       </Window>
-      <Window range={SCENES.words}>
+      <Window from={706} to={800}>
         <S8Words />
       </Window>
-      <Window range={[SCENES.radar[0], SCENES.choose[1]]}>
-        <DarkStage revealAt={SCENES.radar[0] + 2} exitAt={SCENES.choose[1] - 15}>
-          <Window range={SCENES.radar}>
-            <S5Radar />
-          </Window>
-          <Window range={SCENES.choose}>
-            <S6Choose />
-          </Window>
-        </DarkStage>
-      </Window>
-      <Window range={SCENES.logo}>
+      <Window from={784} to={895}>
         <S9Logo />
       </Window>
 
-      {/* voiceover + original score + synced sfx, mixed by tools/audio/compose.py */}
+      {/* voiceover + score + synced sfx, mixed by tools/audio/compose.py */}
       <Audio src={staticFile("audio/explainer-mix.mp3")} />
     </AbsoluteFill>
   );

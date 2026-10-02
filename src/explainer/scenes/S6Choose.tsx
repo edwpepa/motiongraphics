@@ -7,9 +7,10 @@ import { DirBlur } from "../lib/Blur";
 import { clamp01, drift, ease, keys, pop } from "../lib/anim";
 import { Layout, useLayout } from "../layout";
 import { BOLD, C, FONT } from "../theme";
+import { PhraseSeq } from "../components/Phrase";
 import { f, VO } from "../timing";
 
-const IN = 528;
+const IN = 514;
 const SELECT = f(VO.lucrezi) - 3;
 const SPLIT = f(VO.laPretul) - 3;
 const PRICE = f(VO.stabilit);
@@ -87,7 +88,6 @@ export const S6Choose: React.FC = () => {
 
   const line = ease.inOutCubic(clamp01((frame - (PRICE - 8)) / 12));
   const price = pop(frame, PRICE, 11, 170);
-  const caption = clamp01((frame - (PRICE + 8)) / 10);
   const hand = pop(frame, DEAL - 1, 10, 180);
 
   const camShift = keys(frame, [
@@ -99,27 +99,17 @@ export const S6Choose: React.FC = () => {
   const pillX = L.cx;
   const pillY = L.cy + 30;
   const handPos = V ? { x: pillX - 185, y: pillY } : { x: pillX, y: pillY - 112 };
-  const captionTop = V ? L.cy + 700 : L.cy + 110;
 
   return (
     <AbsoluteFill style={{ perspective: 2000, transform: `translateX(${camShift}px)` }}>
-      {/* heading like a tiny UI label */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: V ? 330 : 118,
-          textAlign: "center",
-          fontFamily: FONT,
-          fontSize: V ? 40 : 30,
-          fontWeight: BOLD,
-          color: C.nightInkSoft,
-          opacity: clamp01((frame - IN - 8) / 8) * (1 - clamp01((frame - SPLIT) / 8)),
-        }}
-      >
-        Alege cu cine lucrezi
-      </div>
+      <PhraseSeq
+        phrases={[
+          { words: [{ text: "Tu", at: f(VO.tuAlegi) - 3 }, { text: "alegi", at: f(VO.tuAlegi) + 1 }, { text: "cu", at: f(VO.cuCine) - 3 }, { text: "cine", at: f(VO.cuCine) }, { text: "lucrezi", at: f(VO.lucrezi) - 3 }], out: f(VO.laPretul) - 4, breaks: V ? [1] : [] },
+          { words: [{ text: "Prețul", at: f(VO.laPretul) - 2 }, { text: "stabilit", at: f(VO.stabilit) - 3 }, { text: "de", at: f(VO.voiDoi) - 4 }, { text: "voi", at: f(VO.voiDoi) - 2 }, { text: "doi", at: f(VO.doi) - 3 }], out: 618, breaks: V ? [1] : [] },
+        ]}
+        fontSize={V ? 92 : 76}
+        y={V ? -760 : -400}
+      />
 
       {TASKERS.map((t, i) => {
         const pose = cardPose(i, frame, V);
@@ -213,23 +203,6 @@ export const S6Choose: React.FC = () => {
             }}
           >
             <Glyph name="handshake" size={50} color="#ffffff" weight={2.1} />
-          </div>
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              top: captionTop,
-              textAlign: "center",
-              fontFamily: FONT,
-              fontWeight: BOLD,
-              fontSize: V ? 38 : 30,
-              color: C.nightInkSoft,
-              opacity: caption,
-              transform: `translateY(${(1 - caption) * 12}px)`,
-            }}
-          >
-            Preț stabilit de <span style={{ color: deal > 0.5 ? C.green : C.nightInk }}>voi doi</span>
           </div>
         </>
       )}

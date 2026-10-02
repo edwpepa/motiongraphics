@@ -80,9 +80,16 @@ def main():
     # silent through the "we can't" section (only the charging), back on the final drop
     pf = np.clip((t - M0["preFadeFrom"]) / (M0["preFadeTo"] - M0["preFadeFrom"]), 0, 1)
     env = np.where(t < D, (1 - pf) ** 2, 1.0)
-    env *= np.interp(t, [M0["contFrom"], M0["contFrom"] + 0.6, M0["contTo"] - 0.4, M0["contTo"]], [1, 0.5, 0.5, 1])
-    env *= np.interp(t, [M0["quiet"] - 0.6, M0["quiet"] + 0.2, M0["final"] - 0.03, M0["final"]], [1, 0, 0, 1])
+    env *= np.interp(t, [M0["contFrom"], M0["contFrom"] + 0.6, M0["contTo"] - 0.4, M0["contTo"]], [1, 0.8, 0.8, 1])
+    # suspense: the music stops dead while the shapes gather, until the final chorus
+    env *= np.interp(t, [M0["suspense"] - 0.25, M0["suspense"], M0["final"] - 0.03, M0["final"]], [1, 0, 0, 1])
     mus *= env[None, :]
+    # from the end of the chorus to the final drop the song plays as if from inside a box:
+    # band-limited, a small boxy room, and lower — then it bursts back open on the final chorus
+    box = np.stack([C.filt(C.filt(mus[ch], "lowpass", 650, 4), "highpass", 140, 2) for ch in range(2)])
+    box = box * 1.9 + C.reverb(box, C.IR_ROOM)[:, :N] * 0.35
+    m = np.interp(t, [M0["bridge"] - 0.15, M0["bridge"] + 0.25, M0["final"] - 0.02, M0["final"]], [0, 1, 1, 0])
+    mus = mus * (1 - m)[None, :] + box * (m * 0.62)[None, :]
 
     # ---- sfx (cue sheet exported from the picture: node tools/launch/cues.mjs)
     import sfx as X

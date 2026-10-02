@@ -24,7 +24,7 @@ export const cues = (): Cue[] => {
   add(w("cap", 0) - 12, "air", 0.7);
   add(S.A1_END - 16, "wipe");
   for (let i = 0; i < 6; i++) {
-    const at = S.A1_END + 6 + Math.round(i * BEAT_PRE * 1.5) + 9;
+    const at = S.A1_END + 6 + Math.round(i * BEAT_PRE * 1.5) + 11;
     if (at < S.A2_END) add(at, "drip");
   }
   for (let i = 0; i < 3; i++) add(S.A2_END - 2 + i * 3, "roller", 0.8);
@@ -40,8 +40,6 @@ export const cues = (): Cue[] => {
     const at = S.A5_END + (520 + 116 - 960 + 60 + i * 250) / 9;
     if (at > S.A5_END && at < S.A6_END) add(at, "late");
   }
-  add(w("speri3", 0) - 14, "hope");
-  add(w("speri3", 2) + 4, "fail");
   add(S.A7_END + 2, "whoosh");
   for (let i = 0; i < 6; i++) add(w("lumea", 5) - 2 + (i * 14) / 6, "key", 0.8);
   add(w("lumea", 9) - 2, "nope");
@@ -111,7 +109,7 @@ export const cues = (): Cue[] => {
   [0, 2].forEach((j) => add(w("taskurile", 2) + 4 + j * 5, "pop", 0.7));
   add(w("muncesti", 2) - 4, "tick");
   add(w("muncesti", 2) + 2, "zip");
-  add(QUIET, "charge");
+  add(S.C5_END, "charge");
   add(BREAK - 12, "suck");
   add(w("handly", 0) - 4, "shimmer");
   add(FINAL, "drop");
@@ -133,6 +131,8 @@ export const marks = () => ({
   contFrom: pStart("cont") / 30 - 0.4,
   contTo: pEnd("cont") / 30 + 0.6,
   quiet: QUIET / 30,
+  bridge: BRIDGE / 30,
+  suspense: S.C5_END / 30,
   brk: BREAK / 30,
   final: FINAL / 30,
 });

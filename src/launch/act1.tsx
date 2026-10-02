@@ -114,44 +114,75 @@ export const A1: React.FC = () => {
 export const A2: React.FC = () => {
   const frame = useCurrentFrame();
   const DX = CX + 430;
-  const DY = CY + 20;
+  const DY = CY + 10;
   const R = 300;
+  const FLOOR = CY + 330;
   const t0 = A1_END;
-  const breathe = 1 + 0.025 * Math.sin(frame / 7);
-  const popIn = ease.outBack(clamp01((frame - t0) / 14));
   const drips = Array.from({ length: 6 }, (_, i) => t0 + 6 + Math.round(i * BEAT_PRE * 1.5));
+  // springy body: it swells and stretches as each drip gathers at the tip, then wobbles back
+  let sy = 1;
+  let sx = 1;
+  for (const at of drips) {
+    const pre = clamp01((frame - (at - 8)) / 8);
+    if (frame < at) {
+      const e = ease.inOutCubic(pre);
+      sy += 0.1 * e;
+      sx -= 0.06 * e;
+    } else {
+      const t = frame - at;
+      const k = Math.exp(-t / 7) * Math.cos(t * 0.62);
+      sy += 0.1 * k;
+      sx -= 0.07 * k;
+    }
+  }
+  const pop = frame < t0 ? 0 : 1 - Math.exp(-(frame - t0) / 5) * Math.cos((frame - t0) * 0.45);
+  const bob = Math.sin(frame / 16) * 8;
   const days = Math.round(lerp(1, 14, ease.inOutCubic(clamp01((frame - (w("robinet", 4) - 10)) / 30))));
-  const outT = clamp01((frame - (A2_END - 8)) / 8);
+  const outT = ease.inCubic(clamp01((frame - (A2_END - 8)) / 8));
+  const tipY = DY + bob + R * 0.62 * sy;
   return (
     <AbsoluteFill>
       <Bg kind="deep" />
-      {/* ripples on the floor */}
+      {/* soft light pool on the floor */}
+      <div style={{ position: "absolute", left: DX - 300, top: FLOOR - 60, width: 600, height: 120, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(0,191,99,0.18), rgba(0,0,0,0) 70%)" }} />
+      {/* ripples + splash where each drip lands */}
       <svg width={1920} height={1080} style={{ position: "absolute", inset: 0 }}>
         {drips.map((at, i) => {
-          const t = (frame - (at + 9)) / 26;
+          const land = at + 11;
+          const t = (frame - land) / 34;
           if (t < 0 || t > 1) return null;
-          const e = ease.outCubic(t);
+          const e = ease.outQuint(t);
           return (
-            <g key={i} opacity={(1 - t) * 0.8}>
-              <ellipse cx={DX} cy={CY + 330} rx={30 + 230 * e} ry={(30 + 230 * e) * 0.18} fill="none" stroke={P.mint} strokeWidth={3 * (1 - t) + 1} />
-              <ellipse cx={DX} cy={CY + 330} rx={10 + 120 * e} ry={(10 + 120 * e) * 0.18} fill="none" stroke={P.green} strokeWidth={2} />
+            <g key={i} opacity={(1 - t) * 0.85}>
+              <ellipse cx={DX} cy={FLOOR} rx={24 + 250 * e} ry={(24 + 250 * e) * 0.16} fill="none" stroke={P.mint} strokeWidth={3 * (1 - t) + 0.8} />
+              <ellipse cx={DX} cy={FLOOR} rx={10 + 140 * ease.outQuint(clamp01(t * 1.3))} ry={(10 + 140 * ease.outQuint(clamp01(t * 1.3))) * 0.16} fill="none" stroke={P.green} strokeWidth={2} />
+              {[-1, 1, -0.4, 0.5].map((d, j) => {
+                const u = clamp01((frame - land) / 14);
+                if (u >= 1) return null;
+                const x = DX + d * 70 * u;
+                const y = FLOOR - Math.sin(Math.PI * u) * (40 + 20 * j);
+                return <circle key={j} cx={x} cy={y} r={5 - 3 * u} fill={P.mint} />;
+              })}
             </g>
           );
         })}
       </svg>
+      {/* drips: bead at the tip, let go, fall, land */}
       {drips.map((at, i) => {
-        const t = (frame - at) / 9;
-        if (t < 0 || t > 1) return null;
-        return <Shape key={i} pts={shape("drop")} x={DX} y={lerp(DY + R * 0.5, CY + 320, ease.inCubic(t))} size={46} sy={1 + 0.4 * t} fill={P.mint} />;
+        const grow = ease.outBack(clamp01((frame - (at - 8)) / 8));
+        const t = (frame - at) / 11;
+        if (frame < at - 8 || t > 1) return null;
+        const falling = t > 0;
+        const y = falling ? lerp(tipY + 14, FLOOR - 14, t * t) : tipY + 10 * grow;
+        return <Shape key={i} pts={shape("drop")} x={DX} y={y} size={44 * (falling ? 1 : grow)} sy={falling ? 1 + 0.35 * t : 1 + 0.2 * grow} sx={falling ? 1 - 0.12 * t : 1} fill={P.mint} />;
       })}
-      <Shape pts={blob(frame / 20, 0.25)} x={DX} y={DY} size={0} fill="none" />
       <Shape
         pts={mix(shape("drop"), blob(frame / 18, 0.3), 0.08)}
         x={DX}
-        y={DY}
-        size={R * popIn}
-        sx={breathe}
-        sy={2 - breathe}
+        y={DY + bob}
+        size={R * pop}
+        sx={sx}
+        sy={sy}
         fill={P.green}
         gradient={GREEN_GRAD}
         id="a2"
@@ -371,18 +402,17 @@ export const A6: React.FC = () => {
 export const A7: React.FC = () => {
   const frame = useCurrentFrame();
   const t0 = A6_END;
-  // the ring tries to close into a check… and gives up
-  const draw = ease.inOutCubic(clamp01((frame - (w("speri3", 0) - 14)) / 22));
-  const giveUp = ease.inOutCubic(clamp01((frame - (w("speri3", 2) + 4)) / 16));
-  const p = draw * 0.72 * (1 - giveUp);
-  const droop = giveUp * 40;
-  const a = io(frame, t0 + 2, A7_END, 8, 8);
+  // a loader that keeps going round and never finishes
+  const a = io(frame, t0 + 2, A7_END, 10, 8);
+  const local = frame - t0;
+  const head = local * 9 + 120 * (1 - Math.cos(local / 9));
+  const len = 0.18 + 0.5 * (0.5 + 0.5 * Math.sin(local / 7));
   return (
     <AbsoluteFill>
       <Bg kind="black" />
-      <svg width={300} height={300} viewBox="-60 -60 120 120" style={{ position: "absolute", left: CX - 150, top: CY - 250, opacity: a, transform: `translateY(${droop}px)` }}>
+      <svg width={300} height={300} viewBox="-60 -60 120 120" style={{ position: "absolute", left: CX - 150, top: CY - 250, opacity: a, transform: `scale(${0.8 + 0.2 * a})` }}>
         <circle r={50} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={6} />
-        <circle r={50} fill="none" stroke={P.green} strokeWidth={7} strokeLinecap="round" pathLength={1} strokeDasharray={`${p} 1`} transform="rotate(-90)" />
+        <circle r={50} fill="none" stroke={P.green} strokeWidth={7} strokeLinecap="round" pathLength={1} strokeDasharray={`${len} 1`} transform={`rotate(${head - 90})`} style={{ filter: "drop-shadow(0 0 6px rgba(0,191,99,0.6))" }} />
       </svg>
       <Txt words={[...kw("speri1"), ...kw("speri2")]} size={84} on="black" y={CY + 110} out={w("speri3", 0) - 6} />
       <Txt words={kw("speri3", { color: { 2: MINT_INK } })} size={84} on="black" y={CY + 110} out={A7_END - 6} />

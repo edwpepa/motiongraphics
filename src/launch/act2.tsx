@@ -112,53 +112,133 @@ const B2: React.FC = () => {
 
 // ------------------------------------------------------------------ B3: verified taskers nearby send offers
 const OFFERS: Array<{ p: Person; name: string; price: string; x: number; y: number }> = [
-  { p: "mihai", name: "Mihai D.", price: "150 lei", x: 760, y: 700 },
-  { p: "andrei", name: "Andrei P.", price: "140 lei", x: 1080, y: 610 },
-  { p: "radu", name: "Radu S.", price: "170 lei", x: 920, y: 860 },
+  { p: "mihai", name: "Mihai D.", price: "150 lei", x: 250, y: 230 },
+  { p: "andrei", name: "Andrei P.", price: "140 lei", x: 860, y: 200 },
+  { p: "radu", name: "Radu S.", price: "170 lei", x: 760, y: 590 },
 ];
+const MW = 1100;
+const MH = 780;
+const ME: [number, number] = [550, 400];
+
+/** a dark, premium city map: parks, a river, avenues, blocks */
+const CityMap: React.FC<{ frame: number; routes: number[] }> = ({ frame, routes }) => (
+  <svg width={MW} height={MH} viewBox={`0 0 ${MW} ${MH}`} style={{ position: "absolute", inset: 0 }}>
+    <defs>
+      <radialGradient id="mapGlow" cx="50%" cy="51%" r="60%">
+        <stop offset="0%" stopColor="#11261d" />
+        <stop offset="100%" stopColor="#0a110e" />
+      </radialGradient>
+      <clipPath id="mapClip">
+        <rect width={MW} height={MH} rx={56} />
+      </clipPath>
+    </defs>
+    <g clipPath="url(#mapClip)">
+      <rect width={MW} height={MH} fill="url(#mapGlow)" />
+      {/* parks */}
+      <path d="M60 470 q80 -60 190 -20 q60 40 40 130 q-30 90 -150 80 q-110 -20 -80 -190z" fill="rgba(0,191,99,0.12)" />
+      <path d="M840 470 q90 -30 170 30 q30 80 -40 130 q-120 30 -150 -50 q-20 -80 20 -110z" fill="rgba(0,191,99,0.1)" />
+      {/* river */}
+      <path d="M-40 140 C 220 120, 380 300, 600 260 S 920 60, 1160 120" stroke="rgba(90,170,150,0.22)" strokeWidth={46} fill="none" strokeLinecap="round" />
+      {/* blocks */}
+      {Array.from({ length: 64 }, (_, i) => {
+        const cx = (i % 11) * 104 + 20;
+        const cy = Math.floor(i / 11) * 128 + 30;
+        return <rect key={i} x={cx + seeded(i, 2) * 14} y={cy + seeded(i, 3) * 14} width={62 + seeded(i, 4) * 18} height={70 + seeded(i, 5) * 22} rx={10} fill="rgba(255,255,255,0.035)" />;
+      })}
+      {/* streets */}
+      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+        <line key={`v${i}`} x1={i * 104 + 6} y1={0} x2={i * 104 + 6} y2={MH} stroke={`rgba(255,255,255,${i % 3 === 0 ? 0.11 : 0.05})`} strokeWidth={i % 3 === 0 ? 12 : 5} />
+      ))}
+      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+        <line key={`h${i}`} x1={0} y1={i * 128 + 14} x2={MW} y2={i * 128 + 14} stroke={`rgba(255,255,255,${i % 2 === 0 ? 0.1 : 0.05})`} strokeWidth={i % 2 === 0 ? 12 : 5} />
+      ))}
+      <line x1={-20} y1={MH + 20} x2={MW + 20} y2={-40} stroke="rgba(255,255,255,0.09)" strokeWidth={16} />
+      {/* your area */}
+      <circle cx={ME[0]} cy={ME[1]} r={300} fill="rgba(0,191,99,0.07)" stroke="rgba(0,191,99,0.35)" strokeWidth={2.5} strokeDasharray="10 12" />
+      {/* routes from each tasker to you */}
+      {OFFERS.map((o, i) => {
+        const p = routes[i];
+        if (p <= 0) return null;
+        const d = `M${o.x} ${o.y} Q ${(o.x + ME[0]) / 2 + (i - 1) * 90} ${(o.y + ME[1]) / 2 - 80}, ${ME[0]} ${ME[1]}`;
+        return (
+          <g key={i}>
+            <path d={d} stroke="rgba(0,191,99,0.25)" strokeWidth={14} fill="none" strokeLinecap="round" pathLength={1} strokeDasharray={`${p} 1`} />
+            <path d={d} stroke={P.mint} strokeWidth={4} fill="none" strokeLinecap="round" strokeDasharray="2 14" strokeDashoffset={-frame * 1.6} opacity={p} />
+          </g>
+        );
+      })}
+      {/* you */}
+      {[0, 1].map((k) => {
+        const r = ((frame + k * 20) % 40) / 40;
+        return <circle key={k} cx={ME[0]} cy={ME[1]} r={20 + 90 * r} fill="none" stroke={P.green} strokeWidth={3} opacity={(1 - r) * 0.7} />;
+      })}
+      <circle cx={ME[0]} cy={ME[1]} r={20} fill={P.green} stroke="#fff" strokeWidth={6} />
+    </g>
+    <rect x={1} y={1} width={MW - 2} height={MH - 2} rx={55} fill="none" stroke="rgba(185,255,214,0.18)" strokeWidth={2} />
+  </svg>
+);
 
 const B3: React.FC = () => {
   const frame = useCurrentFrame();
   const b0 = B2_END;
-  const plane = ease.outExpo(clamp01((frame - b0) / 24));
+  const plane = ease.outExpo(clamp01((frame - b0) / 26));
   const outT = ease.inCubic(clamp01((frame - (B3_END - 7)) / 7));
+  const TILT = 48 + 12 * (1 - plane);
+  const SPIN = -16 + (frame - b0) * 0.08;
+  const pinAt = (i: number) => w("taskeri", 1) - 4 + i * 5;
+  const routes = OFFERS.map((_, i) => ease.inOutCubic(clamp01((frame - (pinAt(i) + 10)) / 18)));
   return (
     <AbsoluteFill>
       <Bg kind="black" />
-      {/* the city, laid flat */}
-      <div style={{ position: "absolute", left: CX - 1100, top: 380, width: 2200, height: 1100, transform: `perspective(1300px) rotateX(${62 - 6 * plane}deg) translateY(${(1 - plane) * 300}px) rotateZ(${-8 + frame * 0.04}deg)`, opacity: plane * (1 - outT) }}>
-        <svg width={2200} height={1100} viewBox="0 0 2200 1100">
-          {Array.from({ length: 14 }, (_, i) => (
-            <line key={`v${i}`} x1={i * 170 + 40} y1={0} x2={i * 170 + 40 + (i % 3) * 30} y2={1100} stroke="rgba(0,191,99,0.22)" strokeWidth={i % 4 === 0 ? 10 : 3} />
-          ))}
-          {Array.from({ length: 8 }, (_, i) => (
-            <line key={`h${i}`} x1={0} y1={i * 150 + 30} x2={2200} y2={i * 150 + 60} stroke="rgba(0,191,99,0.22)" strokeWidth={i % 3 === 0 ? 10 : 3} />
-          ))}
-          <path d="M-20 820 C 500 600, 900 900, 1400 520 S 2100 300, 2240 380" stroke="rgba(0,191,99,0.5)" strokeWidth={22} fill="none" />
-          {Array.from({ length: 30 }, (_, i) => (
-            <rect key={i} x={seeded(i, 1) * 2100} y={seeded(i, 2) * 1050} width={60 + seeded(i, 3) * 80} height={40 + seeded(i, 4) * 60} rx={8} fill="rgba(0,191,99,0.07)" />
-          ))}
-        </svg>
-      </div>
-      {/* pins */}
-      {OFFERS.map((o, i) => {
-        const at = w("taskeri", 1) - 4 + i * 5;
-        const pop = ease.outBack(clamp01((frame - at) / 12));
-        if (pop <= 0) return null;
-        const ring = ((frame - at) % 30) / 30;
-        return (
-          <div key={o.p} style={{ position: "absolute", left: o.x, top: o.y, transform: `translate(-50%, -100%) scale(${pop * (1 - outT)})`, transformOrigin: "50% 100%" }}>
-            <div style={{ position: "absolute", left: "50%", bottom: -20, width: 160, height: 50, marginLeft: -80, borderRadius: "50%", border: `2px solid rgba(0,191,99,${0.6 * (1 - ring)})`, transform: `scale(${0.3 + ring})` }} />
-            <div style={{ position: "relative", padding: 6, borderRadius: "50%", background: P.green, boxShadow: "0 0 40px rgba(0,191,99,0.5)" }}>
-              <Avatar person={o.p} size={96} ring="#fff" />
-              <div style={{ position: "absolute", right: -4, bottom: -4, width: 38, height: 38, borderRadius: 19, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Glyph name="check" size={24} color={P.green} weight={3.4} />
+      <AbsoluteFill style={{ perspective: 1900, opacity: plane * (1 - outT) }}>
+        <div
+          style={{
+            position: "absolute",
+            left: 800 - MW / 2,
+            top: 680 - MH / 2,
+            width: MW,
+            height: MH,
+            transformStyle: "preserve-3d",
+            transform: `translateY(${(1 - plane) * 260}px) rotateX(${TILT}deg) rotateZ(${SPIN}deg) scale(${1.1 + 0.06 * plane})`,
+            borderRadius: 56,
+            boxShadow: "0 80px 140px rgba(0,0,0,0.6), 0 0 120px rgba(0,191,99,0.12)",
+          }}
+        >
+          <CityMap frame={frame} routes={routes} />
+          {/* pins stand up out of the map */}
+          {OFFERS.map((o, i) => {
+            const pop = ease.outBack(clamp01((frame - pinAt(i)) / 12));
+            if (pop <= 0) return null;
+            return (
+              <div key={o.p} style={{ position: "absolute", left: o.x, top: o.y, width: 0, height: 0, transformStyle: "preserve-3d" }}>
+                <div style={{ position: "absolute", left: -40, top: -14, width: 80, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.45)", filter: "blur(6px)", transform: `scale(${pop})` }} />
+                <div
+                  style={{
+                    position: "absolute",
+                    left: -62,
+                    top: -168,
+                    width: 124,
+                    height: 168,
+                    transformOrigin: "50% 100%",
+                    transform: `rotateZ(${-SPIN}deg) rotateX(${-TILT}deg) scale(${pop})`,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                  }}
+                >
+                  <div style={{ position: "relative", padding: 7, borderRadius: "50%", background: "#fff", boxShadow: "0 18px 40px rgba(0,0,0,0.45), 0 0 40px rgba(0,191,99,0.35)" }}>
+                    <Avatar person={o.p} size={100} ring={P.green} />
+                    <div style={{ position: "absolute", right: -6, bottom: -2, width: 40, height: 40, borderRadius: 20, background: P.green, border: "4px solid #fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Glyph name="check" size={20} color="#fff" weight={3.6} />
+                    </div>
+                  </div>
+                  <div style={{ width: 0, height: 0, borderLeft: "12px solid transparent", borderRight: "12px solid transparent", borderTop: "18px solid #fff", marginTop: -2 }} />
+                </div>
               </div>
-            </div>
-            <div style={{ width: 4, height: 34, margin: "0 auto", background: P.green, borderRadius: 2 }} />
-          </div>
-        );
-      })}
+            );
+          })}
+        </div>
+      </AbsoluteFill>
       {/* offers stack in */}
       {OFFERS.map((o, i) => {
         const at = w("taskeri", 6) - 4 + i * 5;

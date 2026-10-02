@@ -402,7 +402,7 @@ def charge(dur):
 KINDS = {k: v for k, v in globals().items() if callable(v) and k not in ("T", "st", "verb", "norm", "noise", "sweep_tone", "impact", "charge")}
 
 GAIN = {
-    "bloom": 0.6, "air": 0.5, "wipe": 0.6, "drip": 0.55, "roller": 0.5, "brush": 0.6, "thud": 0.7, "pop": 0.45,
+    "bloom": 0.6, "air": 0.5, "wipe": 0.6, "drip": 0.2, "roller": 0.5, "brush": 0.6, "thud": 0.7, "pop": 0.45,
     "morph": 0.5, "glitch": 0.35, "suck": 0.5, "late": 0.5, "hope": 0.45, "fail": 0.45, "whoosh": 0.5, "key": 0.35,
     "nope": 0.45, "cut": 0.75, "search": 0.4, "ring": 0.35, "tick": 0.35, "fall": 0.35, "bell": 0.42, "shimmer": 0.5,
     "drop": 1.0, "slam": 0.55, "zoom": 0.5, "tap": 0.45, "success": 0.5, "notif": 0.45, "select": 0.45, "expand": 0.45,

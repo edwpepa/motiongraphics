@@ -1,5 +1,5 @@
 import React from "react";
-import { useCurrentFrame, interpolate } from "remotion";
+import { useCurrentFrame, staticFile } from "remotion";
 import { COLORS } from "../constants";
 import { idleDrift } from "../utils/easing";
 
@@ -27,9 +27,9 @@ const Blob: React.FC<{
         width: size,
         height: size,
         borderRadius: "50%",
-        background: color,
+        // soft glow via radial-gradient instead of filter:blur() — far cheaper to paint per frame
+        background: `radial-gradient(circle, ${color} 0%, ${color} 18%, transparent 70%)`,
         opacity,
-        filter: "blur(140px)",
         transform: `translate(${dx}px, ${dy}px) scale(${scale})`,
       }}
     />
@@ -59,9 +59,9 @@ export const Background: React.FC = () => {
           background: `linear-gradient(${angle}deg, ${COLORS.greenDark} 0%, ${COLORS.black} ${55 + posShift}%, ${COLORS.black} 100%)`,
         }}
       />
-      <Blob size={900} top="-10%" left="-20%" color={COLORS.green} opacity={0.35} driftAmp={30} period={360} phase={0} />
-      <Blob size={700} top="55%" left="60%" color={COLORS.green} opacity={0.22} driftAmp={26} period={300} phase={2} />
-      <Blob size={520} top="75%" left="-15%" color={COLORS.greenDark} opacity={0.4} driftAmp={20} period={420} phase={1.2} />
+      <Blob size={1100} top="-18%" left="-30%" color={COLORS.green} opacity={0.28} driftAmp={30} period={360} phase={0} />
+      <Blob size={900} top="50%" left="50%" color={COLORS.green} opacity={0.18} driftAmp={26} period={300} phase={2} />
+      <Blob size={700} top="70%" left="-25%" color={COLORS.greenDark} opacity={0.32} driftAmp={20} period={420} phase={1.2} />
 
       {/* subtle vignette for premium depth */}
       <div
@@ -72,14 +72,17 @@ export const Background: React.FC = () => {
         }}
       />
 
-      {/* film grain texture */}
-      <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.05 }}>
-        <filter id="grain">
-          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-        <rect width="100%" height="100%" filter="url(#grain)" />
-      </svg>
+      {/* static film grain texture (tiled) — cheap, no per-frame filter computation */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `url(${staticFile("images/grain.png")})`,
+          backgroundSize: "512px 512px",
+          opacity: 0.045,
+          mixBlendMode: "overlay",
+        }}
+      />
     </div>
   );
 };

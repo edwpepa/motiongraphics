@@ -12,18 +12,21 @@ import { f, VO } from "../timing";
 
 const ENTER = 330;
 const TYPE_START = f(VO.postezi) + 1;
-const CATEGORY = f(VO.taskul) + 4;
-const PRESS = f(VO.handlyWord) + 2;
-const SUCCESS = PRESS + 10;
+// the whole posting flow plays out; "Task postat" lands about three quarters of the way through
+const CATEGORY = TYPE_START + 25;
+const LOCATION = CATEGORY + 10;
+const PRICE_SEL = LOCATION + 10;
+const PRESS = PRICE_SEL + 10;
+const SUCCESS = PRESS + 14;
 const SECONDS_CHIP = f(VO.cateva) - 2;
 const EXIT = 436;
 
 type ChipDef = { icon: GlyphName; tile: TileColor; label: string; at: number; pos: [number, number]; vpos: [number, number]; z: number; size?: number };
 const CHIPS: ChipDef[] = [
-  { icon: "wrench", tile: "blue", label: "Instalații", at: SUCCESS + 12, pos: [-360, -320], vpos: [-200, -545], z: 120 },
-  { icon: "pin", tile: "red", label: "În zona ta", at: SUCCESS + 16, pos: [370, -200], vpos: [225, -470], z: 90 },
-  { icon: "check", tile: "green", label: "Task postat", at: SUCCESS + 20, pos: [370, 250], vpos: [230, 470], z: 140 },
-  { icon: "timer", tile: "orange", label: "Gata în câteva secunde", at: Math.max(SECONDS_CHIP, SUCCESS + 24), pos: [-470, 330], vpos: [-95, 565], z: 170, size: 34 },
+  { icon: "wrench", tile: "blue", label: "Instalații", at: CATEGORY + 3, pos: [-360, -320], vpos: [-200, -545], z: 120 },
+  { icon: "pin", tile: "red", label: "În zona ta", at: LOCATION + 3, pos: [370, -200], vpos: [225, -470], z: 90 },
+  { icon: "check", tile: "green", label: "Task postat", at: SUCCESS + 12, pos: [370, 250], vpos: [230, 470], z: 140 },
+  { icon: "timer", tile: "orange", label: "Gata în câteva secunde", at: Math.max(SECONDS_CHIP, SUCCESS + 15), pos: [-470, 330], vpos: [-95, 565], z: 170, size: 34 },
 ];
 
 const phoneMotion = (frame: number, vertical: boolean) => {
@@ -41,7 +44,7 @@ const phoneMotion = (frame: number, vertical: boolean) => {
     rotX: 5 + 42 * (1 - inT) + 60 * outT,
     rotZ: -8 * (1 - inT),
     y: (vertical ? 1500 : 1150) * (1 - inT) + 300 * outT + drift(frame, 7, 120),
-    scale: (vertical ? 1.12 : 0.92) * (1.6 - 0.6 * inT) * (1 - 0.18 * outT) * keys(frame, [[SUCCESS + 6, 1], [SUCCESS + 24, vertical ? 0.78 : 0.74]], ease.inOutCubic),
+    scale: (vertical ? 1.12 : 0.92) * (1.6 - 0.6 * inT) * (1 - 0.18 * outT) * keys(frame, [[SUCCESS + 2, 1], [SUCCESS + 16, vertical ? 0.8 : 0.76]], ease.inOutCubic),
     opacity: 1 - clamp01((frame - EXIT - 9) / 5),
   };
 };
@@ -54,10 +57,12 @@ export const S4Post: React.FC = () => {
   const mp = phoneMotion(frame - 1, L.vertical);
 
   const app = {
-    typed: clamp01((frame - TYPE_START) / 16) * TASK_TEXT.length,
-    caret: Math.floor(frame / 7) % 2 === 0 || (frame > TYPE_START && frame < TYPE_START + 18),
+    typed: clamp01((frame - TYPE_START) / 20) * TASK_TEXT.length,
+    caret: Math.floor(frame / 7) % 2 === 0 || (frame > TYPE_START && frame < TYPE_START + 22),
     focus: clamp01((frame - (TYPE_START - 4)) / 4) * (1 - clamp01((frame - CATEGORY) / 4)),
     category: ease.outCubic(clamp01((frame - CATEGORY) / 6)),
+    location: clamp01((frame - LOCATION) / 12),
+    priceSel: ease.outCubic(clamp01((frame - PRICE_SEL) / 8)),
     press: clamp01((frame - PRESS) / 9),
     loading: clamp01((frame - (PRESS + 3)) / 12),
     success: ease.outCubic(clamp01((frame - SUCCESS) / 9)),
@@ -65,15 +70,27 @@ export const S4Post: React.FC = () => {
     since: frame - SUCCESS,
   };
 
-  // camera: push in on the input while the task is typed, ease back out for the post + confirmation
+  // camera: lean in on the form and follow it down field by field, then ease out for the confirmation
+  const Z = L.vertical ? 1.4 : 1.55;
   const zoom = keys(frame, [
     [TYPE_START - 4, 1],
-    [TYPE_START + 6, L.vertical ? 1.4 : 1.55],
-    [CATEGORY - 3, L.vertical ? 1.4 : 1.55],
-    [CATEGORY + 9, 1],
+    [TYPE_START + 6, Z],
+    [PRESS + 2, Z],
+    [SUCCESS + 2, 1],
   ], ease.inOutCubic);
-  const zoomK = (zoom - 1) / (L.vertical ? 0.4 : 0.55);
-  const camY = (L.vertical ? 190 : 150) * zoomK;
+  const focus = keys(frame, [
+    [TYPE_START + 6, 261],
+    [CATEGORY - 4, 261],
+    [CATEGORY + 2, 354],
+    [LOCATION - 4, 354],
+    [LOCATION + 2, 470],
+    [PRICE_SEL - 4, 470],
+    [PRICE_SEL + 2, 593],
+    [PRESS - 5, 593],
+    [PRESS + 1, 740],
+  ], ease.inOutCubic);
+  const zoomK = (zoom - 1) / (Z - 1);
+  const camY = (442 - focus) * (L.vertical ? 1.05 : 0.83) * zoomK;
 
   // smear while it spins in / drops out
   const blurX = Math.min(28, Math.abs(m.x - mp.x) * 0.3 + Math.abs(m.rotY - mp.rotY) * 1.3);

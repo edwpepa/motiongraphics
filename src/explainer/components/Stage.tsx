@@ -39,15 +39,6 @@ export const Stage: React.FC<{ light?: number; lightX?: number }> = ({ light = 1
         }}
       />
       <Grid color="rgba(160,255,200,0.05)" />
-      {/* dust */}
-      <svg width={L.W} height={L.H} style={{ position: "absolute", inset: 0 }}>
-        {motes.map((m, i) => {
-          const y = ((m.y - (frame / 900) * m.sp + 10) % 1) * L.H;
-          const x = m.x * L.W + Math.sin(frame / 60 + m.ph) * 12;
-          const near = Math.max(0, 1 - Math.abs(x / L.W - lightX) * 1.6) * Math.max(0, 1 - y / L.H);
-          return <circle key={i} cx={x} cy={y} r={m.r} fill={`rgba(140,255,190,${m.a * (0.25 + 0.75 * near) * light})`} />;
-        })}
-      </svg>
       <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.65) 100%)" }} />
       <AbsoluteFill
         style={{

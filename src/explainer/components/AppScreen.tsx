@@ -14,6 +14,10 @@ export type AppState = {
   loading: number;
   success: number;
   check: number;
+  /** location confirmed on the map (0..1) */
+  location?: number;
+  /** price option chosen (0..1) */
+  priceSel?: number;
   /** frames since the success state started (drives the live check animation) */
   since?: number;
 };
@@ -39,7 +43,7 @@ const StatusBar: React.FC = () => (
   </div>
 );
 
-const MiniMap: React.FC<{ y: number }> = ({ y }) => (
+const MiniMap: React.FC<{ y: number; loc: number }> = ({ y, loc }) => (
   <div style={{ position: "absolute", left: 24, top: y, width: 352, height: 108, borderRadius: 16, overflow: "hidden", background: "#e8efe9" }}>
     <svg width={352} height={108} viewBox="0 0 352 108">
       <path d="M-10 70 C 80 40, 160 95, 360 52" stroke="#fff" strokeWidth={12} fill="none" />
@@ -48,8 +52,10 @@ const MiniMap: React.FC<{ y: number }> = ({ y }) => (
       <path d="M-10 22 L 360 30" stroke="#fff" strokeWidth={5} fill="none" />
       <rect x={20} y={36} width={70} height={22} rx={5} fill="#d6e6da" />
       <rect x={270} y={66} width={60} height={30} rx={5} fill="#d6e6da" />
-      <circle cx={190} cy={62} r={30} fill="rgba(0,191,99,0.16)" />
-      <circle cx={190} cy={62} r={9} fill={C.green} stroke="#fff" strokeWidth={3} />
+      <circle cx={190} cy={62} r={14 + 26 * ease.outCubic(clamp01(loc * 1.4))} fill={`rgba(0,191,99,${0.16 * clamp01(loc * 2)})`} />
+      <g transform={`translate(0 ${-34 * (1 - ease.outBack(clamp01(loc * 1.6)))})`} opacity={clamp01(loc * 4)}>
+        <circle cx={190} cy={62} r={9} fill={C.green} stroke="#fff" strokeWidth={3} />
+      </g>
     </svg>
     <div
       style={{
@@ -156,7 +162,7 @@ export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
       </div>
 
       <Label y={394}>UNDE?</Label>
-      <MiniMap y={416} />
+      <MiniMap y={416} loc={s.location ?? 1} />
 
       <Label y={544}>PREȚ</Label>
       <div
@@ -167,7 +173,9 @@ export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
           width: 352,
           height: 54,
           borderRadius: 14,
-          background: "#f0f4f1",
+          background: mixColor("#f0f4f1", "#e3f7ec", clamp01(s.priceSel ?? 0)),
+          border: `2px solid ${mixColor("#f0f4f1", C.green, clamp01(s.priceSel ?? 0))}`,
+          transform: `scale(${1 + 0.04 * Math.sin(clamp01(s.priceSel ?? 0) * Math.PI)})`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -180,7 +188,7 @@ export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
           <Glyph name="handshake" size={20} color={C.green} weight={2.2} />
           Îl stabiliți împreună
         </span>
-        <Glyph name="chevron" size={18} color="#9aa39e" weight={2.6} />
+        {(s.priceSel ?? 0) > 0.5 ? <Glyph name="check" size={18} color={C.green} weight={3} /> : <Glyph name="chevron" size={18} color="#9aa39e" weight={2.6} />}
       </div>
 
       {/* CTA */}
@@ -241,45 +249,24 @@ export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
       {s.success > 0 && (
         <div style={{ position: "absolute", inset: 0, background: `rgba(251,252,251,${s.success})`, display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div style={{ position: "relative", marginTop: 250, width: 128, height: 128 }}>
-            {/* ripples keep rolling out of the badge */}
-            {[0, 1, 2].map((k) => {
-              const t = (s.since ?? 0) - 6 - k * 9;
-              const p = t > 0 ? (t % 30) / 30 : 0;
-              if (t <= 0) return null;
-              return <div key={k} style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `${3 * (1 - p)}px solid ${C.green}`, transform: `scale(${1 + 1.1 * ease.outCubic(p)})`, opacity: (1 - p) * 0.7 }} />;
-            })}
-            {/* sparks once the check lands */}
-            {Array.from({ length: 10 }, (_, k) => {
-              const t = (s.since ?? 0) - 12;
-              const p = clamp01(t / 16);
-              if (p <= 0 || p >= 1) return null;
-              const a = (k / 10) * Math.PI * 2;
-              const d = 70 + 60 * ease.outCubic(p);
-              return <div key={`s${k}`} style={{ position: "absolute", left: 64 + Math.cos(a) * d - 4, top: 64 + Math.sin(a) * d - 4, width: 8, height: 8, borderRadius: "50%", background: k % 2 ? C.green : "#9dffc9", opacity: 1 - p, transform: `scale(${1 - 0.6 * p})` }} />;
-            })}
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                borderRadius: "50%",
-                overflow: "hidden",
-                background: "radial-gradient(circle at 35% 30%, #5cf0a6 0%, #00c46a 55%, #00a352 100%)",
-                boxShadow: "0 18px 40px rgba(0,191,99,0.35)",
-                transform: `scale(${ease.outBack(clamp01(s.success)) * (1 + 0.04 * Math.sin(((s.since ?? 0) / 30) * Math.PI * 2) * clamp01(((s.since ?? 0) - 20) / 10))})`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <svg width={70} height={70} viewBox="0 0 70 70">
-                <path d="M18 36 L30 48 L53 22" fill="none" stroke="#fff" strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - checkLen} />
-              </svg>
-              {/* a light sweep across the badge */}
-              <div style={{ position: "absolute", top: -40, bottom: -40, width: 34, left: `${-40 + 180 * clamp01(((s.since ?? 0) - 14) / 14)}%`, transform: "rotate(22deg)", background: "linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.7), rgba(255,255,255,0))" }} />
-            </div>
+            {(() => {
+              const t = s.since ?? 0;
+              const ring = ease.inOutCubic(clamp01(t / 12));
+              const fill = ease.outCubic(clamp01((t - 9) / 8));
+              const chk = ease.outCubic(clamp01((t - 13) / 10));
+              const settle = 1 + 0.05 * Math.sin(clamp01((t - 13) / 10) * Math.PI);
+              return (
+                <svg width={128} height={128} viewBox="0 0 128 128" style={{ transform: `scale(${settle})` }}>
+                  <circle cx={64} cy={64} r={58} fill="none" stroke="rgba(0,191,99,0.15)" strokeWidth={6} />
+                  <circle cx={64} cy={64} r={58} fill="none" stroke={C.green} strokeWidth={6} strokeLinecap="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - ring} transform="rotate(-90 64 64)" />
+                  <circle cx={64} cy={64} r={58 * fill} fill={C.green} />
+                  <path d="M40 66 L56 81 L89 47" fill="none" stroke="#fff" strokeWidth={9} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - chk} />
+                </svg>
+              );
+            })()}
           </div>
-          <div style={{ marginTop: 34, fontSize: 30, fontWeight: BOLD, letterSpacing: "-0.03em", opacity: clamp01(s.success * 1.4 - 0.3) }}>Task postat!</div>
-          <div style={{ marginTop: 10, width: 280, textAlign: "center", fontSize: 16, fontWeight: BOLD, color: "#7b8480", lineHeight: 1.4, opacity: clamp01(s.success * 1.4 - 0.5) }}>
+          <div style={{ marginTop: 34, fontSize: 30, fontWeight: BOLD, letterSpacing: "-0.03em", opacity: clamp01(((s.since ?? 0) - 14) / 8), transform: `translateY(${10 * (1 - clamp01(((s.since ?? 0) - 14) / 8))}px)` }}>Task postat!</div>
+          <div style={{ marginTop: 10, width: 280, textAlign: "center", fontSize: 16, fontWeight: BOLD, color: "#7b8480", lineHeight: 1.4, opacity: clamp01(((s.since ?? 0) - 18) / 8) }}>
             Taskerii din zona ta au fost anunțați
           </div>
           <div style={{ marginTop: 28, display: "flex", opacity: clamp01(s.check * 1.5 - 0.4) }}>

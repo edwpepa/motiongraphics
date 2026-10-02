@@ -162,6 +162,69 @@ const LeftFace: React.FC<{ w: number; h: number; idx?: number }> = ({ w, h, idx 
   </div>
 );
 
+/**
+ * The room the camera drifts through: a white wall with a quiet grid and a few line-drawn objects
+ * (lamp, frames, window, shelf, plants), all kept faint. Layers slide at different speeds (parallax)
+ * as the camera trucks right towards the table with the planner.
+ */
+const Room: React.FC<{ cam: number; W: number; H: number; vertical: boolean }> = ({ cam, W, H, vertical }) => {
+  const line = "rgba(16,40,28,0.16)";
+  const soft = "rgba(16,40,28,0.06)";
+  const green = "rgba(0,163,82,0.35)";
+  const cell = vertical ? 90 : 96;
+  const wallX = -cam * 0.55;
+  const midX = -cam * 0.85;
+  const floorY = H * (vertical ? 0.8 : 0.83);
+  const sw = { fill: "none", stroke: line, strokeWidth: 3, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  return (
+    <AbsoluteFill style={{ overflow: "hidden" }}>
+      {/* wall grid */}
+      <AbsoluteFill
+        style={{
+          backgroundImage: `linear-gradient(rgba(16,40,28,0.06) 1.5px, transparent 1.5px), linear-gradient(90deg, rgba(16,40,28,0.06) 1.5px, transparent 1.5px)`,
+          backgroundSize: `${cell}px ${cell}px`,
+          backgroundPosition: `${(W / 2 + wallX) % cell}px ${(H / 2) % cell}px`,
+          WebkitMaskImage: "linear-gradient(180deg, transparent 0%, #000 18%, #000 70%, transparent 100%)",
+          maskImage: "linear-gradient(180deg, transparent 0%, #000 18%, #000 70%, transparent 100%)",
+        }}
+      />
+      {/* far wall */}
+      <svg width={W} height={H} style={{ position: "absolute", inset: 0, overflow: "visible" }}>
+        <g transform={`translate(${wallX} 0)`}>
+          {/* pendant lamp */}
+          <path d={`M ${W * 0.16} 0 V ${H * 0.16}`} {...sw} />
+          <path d={`M ${W * 0.16 - 60} ${H * 0.16 + 52} Q ${W * 0.16} ${H * 0.16 - 20} ${W * 0.16 + 60} ${H * 0.16 + 52} Z`} {...sw} fill="#ffffff" />
+          <circle cx={W * 0.16} cy={H * 0.16 + 62} r={9} fill={green} />
+          {/* two frames */}
+          <rect x={W * 0.8} y={H * 0.16} width={150} height={190} rx={10} {...sw} />
+          <path d={`M ${W * 0.8 + 26} ${H * 0.16 + 150} l 36 -46 l 28 30 l 22 -20 l 34 36`} {...sw} stroke={green} />
+          <rect x={W * 0.8 + 180} y={H * 0.22} width={110} height={110} rx={10} {...sw} />
+          <circle cx={W * 0.8 + 235} cy={H * 0.22 + 55} r={22} {...sw} stroke={green} />
+          {/* window */}
+          <rect x={W * 1.25} y={H * 0.12} width={360} height={420} rx={22} {...sw} fill="rgba(240,247,243,0.6)" />
+          <path d={`M ${W * 1.25 + 180} ${H * 0.12} V ${H * 0.12 + 420} M ${W * 1.25} ${H * 0.12 + 210} H ${W * 1.25 + 360}`} {...sw} />
+          <path d={`M ${W * 1.25 + 40} ${H * 0.12 + 90} q 30 -26 60 0 q 26 -18 46 6`} {...sw} stroke={soft} strokeWidth={4} />
+          {/* shelf with books + a little plant */}
+          <path d={`M ${W * 1.62} ${H * 0.36} H ${W * 1.62 + 360}`} {...sw} />
+          {[0, 1, 2, 3].map((i) => (
+            <rect key={i} x={W * 1.62 + 24 + i * 34} y={H * 0.36 - (70 + (i % 2) * 18)} width={26} height={70 + (i % 2) * 18} rx={4} {...sw} stroke={i === 2 ? green : line} />
+          ))}
+          <path d={`M ${W * 1.62 + 250} ${H * 0.36} h 50 l -6 -40 h -38 z`} {...sw} />
+          <path d={`M ${W * 1.62 + 275} ${H * 0.36 - 40} q -20 -40 -34 -46 M ${W * 1.62 + 275} ${H * 0.36 - 40} q 6 -44 26 -56 M ${W * 1.62 + 275} ${H * 0.36 - 40} q 22 -26 40 -26`} {...sw} stroke={green} />
+          {/* baseboard */}
+          <path d={`M ${-W} ${floorY} H ${W * 4}`} {...sw} stroke={soft} strokeWidth={4} />
+        </g>
+        {/* nearer: a floor plant and a stool slide by faster */}
+        <g transform={`translate(${midX} 0)`}>
+          <path d={`M ${W * 0.95} ${floorY + 40} l 18 -110 h 76 l 18 110 z`} {...sw} fill="#ffffff" />
+          <path d={`M ${W * 0.95 + 56} ${floorY - 70} q -50 -90 -90 -110 M ${W * 0.95 + 56} ${floorY - 70} q 10 -120 50 -160 M ${W * 0.95 + 56} ${floorY - 70} q 60 -60 100 -70`} {...sw} stroke={green} strokeWidth={4} />
+          <path d={`M ${W * 1.5} ${floorY - 110} h 150 M ${W * 1.5 + 20} ${floorY - 110} l -10 150 M ${W * 1.5 + 130} ${floorY - 110} l 10 150`} {...sw} />
+        </g>
+      </svg>
+    </AbsoluteFill>
+  );
+};
+
 export const Problem: React.FC = () => {
   const frame = useCurrentFrame();
   const L = useLayout();
@@ -217,6 +280,7 @@ export const Problem: React.FC = () => {
     <AbsoluteFill>
 
       <DirBlur x={panBlur} style={{ position: "absolute", inset: 0 }}>
+      <Room cam={pan * SPAN} W={L.W} H={L.H} vertical={V} />
       {/* intro phrases */}
       {pan < 1 && (
       <AbsoluteFill style={{ transform: `translateX(${-pan * SPAN}px) scale(${push})` }}>
@@ -257,14 +321,6 @@ export const Problem: React.FC = () => {
       )}
 
       <AbsoluteFill style={{ transform: `translateX(${(1 - pan) * SPAN}px)` }}>
-      {/* "pe care o tot amâni?" above the planner */}
-      <PhraseSeq
-        light
-        fontSize={V ? 84 : 78}
-        y={V ? -720 : -430}
-        phrases={[{ words: VO.postpone.map(([text, sec]) => ({ text, at: f(sec) - LEAD, color: text.startsWith("amâni") ? ACCENT_LIGHT : undefined })), out: arrive(0) - 12 }]}
-      />
-
       {/* the planner */}
       {planIn > 0 && planOut < 1 && (
         <DirBlur x={camBlur} style={{ position: "absolute", inset: 0, opacity: 1 - planOut, filter: planOut > 0 ? `blur(${planOut * 20}px)` : undefined }}>
@@ -278,6 +334,22 @@ export const Problem: React.FC = () => {
             }}
           >
             <div style={{ transformStyle: "preserve-3d", transform: `scale(${cam.s}) translate(${-cam.x}px, ${-cam.y}px) rotateX(${lerp(38, 12, planIn) * (1 - 0.6 * clamp01((cam.s - base.s) / (lean.s - base.s)))}deg)` }}>
+              {/* the table it rests on */}
+              <div
+                style={{
+                  position: "absolute",
+                  left: -PGW * 2.2,
+                  top: -PGH / 2 - 70,
+                  width: PGW * 4.4,
+                  height: PGH + 900,
+                  borderRadius: 30,
+                  background: "linear-gradient(180deg, #f3eee6 0%, #ebe3d6 40%, #e4dacb 100%)",
+                  boxShadow: "inset 0 3px 0 rgba(255,255,255,0.9), 0 -1px 0 rgba(16,40,28,0.06)",
+                  backgroundImage: "repeating-linear-gradient(90deg, rgba(140,110,70,0.035) 0px, rgba(140,110,70,0.035) 2px, transparent 2px, transparent 46px), linear-gradient(180deg, #f3eee6 0%, #ebe3d6 40%, #e4dacb 100%)",
+                }}
+              />
+              {/* soft contact shadow of the book */}
+              <div style={{ position: "absolute", left: -PGW - 60, top: PGH / 2 - 10, width: PGW * 2 + 120, height: 90, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(60,45,25,0.22) 0%, rgba(60,45,25,0) 70%)" }} />
               {/* cover + page-block edges */}
               <div style={{ position: "absolute", left: -PGW - 26, top: -PGH / 2 - 22, width: PGW * 2 + 52, height: PGH + 44, borderRadius: 26, background: "linear-gradient(180deg, #13734a 0%, #0a4f32 100%)", boxShadow: "0 50px 90px rgba(10,50,30,0.28), 0 12px 24px rgba(10,50,30,0.16), inset 0 1px 0 rgba(255,255,255,0.18)" }} />
               {[3, 2, 1].map((k) => (
@@ -319,12 +391,20 @@ export const Problem: React.FC = () => {
           </div>
         </DirBlur>
       )}
+      {/* "pe care o tot amâni?" above the planner */}
+      <PhraseSeq
+        light
+        fontSize={V ? 84 : 78}
+        y={V ? -720 : -430}
+        phrases={[{ words: VO.postpone.map(([text, sec]) => ({ text, at: f(sec) - LEAD, color: text.startsWith("amâni") ? ACCENT_LIGHT : undefined })), out: arrive(0) - 12 }]}
+      />
+
       </AbsoluteFill>
       </DirBlur>
 
       {/* the drop: a minimal liquid bead that wobbles, gathers itself in, then splashes (see LiquidSplash) */}
-      {frame >= FLY && frame < DROP - 3 && (
-        <div style={{ position: "absolute", left: L.cx, top: L.cy, transform: `scale(${pop(frame, FLY, 11, 150) * (1 - 0.45 * ease.inCubic(clamp01((frame - (DROP - 11)) / 8)))})` }}>
+      {frame >= FLY && frame < DROP - 7 && (
+        <div style={{ position: "absolute", left: L.cx, top: L.cy, transform: `scale(${pop(frame, FLY, 11, 150) * (1 - 0.5 * ease.inCubic(clamp01((frame - (DROP - 15)) / 8)))})` }}>
           <LiquidDrop r={OS / 2} frame={frame} />
         </div>
       )}

@@ -1,7 +1,9 @@
 import React from "react";
 import { Img, staticFile } from "remotion";
 import { clamp01, ease, mixColor } from "../lib/anim";
-import { C, FONT } from "../theme";
+import { BOLD, C, FONT } from "../theme";
+import { Avatar, Person } from "./Avatar";
+import { Glyph, GlyphName } from "./Icons";
 
 export type AppState = {
   typed: number;
@@ -17,12 +19,12 @@ export type AppState = {
 export const TASK_TEXT = "Robinet care curge";
 
 const Label: React.FC<{ y: number; children: React.ReactNode }> = ({ y, children }) => (
-  <div style={{ position: "absolute", left: 24, top: y, fontSize: 13, fontWeight: 600, color: "#7b8480", letterSpacing: "0.01em" }}>{children}</div>
+  <div style={{ position: "absolute", left: 24, top: y, fontSize: 13, fontWeight: BOLD, color: "#7b8480", letterSpacing: "0.01em" }}>{children}</div>
 );
 
 const StatusBar: React.FC = () => (
   <div style={{ position: "absolute", left: 0, top: 0, width: "100%", height: 54 }}>
-    <div style={{ position: "absolute", left: 38, top: 19, fontSize: 16, fontWeight: 600, color: C.ink }}>9:41</div>
+    <div style={{ position: "absolute", left: 38, top: 19, fontSize: 16, fontWeight: BOLD, color: C.ink }}>9:41</div>
     <svg style={{ position: "absolute", right: 30, top: 21 }} width={74} height={14} viewBox="0 0 74 14">
       {[0, 1, 2, 3].map((i) => (
         <rect key={i} x={i * 5} y={10 - i * 3} width={3.4} height={4 + i * 3} rx={1} fill={C.ink} />
@@ -56,12 +58,15 @@ const MiniMap: React.FC<{ y: number }> = ({ y }) => (
         borderRadius: 999,
         background: "#fff",
         fontSize: 12.5,
-        fontWeight: 600,
+        fontWeight: BOLD,
         color: C.ink,
         boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
       }}
     >
-      📍 În zona ta
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+        <Glyph name="pin" size={14} color={C.green} weight={2.6} />
+        În zona ta
+      </span>
     </div>
   </div>
 );
@@ -80,16 +85,16 @@ export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
       {/* app header */}
       <div style={{ position: "absolute", left: 24, top: 66, display: "flex", alignItems: "center", gap: 9 }}>
         <Img src={staticFile("images/logo.webp")} style={{ width: 34, height: 34 }} />
-        <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em" }}>
-          handly<span style={{ color: C.green }}>.ro</span>
+        <span style={{ fontSize: 22, fontWeight: BOLD, letterSpacing: "-0.03em" }}>
+          handly.ro
         </span>
       </div>
-      <div style={{ position: "absolute", right: 24, top: 64, width: 38, height: 38, borderRadius: "50%", background: C.greenSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
-        🙂
+      <div style={{ position: "absolute", right: 24, top: 64 }}>
+        <Avatar person="tu" size={40} dark={false} ring="#ffffff" />
       </div>
 
-      <div style={{ position: "absolute", left: 24, top: 124, fontSize: 29, fontWeight: 800, letterSpacing: "-0.03em" }}>Postează un task</div>
-      <div style={{ position: "absolute", left: 24, top: 164, fontSize: 15, fontWeight: 500, color: "#7b8480" }}>Spune-ne ce ai nevoie</div>
+      <div style={{ position: "absolute", left: 24, top: 124, fontSize: 29, fontWeight: BOLD, letterSpacing: "-0.03em" }}>Postează un task</div>
+      <div style={{ position: "absolute", left: 24, top: 164, fontSize: 15, fontWeight: BOLD, color: "#7b8480" }}>Spune-ne ce ai nevoie</div>
 
       <Label y={210}>CE TREBUIE FĂCUT?</Label>
       <div
@@ -107,7 +112,7 @@ export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
           alignItems: "center",
           padding: "0 16px",
           fontSize: 18,
-          fontWeight: 500,
+          fontWeight: BOLD,
         }}
       >
         {typed.length === 0 && s.focus < 0.5 ? <span style={{ color: "#a9b0ac" }}>ex: Robinet care curge</span> : <span>{typed}</span>}
@@ -116,11 +121,13 @@ export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
 
       <Label y={312}>CATEGORIE</Label>
       <div style={{ position: "absolute", left: 24, top: 334, display: "flex", gap: 8 }}>
-        {[
-          ["🔧", "Instalații"],
-          ["🖌️", "Zugrăveli"],
-          ["🪛", "Montaj"],
-        ].map(([e, label], i) => {
+        {(
+          [
+            ["wrench", "Instalații"],
+            ["roller", "Zugrăveli"],
+            ["hammer", "Montaj"],
+          ] as [GlyphName, string][]
+        ).map(([g, label], i) => {
           const on = i === 0 ? s.category : 0;
           return (
             <div
@@ -133,13 +140,13 @@ export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
                 alignItems: "center",
                 gap: 6,
                 fontSize: 14.5,
-                fontWeight: 600,
+                fontWeight: BOLD,
                 background: mixColor("#eef2ef", C.green, on),
                 color: mixColor(C.ink, "#ffffff", on),
                 transform: `scale(${1 + 0.08 * Math.sin(clamp01(on) * Math.PI)})`,
               }}
             >
-              <span style={{ fontSize: 15 }}>{e}</span>
+              <Glyph name={g} size={16} color={mixColor(C.ink, "#ffffff", on)} weight={2.4} />
               {label}
             </div>
           );
@@ -164,11 +171,14 @@ export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
           justifyContent: "space-between",
           padding: "0 16px",
           fontSize: 15.5,
-          fontWeight: 600,
+          fontWeight: BOLD,
         }}
       >
-        <span>🤝 Îl stabiliți împreună</span>
-        <span style={{ color: "#9aa39e", fontSize: 20 }}>›</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
+          <Glyph name="handshake" size={20} color={C.green} weight={2.2} />
+          Îl stabiliți împreună
+        </span>
+        <Glyph name="chevron" size={18} color="#9aa39e" weight={2.6} />
       </div>
 
       {/* CTA */}
@@ -189,7 +199,7 @@ export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
           gap: 10,
           color: "#fff",
           fontSize: 18,
-          fontWeight: 700,
+          fontWeight: BOLD,
         }}
       >
         {s.loading > 0 && s.success < 0.5 ? (
@@ -246,31 +256,17 @@ export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
               <path d="M18 36 L30 48 L53 22" fill="none" stroke="#fff" strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - checkLen} />
             </svg>
           </div>
-          <div style={{ marginTop: 34, fontSize: 30, fontWeight: 800, letterSpacing: "-0.03em", opacity: clamp01(s.success * 1.4 - 0.3) }}>Task postat!</div>
-          <div style={{ marginTop: 10, width: 280, textAlign: "center", fontSize: 16, fontWeight: 500, color: "#7b8480", lineHeight: 1.4, opacity: clamp01(s.success * 1.4 - 0.5) }}>
+          <div style={{ marginTop: 34, fontSize: 30, fontWeight: BOLD, letterSpacing: "-0.03em", opacity: clamp01(s.success * 1.4 - 0.3) }}>Task postat!</div>
+          <div style={{ marginTop: 10, width: 280, textAlign: "center", fontSize: 16, fontWeight: BOLD, color: "#7b8480", lineHeight: 1.4, opacity: clamp01(s.success * 1.4 - 0.5) }}>
             Taskerii din zona ta au fost anunțați
           </div>
           <div style={{ marginTop: 28, display: "flex", opacity: clamp01(s.check * 1.5 - 0.4) }}>
-            {["👨‍🔧", "👷", "🧑‍🔧", "👩‍🔧"].map((e, i) => (
-              <div
-                key={i}
-                style={{
-                  width: 50,
-                  height: 50,
-                  marginLeft: i === 0 ? 0 : -12,
-                  borderRadius: "50%",
-                  background: C.greenSoft,
-                  border: "3px solid #fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 25,
-                }}
-              >
-                {e}
+            {(["andrei", "mihai", "radu"] as Person[]).map((p, i) => (
+              <div key={p} style={{ marginLeft: i === 0 ? 0 : -12 }}>
+                <Avatar person={p} size={50} dark={false} ring="#ffffff" />
               </div>
             ))}
-            <div style={{ marginLeft: 10, alignSelf: "center", fontSize: 15, fontWeight: 700, color: C.green }}>+12</div>
+            <div style={{ marginLeft: 10, alignSelf: "center", fontSize: 15, fontWeight: BOLD, color: C.green }}>+3</div>
           </div>
         </div>
       )}

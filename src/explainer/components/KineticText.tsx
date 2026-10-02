@@ -1,6 +1,6 @@
 import React from "react";
 import { useCurrentFrame } from "remotion";
-import { C, FONT } from "../theme";
+import { BOLD, C, FONT } from "../theme";
 import { clamp01, ease, mixColor } from "../lib/anim";
 
 export type KWord = {
@@ -37,7 +37,7 @@ type Props = {
 export const KineticText: React.FC<Props> = ({
   words,
   fontSize,
-  weight = 600,
+  weight = BOLD,
   ink = C.ink,
   tint = C.green,
   breaks = [],
@@ -72,7 +72,7 @@ export const KineticText: React.FC<Props> = ({
         <div key={li} style={{ display: "flex", whiteSpace: "nowrap" }}>
           {line.map((w, wi) => (
             <span key={wi} style={{ display: "inline-block", marginRight: wi < line.length - 1 && !w.joinNext ? "0.27em" : 0 }}>
-              <Word word={w} frame={frame} ink={w.color ?? ink} tint={tint} dur={dur} mode={mode} seed={li * 7 + wi * 3} />
+              <Word word={w} frame={frame} ink={w.color ?? ink} tint={tint} dur={dur} mode={mode} seed={li * 7 + wi * 3} blurMax={fontSize * 0.11} />
             </span>
           ))}
         </div>
@@ -89,11 +89,12 @@ const Word: React.FC<{
   dur: number;
   mode: "rise" | "track";
   seed: number;
-}> = ({ word, frame, ink, tint, dur, mode, seed }) => {
+  blurMax: number;
+}> = ({ word, frame, ink, tint, dur, mode, seed, blurMax }) => {
   const local = frame - word.at;
   const letters = Array.from(word.text);
   const wordP = clamp01(local / (dur + letters.length * 0.55));
-  const blur = (1 - ease.outCubic(clamp01(local / (dur * 0.9)))) * 7;
+  const blur = (1 - ease.outCubic(clamp01(local / (dur * 0.9)))) * blurMax;
   const skew = (1 - ease.outExpo(wordP)) * -10;
 
   if (mode === "track") {

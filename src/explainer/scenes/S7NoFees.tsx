@@ -2,6 +2,7 @@ import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { KineticText } from "../components/KineticText";
 import { clamp01, drift, ease, keys } from "../lib/anim";
+import { useLayout } from "../layout";
 import { f, VO } from "../timing";
 
 const LEAD = 3;
@@ -35,6 +36,8 @@ const ScanLines: React.FC<{ start: number; dur: number }> = ({ start, dur }) => 
 // "Fără tarife de firmă. Fără intermediari."
 export const S7NoFees: React.FC = () => {
   const frame = useCurrentFrame();
+  const L = useLayout();
+  const fs = L.vertical ? 108 : 82;
   const swap = f(VO.noMiddlemen[0][1]) - LEAD - 1;
   const exit = f(VO.handly) - LEAD - 1;
   const push = keys(frame, [
@@ -48,7 +51,7 @@ export const S7NoFees: React.FC = () => {
       <div style={{ position: "relative", transform: `scale(${push}) translateY(${drift(frame, 4, 150)}px)` }}>
         {frame < swap + 7 && (
           <div style={swapOut(frame, swap)}>
-            <KineticText words={VO.noFees.map(([text, sec]) => ({ text, at: f(sec) - LEAD }))} fontSize={74} weight={600} />
+            <KineticText words={VO.noFees.map(([text, sec]) => ({ text, at: f(sec) - LEAD }))} fontSize={fs} breaks={L.vertical ? [1] : []} />
           </div>
         )}
         {frame >= swap && (
@@ -56,8 +59,8 @@ export const S7NoFees: React.FC = () => {
             <div style={swapOut(frame, exit)}>
               <KineticText
                 words={VO.noMiddlemen.map(([text, sec]) => ({ text, at: f(sec) - LEAD - 1 }))}
-                fontSize={74}
-                weight={600}
+                fontSize={fs}
+                breaks={L.vertical ? [0] : []}
                 mode="track"
               />
             </div>

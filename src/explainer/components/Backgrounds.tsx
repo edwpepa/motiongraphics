@@ -1,11 +1,11 @@
 import React, { useLayoutEffect, useRef } from "react";
 import { AbsoluteFill, staticFile, useCurrentFrame } from "remotion";
+import { useLayout } from "../layout";
 import { C } from "../theme";
 
 // Both backgrounds are painted on a small canvas with a canvas-level blur and scaled up by CSS.
 // The heavy Gaussian blur then costs almost nothing per frame and the soft edges stay buttery.
-const CW = 480;
-const CH = 270;
+const canvasSize = (W: number, H: number) => ({ CW: Math.round(W / 4), CH: Math.round(H / 4) });
 
 type WaveLayer = {
   base: number;
@@ -44,7 +44,7 @@ const LAYERS: WaveLayer[] = [
   },
 ];
 
-function drawWave(ctx: CanvasRenderingContext2D, layer: WaveLayer, t: number, lift: number) {
+function drawWave(ctx: CanvasRenderingContext2D, layer: WaveLayer, t: number, lift: number, CW: number, CH: number) {
   ctx.save();
   ctx.filter = `blur(${layer.blur}px)`;
   ctx.globalAlpha = layer.alpha;
@@ -72,14 +72,18 @@ function drawWave(ctx: CanvasRenderingContext2D, layer: WaveLayer, t: number, li
 export const WaveBackground: React.FC<{ lift?: number }> = ({ lift = 0 }) => {
   const frame = useCurrentFrame();
   const ref = useRef<HTMLCanvasElement>(null);
+  const L = useLayout();
+  const { CW, CH } = canvasSize(L.W, L.H);
+  // in the tall reel the wave sits lower so it stays a band at the bottom
+  const shift = lift + (L.vertical ? 0.08 : 0);
 
   useLayoutEffect(() => {
     const ctx = ref.current?.getContext("2d");
     if (!ctx) return;
     const t = frame / 30;
     ctx.clearRect(0, 0, CW, CH);
-    for (const layer of LAYERS) drawWave(ctx, layer, t, lift);
-  }, [frame, lift]);
+    for (const layer of LAYERS) drawWave(ctx, layer, t, shift, CW, CH);
+  }, [frame, shift, CW, CH]);
 
   return (
     <AbsoluteFill style={{ background: C.paper }}>
@@ -100,6 +104,9 @@ export const NightBackground: React.FC<{ cx?: number; cy?: number; scale?: numbe
 }) => {
   const frame = useCurrentFrame();
   const ref = useRef<HTMLCanvasElement>(null);
+  const L = useLayout();
+  const { CW, CH } = canvasSize(L.W, L.H);
+  const U = Math.min(CW, CH);
 
   useLayoutEffect(() => {
     const ctx = ref.current?.getContext("2d");
@@ -118,16 +125,16 @@ export const NightBackground: React.FC<{ cx?: number; cy?: number; scale?: numbe
       ctx.save();
       ctx.filter = `blur(${g.blur * scale}px)`;
       ctx.globalAlpha = g.alpha * intensity;
-      ctx.translate((cx + g.x * scale) * CW + Math.sin(t * 0.7 + g.rot) * 6, (cy + g.y * scale) * CH);
+      ctx.translate(cx * CW + g.x * scale * U * 1.78 + Math.sin(t * 0.7 + g.rot) * 6, cy * CH + g.y * scale * U);
       ctx.rotate(g.rot);
       ctx.beginPath();
-      ctx.ellipse(0, 0, g.rx * CW * scale, g.ry * CH * scale * 1.8, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, g.rx * U * 1.78 * scale, g.ry * U * scale * 1.8, 0, 0, Math.PI * 2);
       ctx.fillStyle = `rgb(${g.color})`;
       ctx.fill();
       ctx.restore();
     }
     ctx.globalCompositeOperation = "source-over";
-  }, [frame, cx, cy, scale, intensity]);
+  }, [frame, cx, cy, scale, intensity, CW, CH, U]);
 
   return (
     <AbsoluteFill style={{ background: C.night }}>

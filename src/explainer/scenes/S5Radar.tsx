@@ -1,10 +1,12 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
-import { Avatar } from "../components/Avatar";
+import { Avatar, Person } from "../components/Avatar";
+import { Glyph, IconTile } from "../components/Icons";
 import { Pill } from "../components/Pill";
 import { DirBlur } from "../lib/Blur";
 import { clamp01, drift, ease, keys, pop } from "../lib/anim";
-import { C, FONT } from "../theme";
+import { useLayout } from "../layout";
+import { BOLD, C, FONT } from "../theme";
 import { f, VO } from "../timing";
 
 const RING_STARTS = [f(VO.taskerii) - 1, f(VO.taskerii) + 17, f(VO.vad) + 1];
@@ -13,13 +15,14 @@ const RING_MAX = 1000;
 
 const ringRadius = (frame: number, start: number) => 40 + (RING_MAX - 40) * ease.outCubic(clamp01((frame - start) / RING_DUR));
 
-const TASKERS = [
-  { emoji: "👨‍🔧", x: -520, y: -215, km: "1,2 km" },
-  { emoji: "👷", x: 430, y: -255, km: "0,8 km" },
-  { emoji: "🧑‍🔧", x: -330, y: 240, km: "2,1 km" },
-  { emoji: "👩‍🔧", x: 560, y: 175, km: "1,5 km" },
-  { emoji: "🧑‍🎨", x: -770, y: 30, km: "3 km" },
-  { emoji: "👨‍🔧", x: 195, y: 320, km: "0,5 km" },
+// Same distances in both formats (so the "seen" blips in the soundtrack line up), different angles.
+const TASKERS: { person?: Person; pos: [number, number]; vpos: [number, number]; km: string }[] = [
+  { person: "andrei", pos: [-520, -215], vpos: [-300, -476], km: "1,2 km" },
+  { person: "mihai", pos: [430, -255], vpos: [300, -400], km: "0,8 km" },
+  { person: "radu", pos: [-330, 240], vpos: [-330, 240], km: "2,1 km" },
+  { pos: [560, 175], vpos: [330, 485], km: "1,5 km" },
+  { pos: [-770, 30], vpos: [-200, 745], km: "3 km" },
+  { pos: [195, 320], vpos: [195, 320], km: "0,5 km" },
 ];
 
 /** Frame at which the first radar ring reaches a point at `dist` px. */
@@ -41,17 +44,19 @@ const Pin: React.FC = () => (
 // "Taskerii din zona ta văd task-ul"
 export const S5Radar: React.FC = () => {
   const frame = useCurrentFrame();
+  const L = useLayout();
   const exitStart = 474;
 
   const camScale = keys(frame, [
     [398, 1.16],
     [exitStart, 1.0],
   ], ease.outCubic);
-  const exitX = -900 * ease.inCubic(clamp01((frame - exitStart) / 14));
-  const exitXPrev = -900 * ease.inCubic(clamp01((frame - 1 - exitStart) / 14));
+  const exitX = -L.W * 0.47 * ease.inCubic(clamp01((frame - exitStart) / 14));
+  const exitXPrev = -L.W * 0.47 * ease.inCubic(clamp01((frame - 1 - exitStart) / 14));
   const exitFade = 1 - clamp01((frame - exitStart - 4) / 10);
 
-  const lits = TASKERS.map((t) => litFrame(Math.hypot(t.x, t.y)));
+  const positions = TASKERS.map((t) => (L.vertical ? t.vpos : t.pos));
+  const lits = positions.map(([x, y]) => litFrame(Math.hypot(x, y)));
   const seen = lits.filter((l) => frame >= l + 3).length;
   const label = pop(frame, f(VO.vad) - 6, 13, 150);
 
@@ -71,7 +76,7 @@ export const S5Radar: React.FC = () => {
               maskImage: "radial-gradient(ellipse 60% 62% at 50% 50%, #000 30%, transparent 100%)",
             }}
           />
-          <svg width={1920} height={1080} style={{ position: "absolute", inset: 0, opacity: 0.55 }}>
+          <svg width={L.W} height={L.H} viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" style={{ position: "absolute", inset: 0, opacity: 0.55 }}>
             <path d="M-50 760 C 400 640, 900 860, 1980 600" stroke="rgba(255,255,255,0.06)" strokeWidth={26} fill="none" />
             <path d="M560 -40 L 820 1120" stroke="rgba(255,255,255,0.05)" strokeWidth={18} fill="none" />
             <path d="M1460 -40 L 1300 1120" stroke="rgba(255,255,255,0.05)" strokeWidth={14} fill="none" />
@@ -79,7 +84,7 @@ export const S5Radar: React.FC = () => {
           </svg>
 
           {/* radar rings */}
-          <svg width={1920} height={1080} style={{ position: "absolute", inset: 0 }}>
+          <svg width={L.W} height={L.H} style={{ position: "absolute", inset: 0 }}>
             <defs>
               <radialGradient id="pulseFill">
                 <stop offset="0%" stopColor="rgba(0,191,99,0)" />
@@ -93,16 +98,17 @@ export const S5Radar: React.FC = () => {
               const r = ringRadius(frame, s);
               return (
                 <g key={i} opacity={(1 - t) * (i === 2 ? 0.7 : 1)}>
-                  <circle cx={960} cy={540} r={r} fill="url(#pulseFill)" />
-                  <circle cx={960} cy={540} r={r} fill="none" stroke={C.green} strokeWidth={3.5 - 2 * t} />
+                  <circle cx={L.cx} cy={L.cy} r={r} fill="url(#pulseFill)" />
+                  <circle cx={L.cx} cy={L.cy} r={r} fill="none" stroke={C.green} strokeWidth={3.5 - 2 * t} />
                 </g>
               );
             })}
-            <circle cx={960} cy={540} r={130 + drift(frame, 6, 40)} fill="rgba(0,191,99,0.10)" />
+            <circle cx={L.cx} cy={L.cy} r={130 + drift(frame, 6, 40)} fill="rgba(0,191,99,0.10)" />
           </svg>
 
           {/* taskers nearby */}
           {TASKERS.map((t, i) => {
+            const [x, y] = positions[i];
             const appear = pop(frame, 403 + i * 2, 14, 150);
             const lit = clamp01((frame - lits[i]) / 6);
             const bump = 1 + 0.14 * Math.sin(clamp01((frame - lits[i]) / 9) * Math.PI);
@@ -112,8 +118,8 @@ export const S5Radar: React.FC = () => {
                 key={i}
                 style={{
                   position: "absolute",
-                  left: 960 + t.x,
-                  top: 540 + t.y + drift(frame, 5, 70 + i * 11, i),
+                  left: L.cx + x,
+                  top: L.cy + y + drift(frame, 5, 70 + i * 11, i),
                   transform: `translate(-50%, -50%) scale(${appear * bump})`,
                   opacity: clamp01(appear * 2) * (0.55 + 0.45 * lit),
                   display: "flex",
@@ -123,7 +129,7 @@ export const S5Radar: React.FC = () => {
                 }}
               >
                 <div style={{ position: "relative" }}>
-                  <Avatar emoji={t.emoji} size={104} lit={lit} />
+                  <Avatar person={t.person} size={108} lit={lit} />
                   <div
                     style={{
                       position: "absolute",
@@ -137,31 +143,30 @@ export const S5Radar: React.FC = () => {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: 22,
                       transform: `scale(${badge})`,
                     }}
                   >
-                    👀
+                    <Glyph name="eye" size={22} color="#ffffff" weight={2.6} />
                   </div>
                 </div>
-                <div style={{ fontFamily: FONT, fontWeight: 600, fontSize: 22, color: C.nightInkSoft }}>{t.km}</div>
+                <div style={{ fontFamily: FONT, fontWeight: BOLD, fontSize: 22, color: C.nightInkSoft }}>{t.km}</div>
               </div>
             );
           })}
 
           {/* the posted task */}
-          <div style={{ position: "absolute", left: 960, top: 540, transform: `translate(-50%, -88%) scale(${pinDrop})` }}>
+          <div style={{ position: "absolute", left: L.cx, top: L.cy, transform: `translate(-50%, -88%) scale(${pinDrop})` }}>
             <Pin />
           </div>
           <div
             style={{
               position: "absolute",
-              left: 960,
-              top: 540 - 150,
+              left: L.cx,
+              top: L.cy - 150,
               transform: `translate(-50%, -100%) scale(${pop(frame, 410, 12, 160)})`,
             }}
           >
-            <Pill emoji="💧" label="Robinet care curge" size={30} />
+            <Pill icon={<IconTile name="droplet" color="blue" size={44} />} label="Robinet care curge" size={30} />
           </div>
         </AbsoluteFill>
       </DirBlur>
@@ -171,12 +176,12 @@ export const S5Radar: React.FC = () => {
         style={{
           position: "absolute",
           left: "50%",
-          top: 92,
+          top: L.vertical ? 250 : 92,
           transform: `translateX(-50%) translateY(${(1 - label) * -30}px) scale(${0.9 + 0.1 * label})`,
           opacity: clamp01(label * 2) * (1 - clamp01((frame - exitStart + 2) / 8)),
         }}
       >
-        <Pill dark emoji="👀" label={`${Math.max(1, seen)} taskeri din zona ta au văzut task-ul`} size={30} />
+        <Pill dark icon={<Glyph name="eye" size={32} color={C.green} weight={2.4} />} label={`${Math.max(1, seen)} taskeri din zona ta au văzut task-ul`} size={30} />
       </div>
     </AbsoluteFill>
   );

@@ -23,6 +23,14 @@ export const Root: React.FC = () => {
         width={EX.WIDTH}
         height={EX.HEIGHT}
       />
+      <Composition
+        id="HandlyExplainerReel"
+        component={HandlyExplainer}
+        durationInFrames={EX.DURATION_IN_FRAMES}
+        fps={EX.FPS}
+        width={1080}
+        height={1920}
+      />
     </>
   );
 };

@@ -2,7 +2,9 @@ import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { AppScreen, TASK_TEXT } from "../components/AppScreen";
 import { Phone, PHONE_H, PHONE_W } from "../components/Phone";
+import { GlyphName, IconTile, TileColor } from "../components/Icons";
 import { Pill } from "../components/Pill";
+import { useLayout } from "../layout";
 import { DirBlur } from "../lib/Blur";
 import { clamp01, drift, ease, keys, pop } from "../lib/anim";
 import { f, VO } from "../timing";
@@ -15,15 +17,15 @@ const SUCCESS = PRESS + 10;
 const SECONDS_CHIP = f(VO.cateva) - 2;
 const EXIT = 397;
 
-type ChipDef = { emoji: string; label: string; at: number; x: number; y: number; z: number; size?: number };
+type ChipDef = { icon: GlyphName; tile: TileColor; label: string; at: number; pos: [number, number]; vpos: [number, number]; z: number; size?: number };
 const CHIPS: ChipDef[] = [
-  { emoji: "🔧", label: "Instalații", at: CATEGORY + 4, x: -470, y: -250, z: 120 },
-  { emoji: "📍", label: "În zona ta", at: PRESS + 2, x: 450, y: -175, z: 90 },
-  { emoji: "✅", label: "Task postat", at: SUCCESS + 5, x: 470, y: 225, z: 140 },
-  { emoji: "⏱️", label: "Gata în câteva secunde", at: SECONDS_CHIP, x: -520, y: 205, z: 170, size: 34 },
+  { icon: "wrench", tile: "blue", label: "Instalații", at: CATEGORY + 4, pos: [-470, -250], vpos: [-200, -545], z: 120 },
+  { icon: "pin", tile: "red", label: "În zona ta", at: PRESS + 2, pos: [450, -175], vpos: [225, -470], z: 90 },
+  { icon: "check", tile: "green", label: "Task postat", at: SUCCESS + 5, pos: [470, 225], vpos: [230, 470], z: 140 },
+  { icon: "timer", tile: "orange", label: "Gata în câteva secunde", at: SECONDS_CHIP, pos: [-520, 205], vpos: [-95, 565], z: 170, size: 34 },
 ];
 
-const phoneMotion = (frame: number) => {
+const phoneMotion = (frame: number, vertical: boolean) => {
   const inT = ease.outExpo(clamp01((frame - ENTER) / 24));
   const outT = ease.inCubic(clamp01((frame - EXIT) / 13));
   const rotY = keys(frame, [
@@ -32,11 +34,11 @@ const phoneMotion = (frame: number) => {
     [EXIT, 9],
   ], ease.outCubic) - 26 * outT;
   return {
-    x: 950 * (1 - inT),
+    x: (vertical ? 800 : 950) * (1 - inT),
     rotY,
     rotX: 5 + 60 * outT,
     y: 300 * outT + drift(frame, 7, 120),
-    scale: (0.8 + 0.06 * inT) * (1 - 0.18 * outT),
+    scale: (vertical ? 1.04 + 0.08 * inT : 0.8 + 0.06 * inT) * (1 - 0.18 * outT),
     opacity: 1 - clamp01((frame - EXIT - 9) / 5),
   };
 };
@@ -44,8 +46,9 @@ const phoneMotion = (frame: number) => {
 // "Postezi task-ul pe handly.ro — durează câteva secunde."
 export const S4Post: React.FC = () => {
   const frame = useCurrentFrame();
-  const m = phoneMotion(frame);
-  const mp = phoneMotion(frame - 1);
+  const L = useLayout();
+  const m = phoneMotion(frame, L.vertical);
+  const mp = phoneMotion(frame - 1, L.vertical);
 
   const app = {
     typed: clamp01((frame - TYPE_START) / 16) * TASK_TEXT.length,
@@ -61,12 +64,12 @@ export const S4Post: React.FC = () => {
   // camera: push in on the input while the task is typed, ease back out for the post + confirmation
   const zoom = keys(frame, [
     [TYPE_START - 4, 1],
-    [TYPE_START + 6, 1.55],
-    [CATEGORY - 3, 1.55],
+    [TYPE_START + 6, L.vertical ? 1.4 : 1.55],
+    [CATEGORY - 3, L.vertical ? 1.4 : 1.55],
     [CATEGORY + 9, 1],
   ], ease.inOutCubic);
-  const zoomK = (zoom - 1) / 0.55;
-  const camY = 150 * zoomK;
+  const zoomK = (zoom - 1) / (L.vertical ? 0.4 : 0.55);
+  const camY = (L.vertical ? 190 : 150) * zoomK;
 
   // smear while it spins in / drops out
   const blurX = Math.min(28, Math.abs(m.x - mp.x) * 0.3 + Math.abs(m.rotY - mp.rotY) * 1.3);
@@ -92,6 +95,7 @@ export const S4Post: React.FC = () => {
 
           {CHIPS.map((c, i) => {
             const p = pop(frame, c.at, 12, 160);
+            const [cx, cy] = L.vertical ? c.vpos : c.pos;
             if (p <= 0.001) return null;
             const fly = ease.inCubic(clamp01((frame - (EXIT - 2 + i * 2)) / 10));
             const flyPrev = ease.inCubic(clamp01((frame - 1 - (EXIT - 2 + i * 2)) / 10));
@@ -103,11 +107,11 @@ export const S4Post: React.FC = () => {
                   position: "absolute",
                   left: 0,
                   top: 0,
-                  transform: `translate3d(${c.x * (0.55 + 0.45 * p)}px, ${c.y * (0.55 + 0.45 * p) - 1000 * fly + drift(frame, 6, 90 + i * 17, i)}px, ${c.z}px) translate(-50%, -50%) scale(${p * 1.08}) rotateY(${-m.rotY * 0.6}deg)`,
+                  transform: `translate3d(${cx * (0.55 + 0.45 * p)}px, ${cy * (0.55 + 0.45 * p) - 1000 * fly + drift(frame, 6, 90 + i * 17, i)}px, ${c.z}px) translate(-50%, -50%) scale(${p * 1.08}) rotateY(${-m.rotY * 0.6}deg)`,
                   opacity: clamp01(p * 3),
                 }}
               >
-                <Pill emoji={c.emoji} label={c.label} size={c.size ?? 30} />
+                <Pill icon={<IconTile name={c.icon} color={c.tile} size={(c.size ?? 30) * 1.45} />} label={c.label} size={c.size ?? 30} />
               </DirBlur>
             );
           })}

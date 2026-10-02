@@ -1,9 +1,11 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
+import { IconTile } from "../components/Icons";
 import { Pill } from "../components/Pill";
+import { useLayout } from "../layout";
 import { DirBlur } from "../lib/Blur";
 import { clamp01, ease, keys, lerp } from "../lib/anim";
-import { C, FONT } from "../theme";
+import { BOLD, C, FONT } from "../theme";
 import { f, VO } from "../timing";
 
 const CELL_W = 250;
@@ -53,7 +55,7 @@ const Numbers: React.FC<{ color?: string; muted?: string }> = ({ color = C.ink, 
             alignItems: "center",
             justifyContent: "center",
             fontFamily: FONT,
-            fontWeight: 700,
+            fontWeight: BOLD,
             fontSize: 112,
             letterSpacing: "-0.04em",
             color: day > 31 ? muted : color,
@@ -69,6 +71,7 @@ const Numbers: React.FC<{ color?: string; muted?: string }> = ({ color = C.ink, 
 // "pe care o tot amâni?" — the chore keeps sliding to tomorrow on a tilted calendar
 export const S2Calendar: React.FC = () => {
   const frame = useCurrentFrame();
+  const L = useLayout();
   const enter = 98;
   const exitStart = 147;
 
@@ -79,22 +82,24 @@ export const S2Calendar: React.FC = () => {
   // camera trails the marker a few frames behind so each hop reads as a jolt
   const cam = markerPos(frame - 3);
   const chip = markerPos(frame - 1.5);
-  const enterX = 1700 * (1 - ease.outExpo(clamp01((frame - enter) / 12)));
-  const enterXPrev = 1700 * (1 - ease.outExpo(clamp01((frame - 1 - enter) / 12)));
-  const exitY = -1500 * ease.inExpo(clamp01((frame - exitStart) / 9));
-  const exitYPrev = -1500 * ease.inExpo(clamp01((frame - 1 - exitStart) / 9));
+  const enterX = L.W * 0.9 * (1 - ease.outExpo(clamp01((frame - enter) / 12)));
+  const enterXPrev = L.W * 0.9 * (1 - ease.outExpo(clamp01((frame - 1 - enter) / 12)));
+  // exit: the camera dives through the calendar — it swells, softens and dissolves (no streaks)
+  const out = ease.inCubic(clamp01((frame - exitStart) / 9));
+  const zoomOut = 1 + 0.75 * out;
   const scale = keys(frame, [
     [enter, 1.5],
     [HOPS[5] + 6, 1.32],
     [exitStart, 1.18],
-  ], ease.inOutCubic);
+  ], ease.inOutCubic) * (L.vertical ? 0.78 : 1) * zoomOut;
   const rotY = keys(frame, [
     [enter, -26],
     [exitStart, -12],
   ], ease.outCubic);
 
   const gridW = COLS * CELL_W;
-  const tx = -cam.x + gridW / 2;
+  // reel: aim a little right of the marker so the chore tag riding on it stays in frame
+  const tx = -cam.x + gridW / 2 - (L.vertical ? 190 : 0);
   const ty = -cam.y + CELL_H * 0.2;
 
   const R = 92;
@@ -104,8 +109,13 @@ export const S2Calendar: React.FC = () => {
     <AbsoluteFill>
       <DirBlur
         x={Math.abs(enterX - enterXPrev) * 0.35}
-        y={Math.abs(exitY - exitYPrev) * 0.4}
-        style={{ position: "absolute", inset: 0, transform: `translate(${enterX}px, ${exitY}px)` }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          transform: `translateX(${enterX}px)`,
+          opacity: 1 - out,
+          filter: out > 0.01 ? `blur(${26 * out}px)` : undefined,
+        }}
       >
         <AbsoluteFill style={{ perspective: 2200, overflow: "hidden" }}>
           <div
@@ -132,7 +142,7 @@ export const S2Calendar: React.FC = () => {
                     width: CELL_W,
                     textAlign: "center",
                     fontFamily: FONT,
-                    fontWeight: 600,
+                    fontWeight: BOLD,
                     fontSize: 44,
                     color: "#a5aca8",
                   }}
@@ -163,7 +173,7 @@ export const S2Calendar: React.FC = () => {
                   opacity: clamp01((frame - enter - 6) / 6),
                 }}
               >
-                <Pill emoji="🔧" label="Repară robinetul" size={40} />
+                <Pill icon={<IconTile name="wrench" color="blue" size={58} />} label="Repară robinetul" size={40} />
               </div>
             </div>
           </div>

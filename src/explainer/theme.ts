@@ -25,4 +25,6 @@ export const C = {
   red: "#ff3b30",
 };
 
-export const FONT = `Inter, "Noto Color Emoji", sans-serif`;
+export const FONT = "Inter, sans-serif";
+/** Inter Bold (Inter_700Bold) is the only weight used, everywhere. */
+export const BOLD = 700;

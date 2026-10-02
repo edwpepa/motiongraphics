@@ -1,9 +1,12 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
+import { Person } from "../components/Avatar";
+import { Glyph, GlyphName } from "../components/Icons";
 import { CARD_H, CARD_W, TaskerCard } from "../components/TaskerCard";
 import { DirBlur } from "../lib/Blur";
 import { clamp01, drift, ease, keys, pop } from "../lib/anim";
-import { C, FONT } from "../theme";
+import { Layout, useLayout } from "../layout";
+import { BOLD, C, FONT } from "../theme";
 import { f, VO } from "../timing";
 
 const IN = 476;
@@ -12,30 +15,33 @@ const SPLIT = f(VO.laPretul) - 3;
 const PRICE = f(VO.stabilit);
 const DEAL = f(VO.voiDoi);
 
-const TASKERS = [
-  { emoji: "👨‍🔧", name: "Andrei P.", role: "Instalator", rating: "4,9", jobs: "42 task-uri", km: "1,2 km" },
-  { emoji: "👷", name: "Mihai D.", role: "Instalator", rating: "5,0", jobs: "67 task-uri", km: "0,8 km" },
-  { emoji: "🧑‍🔧", name: "Radu C.", role: "Meșter", rating: "4,8", jobs: "31 task-uri", km: "2,1 km" },
+const TASKERS: { person: Person; name: string; role: string; roleIcon: GlyphName; rating: string; jobs: string; km: string }[] = [
+  { person: "andrei", name: "Andrei P.", role: "Instalator", roleIcon: "wrench", rating: "4,9", jobs: "42 task-uri", km: "1,2 km" },
+  { person: "mihai", name: "Mihai D.", role: "Instalator", roleIcon: "wrench", rating: "5,0", jobs: "67 task-uri", km: "0,8 km" },
+  { person: "radu", name: "Radu C.", role: "Meșter", roleIcon: "hammer", rating: "4,8", jobs: "31 task-uri", km: "2,1 km" },
 ];
 const CHOSEN = 1;
-const SLOT = 470;
 
 type Pose = { x: number; y: number; rotY: number; scale: number; opacity: number };
 
-const cardPose = (i: number, frame: number): Pose => {
+// 16:9: a row of three that splits left/right. Reel: a carousel whose chosen card rises while "Tu" comes up from below.
+const cardPose = (i: number, frame: number, vertical: boolean): Pose => {
+  const slot = vertical ? 430 : 470;
   const start = IN + i * 5;
   const t = ease.outExpo(clamp01((frame - start) / 20));
-  let x = (i - 1) * SLOT + 1500 * (1 - t);
+  let x = (i - 1) * slot + 1500 * (1 - t);
+  let y = vertical ? -40 : 0;
   let rotY = -38 * (1 - t) - 5;
-  let scale = 1;
+  let scale = vertical ? 0.95 : 1;
   let opacity = clamp01((frame - start) / 6);
 
   const sel = ease.outCubic(clamp01((frame - SELECT) / 10));
   const split = ease.inOutCubic(clamp01((frame - SPLIT) / 16));
   if (i === CHOSEN) {
     scale *= 1 + 0.06 * sel - 0.06 * split;
-    x += -400 * split;
-    rotY += 5 * split + 8 * split;
+    if (vertical) y += -360 * split;
+    else x += -400 * split;
+    rotY += 13 * split;
   } else {
     scale *= 1 - 0.06 * sel;
     opacity *= 1 - 0.6 * sel;
@@ -43,21 +49,25 @@ const cardPose = (i: number, frame: number): Pose => {
     x += (i < CHOSEN ? -1 : 1) * 1700 * away;
     opacity *= 1 - away;
   }
-  return { x, y: drift(frame, 6, 95 + i * 13, i), rotY, scale, opacity };
+  return { x, y: y + drift(frame, 6, 95 + i * 13, i), rotY, scale, opacity };
 };
 
-const youPose = (frame: number): Pose => {
+const youPose = (frame: number, vertical: boolean): Pose => {
   const t = ease.outExpo(clamp01((frame - (SPLIT + 4)) / 18));
-  return { x: 400 + 1300 * (1 - t), y: drift(frame, 6, 110, 2), rotY: -8 - 30 * (1 - t), scale: 0.94, opacity: clamp01((frame - SPLIT - 4) / 6) };
+  const opacity = clamp01((frame - SPLIT - 4) / 6);
+  return vertical
+    ? { x: 0, y: 400 + 1100 * (1 - t) + drift(frame, 6, 110, 2), rotY: -8, scale: 0.94, opacity }
+    : { x: 400 + 1300 * (1 - t), y: drift(frame, 6, 110, 2), rotY: -8 - 30 * (1 - t), scale: 0.94, opacity };
 };
 
-const Placed: React.FC<{ pose: Pose; prev: Pose; children: React.ReactNode }> = ({ pose, prev, children }) => (
+const Placed: React.FC<{ L: Layout; pose: Pose; prev: Pose; children: React.ReactNode }> = ({ L, pose, prev, children }) => (
   <DirBlur
     x={Math.min(40, Math.abs(pose.x - prev.x) * 0.3)}
+    y={Math.min(40, Math.abs(pose.y - prev.y) * 0.3)}
     style={{
       position: "absolute",
-      left: 960 - CARD_W / 2,
-      top: 540 - CARD_H / 2 + 30,
+      left: L.cx - CARD_W / 2,
+      top: L.cy - CARD_H / 2 + 30,
       opacity: pose.opacity,
       transform: `translate(${pose.x}px, ${pose.y}px) rotateY(${pose.rotY}deg) scale(${pose.scale})`,
     }}
@@ -69,6 +79,8 @@ const Placed: React.FC<{ pose: Pose; prev: Pose; children: React.ReactNode }> = 
 // "tu alegi cu cine lucrezi, la prețul stabilit chiar de voi doi."
 export const S6Choose: React.FC = () => {
   const frame = useCurrentFrame();
+  const L = useLayout();
+  const V = L.vertical;
   const sel = ease.outCubic(clamp01((frame - SELECT) / 10));
   const deal = ease.outCubic(clamp01((frame - DEAL) / 8));
   const badge = pop(frame, SELECT + 2, 11, 180);
@@ -83,6 +95,12 @@ export const S6Choose: React.FC = () => {
     [SPLIT, 0],
   ], ease.outCubic);
 
+  // the agreement sits in the gap between the two cards
+  const pillX = L.cx;
+  const pillY = L.cy + 30;
+  const handPos = V ? { x: pillX - 185, y: pillY } : { x: pillX, y: pillY - 112 };
+  const captionTop = V ? L.cy + 700 : L.cy + 110;
+
   return (
     <AbsoluteFill style={{ perspective: 2000, transform: `translateX(${camShift}px)` }}>
       {/* heading like a tiny UI label */}
@@ -91,11 +109,11 @@ export const S6Choose: React.FC = () => {
           position: "absolute",
           left: 0,
           right: 0,
-          top: 118,
+          top: V ? 330 : 118,
           textAlign: "center",
           fontFamily: FONT,
-          fontSize: 30,
-          fontWeight: 600,
+          fontSize: V ? 40 : 30,
+          fontWeight: BOLD,
           color: C.nightInkSoft,
           opacity: clamp01((frame - IN - 8) / 8) * (1 - clamp01((frame - SPLIT) / 8)),
         }}
@@ -104,10 +122,10 @@ export const S6Choose: React.FC = () => {
       </div>
 
       {TASKERS.map((t, i) => {
-        const pose = cardPose(i, frame);
+        const pose = cardPose(i, frame, V);
         if (pose.opacity <= 0.01) return null;
         return (
-          <Placed key={t.name} pose={pose} prev={cardPose(i, frame - 1)}>
+          <Placed key={t.name} L={L} pose={pose} prev={cardPose(i, frame - 1, V)}>
             <TaskerCard {...t} selected={i === CHOSEN ? Math.max(sel, deal) : 0} />
             {i === CHOSEN && (
               <div
@@ -115,18 +133,22 @@ export const S6Choose: React.FC = () => {
                   position: "absolute",
                   right: -18,
                   top: -22,
-                  padding: "10px 18px",
+                  padding: "10px 18px 10px 14px",
                   borderRadius: 999,
                   background: C.green,
                   color: "#fff",
                   fontFamily: FONT,
-                  fontWeight: 700,
+                  fontWeight: BOLD,
                   fontSize: 24,
                   boxShadow: "0 10px 30px rgba(0,191,99,0.45)",
                   transform: `scale(${badge})`,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
                 }}
               >
-                ✓ Ales
+                <Glyph name="check" size={24} color="#fff" weight={3} />
+                Ales
               </div>
             )}
           </Placed>
@@ -134,27 +156,20 @@ export const S6Choose: React.FC = () => {
       })}
 
       {frame >= SPLIT + 4 && (
-        <Placed pose={youPose(frame)} prev={youPose(frame - 1)}>
-          <TaskerCard
-            emoji="🙋"
-            name="Tu"
-            role="💧 Robinet care curge"
-            note="Postat acum 1 min"
-            selected={deal}
-            avatarBg="radial-gradient(circle at 35% 30%, #2f4a3d 0%, #18261f 70%)"
-          />
+        <Placed L={L} pose={youPose(frame, V)} prev={youPose(frame - 1, V)}>
+          <TaskerCard person="tu" name="Tu" role="Robinet care curge" roleIcon="droplet" note="Postat acum 1 min" selected={deal} />
         </Placed>
       )}
 
       {/* the agreement between the two of you */}
       {frame >= PRICE - 8 && (
         <>
-          <svg width={1920} height={1080} style={{ position: "absolute", inset: 0 }}>
+          <svg width={L.W} height={L.H} style={{ position: "absolute", inset: 0 }}>
             <line
-              x1={960 - 175}
-              y1={570}
-              x2={960 - 175 + 350 * line}
-              y2={570}
+              x1={V ? pillX : pillX - 175}
+              y1={V ? pillY - 170 : pillY}
+              x2={V ? pillX : pillX - 175 + 350 * line}
+              y2={V ? pillY - 170 + 340 * line : pillY}
               stroke={deal > 0 ? C.green : "rgba(255,255,255,0.35)"}
               strokeWidth={3}
               strokeDasharray="10 12"
@@ -164,15 +179,15 @@ export const S6Choose: React.FC = () => {
           <div
             style={{
               position: "absolute",
-              left: 960,
-              top: 570,
+              left: pillX,
+              top: pillY,
               transform: `translate(-50%, -50%) scale(${price})`,
               padding: "16px 30px",
               borderRadius: 999,
               background: C.green,
               color: "#fff",
               fontFamily: FONT,
-              fontWeight: 800,
+              fontWeight: BOLD,
               fontSize: 44,
               letterSpacing: "-0.02em",
               boxShadow: `0 16px 40px rgba(0,191,99,${0.35 + 0.3 * deal})`,
@@ -184,24 +199,31 @@ export const S6Choose: React.FC = () => {
           <div
             style={{
               position: "absolute",
-              left: 960,
-              top: 570 - 112,
+              left: handPos.x,
+              top: handPos.y,
+              width: 88,
+              height: 88,
+              borderRadius: "50%",
+              background: "linear-gradient(180deg, #2fe08a 0%, #00b35c 100%)",
+              boxShadow: "inset 0 2px 0 rgba(255,255,255,0.3), 0 12px 30px rgba(0,191,99,0.45)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               transform: `translate(-50%, -50%) scale(${hand}) rotate(${(1 - hand) * -25}deg)`,
-              fontSize: 64,
             }}
           >
-            🤝
+            <Glyph name="handshake" size={50} color="#ffffff" weight={2.1} />
           </div>
           <div
             style={{
               position: "absolute",
               left: 0,
               right: 0,
-              top: 650,
+              top: captionTop,
               textAlign: "center",
               fontFamily: FONT,
-              fontWeight: 600,
-              fontSize: 30,
+              fontWeight: BOLD,
+              fontSize: V ? 38 : 30,
               color: C.nightInkSoft,
               opacity: caption,
               transform: `translateY(${(1 - caption) * 12}px)`,

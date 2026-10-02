@@ -82,13 +82,48 @@ const PageFace: React.FC<{ page: Page; w: number; h: number; frame: number; live
   );
 };
 
-const LeftFace: React.FC<{ w: number; h: number }> = ({ w, h }) => (
-  <div style={{ position: "absolute", inset: 0, borderRadius: "18px 4px 4px 18px", background: "linear-gradient(270deg, #e3e7e5 0%, #f7f9f8 8%, #ffffff 100%)", overflow: "hidden" }}>
-    {Array.from({ length: 9 }, (_, i) => (
-      <div key={i} style={{ position: "absolute", left: w * 0.11, right: w * 0.11, top: h * 0.42 + i * h * 0.068, height: 2, background: "rgba(16,40,28,0.05)" }} />
-    ))}
-  </div>
-);
+const ODD_JOBS = [
+  ["Bec hol", "Raft baie", "Ușă scârțâie"],
+  ["Priză bucătărie", "Silicon cadă", "Jaluzele"],
+  ["Calorifer", "Mâner geam", "Gresie crăpată"],
+];
+
+/** the left-hand page: a mini month with the slipped days marked, a few other odd jobs, a sticky note */
+const LeftFace: React.FC<{ w: number; h: number; idx?: number }> = ({ w, h, idx = 0 }) => {
+  const pad = w * 0.11;
+  const cell = (w - pad * 2) / 7;
+  const jobs = ODD_JOBS[idx % ODD_JOBS.length];
+  const marked = new Set([3 + (idx % 4), 9 + (idx % 3), 10 + (idx % 3), 16 + (idx % 5), 23, 24 + (idx % 2)]);
+  return (
+    <div style={{ position: "absolute", inset: 0, borderRadius: "18px 4px 4px 18px", background: "linear-gradient(270deg, #e3e7e5 0%, #f7f9f8 8%, #ffffff 100%)", overflow: "hidden", fontFamily: FONT, fontWeight: BOLD }}>
+      <div style={{ position: "absolute", left: pad, top: h * 0.07, fontSize: w * 0.04, letterSpacing: "0.12em", color: "rgba(12,21,17,0.4)" }}>{["OCTOMBRIE", "NOIEMBRIE", "DECEMBRIE", "IANUARIE"][idx % 4]}</div>
+      {/* mini month */}
+      {Array.from({ length: 31 }, (_, d) => {
+        const col = (d + 2) % 7;
+        const row = Math.floor((d + 2) / 7);
+        const on = marked.has(d + 1);
+        return (
+          <div key={d} style={{ position: "absolute", left: pad + col * cell, top: h * 0.13 + row * cell * 0.82, width: cell, height: cell * 0.82, display: "flex", alignItems: "center", justifyContent: "center", fontSize: w * 0.034, color: on ? "#ffffff" : "rgba(12,21,17,0.45)" }}>
+            {on && <div style={{ position: "absolute", width: cell * 0.62, height: cell * 0.62, borderRadius: "50%", background: "rgba(0,163,82,0.85)" }} />}
+            <span style={{ position: "relative" }}>{d + 1}</span>
+          </div>
+        );
+      })}
+      {/* other odd jobs, also waiting */}
+      <div style={{ position: "absolute", left: pad, top: h * 0.56, fontSize: w * 0.034, letterSpacing: "0.1em", color: "rgba(12,21,17,0.35)" }}>ȘI ALTE TREBURI</div>
+      {jobs.map((j, i) => (
+        <div key={j} style={{ position: "absolute", left: pad, top: h * 0.61 + i * h * 0.068, display: "flex", alignItems: "center", gap: w * 0.03, fontSize: w * 0.045, color: "rgba(12,21,17,0.7)" }}>
+          <div style={{ width: w * 0.045, height: w * 0.045, borderRadius: 6, border: "3px solid rgba(12,21,17,0.22)", boxSizing: "border-box" }} />
+          {j}
+        </div>
+      ))}
+      {/* sticky note */}
+      <div style={{ position: "absolute", right: pad * 0.7, bottom: h * 0.06, width: w * 0.36, height: w * 0.3, background: "linear-gradient(180deg, #dff7e9 0%, #cdf0dc 100%)", boxShadow: "0 10px 20px rgba(16,40,28,0.12)", transform: `rotate(${idx % 2 ? 4 : -3}deg)`, padding: w * 0.035, boxSizing: "border-box", fontSize: w * 0.042, color: "#0b6b3d", lineHeight: 1.25 }}>
+        Sună un meșter?
+      </div>
+    </div>
+  );
+};
 
 // ---------------------------------------------------------------- set + small UI bits
 /** dark set: near-black, one soft green light from the top, a faint grid that drifts with the camera */
@@ -438,7 +473,7 @@ export const Problem: React.FC = () => {
                       <div key={k} style={{ position: "absolute", left: -PGW - 6 + k * 2, top: -PGH / 2 - 6 + k * 2, width: PGW * 2 + 12 - k * 4, height: PGH + 12 - k * 2, borderRadius: 18, background: k % 2 ? "#dfe4e1" : "#eef1ef" }} />
                     ))}
                     <div style={{ position: "absolute", left: -PGW, top: -PGH / 2, width: PGW, height: PGH }}>
-                      <LeftFace w={PGW} h={PGH} />
+                      <LeftFace w={PGW} h={PGH} idx={flipsStarted} />
                     </div>
                     <div style={{ position: "absolute", left: 0, top: -PGH / 2, width: PGW, height: PGH }}>
                       <PageFace page={PAGES[current]} w={PGW} h={PGH} frame={frame} live={PAGES[current].chore !== undefined && current <= CHORES.length} />
@@ -458,7 +493,7 @@ export const Problem: React.FC = () => {
                             <div style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg, rgba(10,40,25,${0.18 * p}) 0%, rgba(255,255,255,0) 100%)` }} />
                           </div>
                           <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-                            <LeftFace w={PGW} h={PGH} />
+                            <LeftFace w={PGW} h={PGH} idx={j + 1} />
                             <div style={{ position: "absolute", inset: 0, background: `linear-gradient(270deg, rgba(10,40,25,${0.18 * (1 - p)}) 0%, rgba(255,255,255,0) 100%)` }} />
                           </div>
                         </div>

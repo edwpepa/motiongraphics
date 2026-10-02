@@ -23,7 +23,7 @@ const TASKERS: { person: Person; name: string; role: string; roleIcon: GlyphName
 ];
 const CHOSEN = 1;
 
-type Pose = { x: number; y: number; rotY: number; scale: number; opacity: number };
+type Pose = { x: number; y: number; rotY: number; scale: number; opacity: number; blur?: number };
 
 // 16:9: a row of three that splits left/right. Reel: a carousel whose chosen card rises while "Tu" comes up from below.
 const cardPose = (i: number, frame: number, vertical: boolean): Pose => {
@@ -44,16 +44,17 @@ const cardPose = (i: number, frame: number, vertical: boolean): Pose => {
     else x += -400 * split;
     rotY += 13 * split;
   } else {
-    // the cards not chosen swing round on their edge and fly off — quick, smooth
+    // the cards not chosen turn away and sink back into the dark, sliding off to their side
     const side = i < CHOSEN ? -1 : 1;
-    const away = ease.inOutCubic(clamp01((frame - (SELECT + 3)) / 11));
-    scale *= (1 - 0.04 * sel) * (1 - 0.25 * away);
-    x += side * 1400 * ease.inCubic(away);
-    y += -70 * away;
-    rotY += side * 95 * away;
-    opacity *= 1 - ease.inCubic(clamp01((away - 0.5) / 0.5));
+    const away = ease.outCubic(clamp01((frame - (SELECT + 2)) / 14));
+    scale *= (1 - 0.04 * sel) * (1 - 0.45 * away);
+    x += side * 520 * away;
+    y += 40 * away;
+    rotY += side * 55 * away;
+    opacity *= 1 - ease.inOutCubic(away);
   }
-  return { x, y: y + drift(frame, 6, 95 + i * 13, i), rotY, scale, opacity };
+  const blur = i === CHOSEN ? 0 : 14 * ease.outCubic(clamp01((frame - (SELECT + 2)) / 14));
+  return { x, y: y + drift(frame, 6, 95 + i * 13, i), rotY, scale, opacity, blur };
 };
 
 const youPose = (frame: number, vertical: boolean): Pose => {
@@ -73,6 +74,7 @@ const Placed: React.FC<{ L: Layout; pose: Pose; prev: Pose; children: React.Reac
       left: L.cx - CARD_W / 2,
       top: L.cy - CARD_H / 2 + 30,
       opacity: pose.opacity,
+      filter: pose.blur ? `blur(${pose.blur}px)` : undefined,
       transform: `translate(${pose.x}px, ${pose.y}px) rotateY(${pose.rotY}deg) scale(${pose.scale})`,
     }}
   >

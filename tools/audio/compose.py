@@ -28,7 +28,7 @@ FPS = 30
 DUR = 1000 / FPS
 N = int(DUR * SR)
 VO_OFFSET = 0.4
-PRE = 45 / 30  # cold open (seconds) — matches PRE_ROLL prepended to the final mix (matches the video's PRE_ROLL)
+PRE = 10 / 30  # cold open (seconds) — matches PRE_ROLL prepended to the final mix (matches the video's PRE_ROLL)
 
 rng = np.random.default_rng(7)
 
@@ -686,12 +686,7 @@ def main():
         pre_n = int(PRE * SR)
         pre = np.zeros((2, pre_n + int(1.2 * SR)))
         place(pre, pad_chord([57, 64, 69, 71, 76], PRE + 1.0, attack=0.5, release=0.9) * 0.6, 0.0, 1.0)
-        # a point of light drifts in and traces a heart: airy shimmer, then a soft bell as it closes
-        place(pre, reverse_swell(1.0) * 0.5, 0.0, 0.35)
-        for k, m in enumerate((88, 91, 95, 100)):
-            place(pre, stereo(bell(m, 1.8, ratio=3.5, index=1.2, tau=0.8), (-0.4, 0.4, -0.2, 0.2)[k]), (10 + k * 5) / FPS, 0.10)
-        place(pre, reverb(stereo(bell(76, 2.4, ratio=2.0, index=1.0, tau=1.2))) * 0.6, 31 / FPS, 0.22)
-        place(pre, whoosh(0.7, 300, 4200, 0.6, (-0.3, 0.3), air=0.7), PRE - 0.45, 0.25)
+        place(pre, whoosh(0.7, 300, 4200, 0.6, (-0.3, 0.3), air=0.7), 0.0, 0.25)
         pre *= 10 ** ((-26.0 - lufs(pre)) / 20)
         full = np.zeros((2, pre_n + mix.shape[1]))
         full[:, pre_n:] += mix

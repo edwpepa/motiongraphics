@@ -1,7 +1,6 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { textWidth } from "../components/AppleText";
-import { LiquidDrop } from "../components/LightWorld";
 import { INK, KineticText, SHADOW } from "../components/KineticText";
 import { ACCENT_LIGHT, PhraseSeq } from "../components/Phrase";
 import { DirBlur } from "../lib/Blur";
@@ -436,12 +435,6 @@ export const Problem: React.FC = () => {
       </AbsoluteFill>
       </DirBlur>
 
-      {/* the drop: a minimal liquid bead that wobbles, gathers itself in, then splashes (see LiquidSplash) */}
-      {frame >= FLY && frame < DROP - 7 && (
-        <div style={{ position: "absolute", left: L.cx, top: L.cy, transform: `scale(${pop(frame, FLY, 11, 150) * (1 - 0.5 * ease.inCubic(clamp01((frame - (DROP - 15)) / 8)))})` }}>
-          <LiquidDrop r={OS / 2} frame={frame} />
-        </div>
-      )}
     </AbsoluteFill>
   );
 };

@@ -12,7 +12,7 @@ import { LOGO_START } from "./scenes/S8Words";
 import { S8Words } from "./scenes/S8Words";
 import { S9Logo } from "./scenes/S9Logo";
 import { BOLD, FONT } from "./theme";
-import { DURATION_IN_FRAMES, MUSIC_LIFT_FRAME, PRE_ROLL } from "./timing";
+import { DURATION_IN_FRAMES, f, MUSIC_LIFT_FRAME, PRE_ROLL, VO } from "./timing";
 import { useLayout } from "./layout";
 
 // Everything authored against the voiceover lives in "local" frames; the cold open shifts it by PRE_ROLL.
@@ -24,7 +24,7 @@ const Window: React.FC<{ from: number; to: number; children: React.ReactNode }> 
   return frame >= from && frame < to ? <>{children}</> : null;
 };
 
-const LOGO_POP = MUSIC_LIFT_FRAME - 8; // the drop turns into the handly logo
+const LOGO_POP = f(VO.choresEnd) + 6; // the handly logo appears on its own once the planner has gone
 const EXPAND = 16; // frames for the logo window to swallow the frame
 
 /** size (px) of the logo window `t` frames into the burst */
@@ -40,7 +40,7 @@ const LightWorld: React.FC = () => {
   const local = frame - PRE_ROLL;
   const t = local - BURST;
   if (t >= EXPAND) return null;
-  const S = t >= 0 ? logoWindow(t, L.vertical ? 260 : 230) : 0;
+  const S = t >= 0 ? logoWindow(t, (L.vertical ? 260 : 230) * 0.82) : 0;
   const logo = staticFile("images/logo.webp");
   const mask: React.CSSProperties =
     S > 0
@@ -75,11 +75,14 @@ const LogoPop: React.FC = () => {
   const local = frame - PRE_ROLL;
   if (local < LOGO_POP || local >= BURST) return null;
   const s = L.vertical ? 260 : 230;
-  const p = ease.outBack(clamp01((local - LOGO_POP) / 5));
+  const p = ease.outBack(clamp01((local - LOGO_POP) / 12));
+  // a gentle breath, then it gathers itself in right before it opens up
+  const breathe = 1 + 0.03 * Math.sin((local - LOGO_POP) / 4);
+  const gather = 1 - 0.18 * ease.inCubic(clamp01((local - (BURST - 7)) / 7));
   return (
     <Img
       src={staticFile("images/logo.webp")}
-      style={{ position: "absolute", left: L.cx - s / 2, top: L.cy - s / 2, width: s, height: s, transform: `scale(${0.4 + 0.6 * p})`, opacity: clamp01((local - LOGO_POP) / 2), filter: "drop-shadow(0 10px 30px rgba(0,163,82,0.35))" }}
+      style={{ position: "absolute", left: L.cx - s / 2, top: L.cy - s / 2, width: s, height: s, transform: `scale(${(0.4 + 0.6 * p) * breathe * gather})`, opacity: clamp01((local - LOGO_POP) / 4), filter: "drop-shadow(0 10px 30px rgba(0,163,82,0.35))" }}
     />
   );
 };

@@ -44,11 +44,14 @@ const cardPose = (i: number, frame: number, vertical: boolean): Pose => {
     else x += -400 * split;
     rotY += 13 * split;
   } else {
-    scale *= 1 - 0.06 * sel;
-    opacity *= 1 - 0.6 * sel;
-    const away = ease.inCubic(clamp01((frame - SPLIT) / 12));
-    x += (i < CHOSEN ? -1 : 1) * 1700 * away;
-    opacity *= 1 - away;
+    // the cards not chosen swing round on their edge and fly off — quick, smooth
+    const side = i < CHOSEN ? -1 : 1;
+    const away = ease.inOutCubic(clamp01((frame - (SELECT + 3)) / 11));
+    scale *= (1 - 0.04 * sel) * (1 - 0.25 * away);
+    x += side * 1400 * ease.inCubic(away);
+    y += -70 * away;
+    rotY += side * 95 * away;
+    opacity *= 1 - ease.inCubic(clamp01((away - 0.5) / 0.5));
   }
   return { x, y: y + drift(frame, 6, 95 + i * 13, i), rotY, scale, opacity };
 };

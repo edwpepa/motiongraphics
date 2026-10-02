@@ -161,35 +161,63 @@ const DateRing: React.FC<{ frame: number; R: number; inA: number; outA: number }
   const START = 14;
   let day = START;
   TAPS.forEach((t) => (day += ease.outBack(clamp01((frame - t) / 6), 1.4)));
-  const rot = -(day - 1) * step - frame * 0.08;
+  const rot = -(day - 1) * step - frame * 0.06;
   const sel = Math.round(day);
+  const slipped = day - START; // days postponed so far
+  // the green arc trails back from the marker over every day that slipped by
+  const arcR = R * 0.84;
+  const arcA = (slipped * step * Math.PI) / 180;
+  const arc = `M 0 ${-arcR} A ${arcR} ${arcR} 0 ${arcA > Math.PI ? 1 : 0} 0 ${-Math.sin(arcA) * arcR} ${-Math.cos(arcA) * arcR}`;
   return (
     <div style={{ position: "absolute", left: 0, top: 0, opacity: inA * (1 - outA), transform: `scale(${(0.85 + 0.15 * inA) * (1 + 0.6 * outA)})`, filter: outA > 0 ? `blur(${outA * 14}px)` : undefined }}>
+      {/* dark glass disc */}
+      <div style={{ position: "absolute", left: -R * 0.78, top: -R * 0.78, width: R * 1.56, height: R * 1.56, borderRadius: "50%", background: "radial-gradient(circle at 50% 30%, rgba(40,58,50,0.55) 0%, rgba(10,16,13,0.85) 70%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 60px rgba(0,191,99,0.08), 0 40px 90px rgba(0,0,0,0.6)" }} />
       <svg width={R * 2.6} height={R * 2.6} viewBox={`${-R * 1.3} ${-R * 1.3} ${R * 2.6} ${R * 2.6}`} style={{ position: "absolute", left: -R * 1.3, top: -R * 1.3, overflow: "visible" }}>
-        <circle r={R * 0.84} fill="none" stroke="rgba(160,255,200,0.10)" strokeWidth={2} />
-        <circle r={R * 1.12} fill="none" stroke="rgba(160,255,200,0.06)" strokeWidth={2} />
+        <defs>
+          <linearGradient id="dr-arc" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#b9ffd6" />
+            <stop offset="100%" stopColor="#00c46a" />
+          </linearGradient>
+        </defs>
+        <circle r={R * 0.84} fill="none" stroke="rgba(160,255,200,0.08)" strokeWidth={10} />
+        {slipped > 0.02 && (
+          <>
+            <path d={arc} fill="none" stroke="#00e676" strokeWidth={22} strokeLinecap="round" opacity={0.35} style={{ filter: "blur(10px)" }} />
+            <path d={arc} fill="none" stroke="url(#dr-arc)" strokeWidth={10} strokeLinecap="round" />
+          </>
+        )}
         <g transform={`rotate(${rot})`}>
           {Array.from({ length: N * 4 }, (_, i) => {
             const a = (i / (N * 4)) * Math.PI * 2 - Math.PI / 2;
             const major = i % 4 === 0;
             const reveal = clamp01(inA * 1.6 - (i / (N * 4)) * 0.6);
-            return <line key={i} x1={Math.cos(a) * R * 0.88} y1={Math.sin(a) * R * 0.88} x2={Math.cos(a) * R * (major ? 0.94 : 0.91)} y2={Math.sin(a) * R * (major ? 0.94 : 0.91)} stroke={major ? "rgba(220,255,236,0.5)" : "rgba(220,255,236,0.18)"} strokeWidth={major ? 3 : 2} strokeLinecap="round" opacity={reveal} />;
+            return <line key={i} x1={Math.cos(a) * R * 0.9} y1={Math.sin(a) * R * 0.9} x2={Math.cos(a) * R * (major ? 0.96 : 0.93)} y2={Math.sin(a) * R * (major ? 0.96 : 0.93)} stroke={major ? "rgba(220,255,236,0.5)" : "rgba(220,255,236,0.16)"} strokeWidth={major ? 3 : 2} strokeLinecap="round" opacity={reveal} />;
           })}
           {Array.from({ length: N }, (_, i) => {
             const n = i + 1;
             const a = (i / N) * Math.PI * 2 - Math.PI / 2;
+            // fisheye: numbers near the marker at the top are larger and brighter
+            const screenA = ((((i / N) * 360 + rot) % 360) + 540) % 360 - 180;
+            const near = Math.max(0, 1 - Math.abs(screenA) / 70);
             const on = n === sel;
             const reveal = clamp01(inA * 1.6 - (i / N) * 0.6);
+            const x = Math.cos(a) * R * 1.06;
+            const y = Math.sin(a) * R * 1.06;
             return (
-              <text key={n} x={Math.cos(a) * R * 1.03} y={Math.sin(a) * R * 1.03} transform={`rotate(${-rot} ${Math.cos(a) * R * 1.03} ${Math.sin(a) * R * 1.03})`} textAnchor="middle" dominantBaseline="central" fontFamily="Inter" fontWeight={700} fontSize={on ? R * 0.105 : R * 0.075} fill={on ? "#ffffff" : "rgba(220,255,236,0.35)"} opacity={reveal}>
+              <text key={n} x={x} y={y} transform={`rotate(${-rot} ${x} ${y})`} textAnchor="middle" dominantBaseline="central" fontFamily="Inter" fontWeight={700} fontSize={R * (0.065 + 0.045 * near)} fill={on ? "#ffffff" : `rgba(220,255,236,${0.22 + 0.4 * near})`} opacity={on ? 0 : reveal}>
                 {n}
               </text>
             );
           })}
         </g>
-        {/* the marker at the top the days keep slipping past */}
-        <circle cx={0} cy={-R * 1.03} r={R * 0.1} fill="none" stroke="#2be38a" strokeWidth={4} opacity={inA} />
-        <circle cx={0} cy={-R * 0.8} r={6} fill="#2be38a" opacity={inA} />
+        {/* marker: a pill at the top showing the day it's slipped to */}
+        <g opacity={inA}>
+          <rect x={-R * 0.17} y={-R * 1.06 - R * 0.085} width={R * 0.34} height={R * 0.17} rx={R * 0.085} fill="#00c46a" style={{ filter: "drop-shadow(0 8px 20px rgba(0,196,106,0.45))" }} />
+          <text x={0} y={-R * 1.06} textAnchor="middle" dominantBaseline="central" fontFamily="Inter" fontWeight={700} fontSize={R * 0.085} fill="#ffffff">
+            {sel} Oct
+          </text>
+          <circle cx={0} cy={-R * 0.84} r={9} fill="#ffffff" />
+        </g>
       </svg>
     </div>
   );
@@ -249,33 +277,14 @@ export const Problem: React.FC = () => {
   const frame = useCurrentFrame();
   const L = useLayout();
   const V = L.vertical;
-  const FS = V ? 116 : 140;
+  const SMALL = V ? 70 : 74;
+  const HUGE = V ? 230 : 400;
 
   // ---------------------------------------------------------------- opening lines: a camera that drops from line to line
-  const STEP = L.H * (V ? 0.42 : 0.62);
-  const lineStart = [hw(0), hw(3), hw(6), hw(7)];
-  const camYAt = (fr: number) => lineStart.slice(1).reduce((y, s) => y + STEP * ease.inOutQuart(clamp01((fr - (s - 7)) / 11)), 0);
-  const camY = camYAt(frame);
-  const vy = camY - camYAt(frame - 1);
-  const tilt = Math.max(-10, Math.min(10, vy * 0.12));
-  const pull = 1 + 0.9 * (1 - ease.outExpo(clamp01((frame - (hw(0) - 4)) / 22)));
   const SPAN = L.W * 1.1;
   const panAt = (fr: number) => ease.inOutCubic(clamp01((fr - PAN) / 16));
   const pan = panAt(frame);
   const panBlur = Math.min(40, Math.abs(pan - panAt(frame - 1)) * SPAN * 0.18);
-  const casaW = textWidth("prin casă", FS, -0.04);
-
-  const lineBox = (i: number, child: React.ReactNode) => {
-    const y = i * STEP - camY;
-    const away = clamp01(Math.abs(y) / STEP);
-    if (frame < lineStart[i] - 2 || away >= 0.99) return null;
-    return (
-      <AbsoluteFill key={i} style={{ justifyContent: "center", alignItems: "center", transform: `translateY(${y}px)`, opacity: 1 - ease.inCubic(away) * 0.95 }}>
-        <div style={{ position: "relative" }}>{child}</div>
-      </AbsoluteFill>
-    );
-  };
-
   // ---------------------------------------------------------------- reminder
   const NW = 900;
   const NH = 196;
@@ -351,38 +360,57 @@ export const Problem: React.FC = () => {
     <AbsoluteFill>
       <DarkSet shift={pan * SPAN * 0.3} />
       <DirBlur x={panBlur} style={{ position: "absolute", inset: 0 }}>
-        {/* opening lines */}
+        {/* opening lines — small, calm type that builds word by word; one word goes huge */}
         {pan < 1 && (
-          <AbsoluteFill style={{ transform: `translateX(${-pan * SPAN}px)`, perspective: 1400 }}>
-            <DirBlur y={Math.min(36, Math.abs(vy) * 0.3)} style={{ position: "absolute", inset: 0, transform: `rotateX(${tilt}deg) scale(${pull})`, filter: pull > 1.02 ? `blur(${(pull - 1) * 14}px)` : undefined }}>
-              {lineBox(
-                0,
-                <>
-                  <KineticText words={[0, 1, 2].map((i) => ({ text: VO.hook[i][0], at: hw(i) }))} fontSize={FS} breaks={V ? [1] : []} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.04em" }} />
-                </>,
-              )}
-              {lineBox(
-                1,
-                <>
-                  <KineticText words={[3, 4, 5].map((i) => ({ text: VO.hook[i][0], at: hw(i) }))} fontSize={FS} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.04em" }} />
-                </>,
-              )}
-              {lineBox(2, <Tired frame={frame} at={hw(6)} sag={hw(6) + 13} fs={FS * 1.12} />)}
-              {lineBox(
-                3,
-                <>
-                  <KineticText words={[{ text: "prin", at: hw(7) }, { text: "casă", at: hw(8) }]} fontSize={FS} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.04em" }} />
-                  <div style={{ position: "absolute", left: casaW + FS * 0.08, bottom: FS * 0.26, display: "flex", gap: FS * 0.1 }}>
-                    {[0, 1, 2].map((d) => {
-                      const local = frame - (hw(8) + 8) - d * 3;
-                      const a = ease.outCubic(clamp01(local / 6));
-                      const hop = local > 4 ? Math.max(0, Math.sin(((local - 4) / 15) * Math.PI * 2)) : 0;
-                      return <div key={d} style={{ width: FS * 0.12, height: FS * 0.12, borderRadius: "50%", background: "linear-gradient(180deg, #ffffff, #b4c4bb)", opacity: a, transform: `translateY(${-hop * FS * 0.2}px) scale(${0.3 + 0.7 * a})` }} />;
-                    })}
+          <AbsoluteFill style={{ transform: `translateX(${-pan * SPAN}px)` }}>
+            {/* "Te tot gândești la treaba aia" builds on one small line */}
+            {(() => {
+              const out = hw(6) - 4;
+              const t = clamp01((frame - out) / 6);
+              if (t >= 1) return null;
+              const k = 1 - ease.outExpo(clamp01((frame - (hw(0) - 1)) / 14));
+              return (
+                <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", transform: `scale(${(1 + 0.06 * k) * (1 + 0.5 * ease.inCubic(t))})`, opacity: 1 - ease.inCubic(t), filter: t > 0 ? `blur(${t * 18}px)` : undefined }}>
+                  <KineticText words={[0, 1, 2, 3, 4, 5].map((i) => ({ text: VO.hook[i][0], at: hw(i), color: i === 2 ? ACCENT : undefined }))} fontSize={SMALL} breaks={V ? [2] : []} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.035em" }} />
+                </AbsoluteFill>
+              );
+            })()}
+            {/* "obositoare" punches in huge, cropped by the frame, then sags */}
+            {(() => {
+              const at = hw(6);
+              const out = hw(7) - 4;
+              if (frame < at - 2) return null;
+              const t = clamp01((frame - out) / 6);
+              if (t >= 1) return null;
+              const z = ease.outExpo(clamp01((frame - (at - 2)) / 12));
+              return (
+                <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", transform: `scale(${(0.25 + 0.75 * z) * (1 + 0.25 * ease.inCubic(t))})`, opacity: clamp01(z * 3) * (1 - ease.inCubic(t)), filter: t > 0 || z < 0.9 ? `blur(${Math.max(t * 20, (1 - z) * 16)}px)` : undefined }}>
+                  <Tired frame={frame} at={at} sag={at + 12} fs={HUGE} />
+                </AbsoluteFill>
+              );
+            })()}
+            {/* "prin casă…" small again, the dots hopping */}
+            {(() => {
+              const at = hw(7);
+              if (frame < at - 2) return null;
+              const k = 1 - ease.outExpo(clamp01((frame - (at - 1)) / 12));
+              const w2 = textWidth("prin casă", SMALL, -0.035);
+              return (
+                <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", transform: `scale(${1 + 0.08 * k})` }}>
+                  <div style={{ position: "relative" }}>
+                    <KineticText words={[{ text: "prin", at }, { text: "casă", at: hw(8) }]} fontSize={SMALL} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.035em" }} />
+                    <div style={{ position: "absolute", left: w2 + SMALL * 0.08, bottom: SMALL * 0.26, display: "flex", gap: SMALL * 0.1 }}>
+                      {[0, 1, 2].map((d) => {
+                        const local = frame - (hw(8) + 8) - d * 3;
+                        const a = ease.outCubic(clamp01(local / 6));
+                        const hop = local > 4 ? Math.max(0, Math.sin(((local - 4) / 15) * Math.PI * 2)) : 0;
+                        return <div key={d} style={{ width: SMALL * 0.12, height: SMALL * 0.12, borderRadius: "50%", background: "linear-gradient(180deg, #ffffff, #b4c4bb)", opacity: a, transform: `translateY(${-hop * SMALL * 0.2}px) scale(${0.3 + 0.7 * a})` }} />;
+                      })}
+                    </div>
                   </div>
-                </>,
-              )}
-            </DirBlur>
+                </AbsoluteFill>
+              );
+            })()}
           </AbsoluteFill>
         )}
 

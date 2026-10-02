@@ -3,7 +3,6 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { AppScreen, TASK_TEXT } from "../components/AppScreen";
 import { Phone, PHONE_H, PHONE_W } from "../components/Phone";
 import { GlyphName, IconTile, TileColor } from "../components/Icons";
-import { blobPath } from "../components/MorphShapes";
 import { GlassPill } from "../components/Pill";
 import { useLayout } from "../layout";
 import { DirBlur } from "../lib/Blur";
@@ -85,31 +84,20 @@ export const S4Post: React.FC = () => {
   const halo = clamp01((frame - ENTER) / 10) * (1 - clamp01((frame - EXIT) / 10)) * (1 + 0.6 * Math.max(0, 1 - (frame - ENTER - 6) / 14));
   return (
     <AbsoluteFill>
-      {/* morphing liquid shapes behind the phone */}
-      <svg width={L.W} height={L.H} style={{ position: "absolute", inset: 0, opacity: Math.min(1, halo), filter: "blur(26px)" }}>
-        <defs>
-          <radialGradient id="ph1" cx="35%" cy="30%" r="75%">
-            <stop offset="0%" stopColor="#7dffb4" />
-            <stop offset="55%" stopColor="#00c866" />
-            <stop offset="100%" stopColor="#004d27" />
-          </radialGradient>
-          <radialGradient id="ph2" cx="60%" cy="40%" r="70%">
-            <stop offset="0%" stopColor="#2bff95" stopOpacity={0.9} />
-            <stop offset="100%" stopColor="#00592d" stopOpacity={0.6} />
-          </radialGradient>
-        </defs>
-        {[
-          { dx: -0.16, dy: -0.1, r: 0.3, g: "ph1", sd: 3 },
-          { dx: 0.17, dy: 0.12, r: 0.24, g: "ph2", sd: 7 },
-          { dx: 0.02, dy: 0.24, r: 0.16, g: "ph2", sd: 11 },
-        ].map((b, i) => {
-          const R = Math.min(L.W, L.H) * b.r * (0.7 + 0.3 * clamp01((frame - ENTER) / 18)) * phoneShrink;
-          const t = frame / 30;
-          const ox = (b.dx + 0.05 * Math.sin(t * 0.9 + i * 2)) * Math.min(L.W, L.H) * 1.3 * phoneShrink;
-          const oy = (b.dy + 0.05 * Math.cos(t * 0.7 + i)) * Math.min(L.W, L.H) * 1.3 * phoneShrink;
-          return <path key={i} d={blobPath(L.cx + ox, L.cy + oy, R, t * 1.4, b.sd, 0.24)} fill={`url(#${b.g})`} opacity={0.55} />;
-        })}
-      </svg>
+      {/* one soft pool of green light under the phone (Google reference) */}
+      <div
+        style={{
+          position: "absolute",
+          left: L.cx - 760,
+          top: L.cy - 760 + (m.y - drift(frame, 7, 120)) * 0.6,
+          width: 1520,
+          height: 1520,
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(0,200,100,0.30) 0%, rgba(0,170,85,0.12) 32%, rgba(0,0,0,0) 62%)",
+          opacity: Math.min(1, halo),
+          transform: `scale(${(L.vertical ? 1 : 0.85) * phoneShrink})`,
+        }}
+      />
     <AbsoluteFill style={{ opacity: m.opacity, transform: `translate(${OX}px, ${OY}px)` }}>
       <DirBlur x={blurX} y={blurY} style={{ position: "absolute", inset: 0, perspective: 1900 }}>
         <div

@@ -1,12 +1,9 @@
 import React from "react";
 import { AbsoluteFill, Audio, staticFile, useCurrentFrame } from "remotion";
-import { MorphShapes } from "./components/MorphShapes";
 import { Stage } from "./components/Stage";
 import { useExplainerFonts } from "./fonts";
 import { clamp01 } from "./lib/anim";
-import { S1Hook } from "./scenes/S1Hook";
-import { S2Calendar } from "./scenes/S2Calendar";
-import { S3Chores } from "./scenes/S3Chores";
+import { Problem } from "./scenes/Problem";
 import { S4Post } from "./scenes/S4Post";
 import { S5Radar } from "./scenes/S5Radar";
 import { S6Choose } from "./scenes/S6Choose";
@@ -27,36 +24,15 @@ const WhiteSet: React.FC = () => {
   if (frame > MUSIC_LIFT_FRAME) return null;
   const R = irisR(frame, L.W, L.H);
   const mask = R > 0 ? `radial-gradient(circle at 50% 50%, transparent ${R}px, #000 ${R + 3}px)` : undefined;
-  // daylight mirror of the dark Stage: soft mint light from above, two slow caustic glows, a faint dot field, paper grain
-  const t = frame / 30;
+  // clean daylight set (Google reference): near-flat pale grey-white, a touch brighter in the middle
   return (
-    <AbsoluteFill style={{ WebkitMaskImage: mask, maskImage: mask, overflow: "hidden", background: "#f6f7f6" }}>
-      <AbsoluteFill
-        style={{
-          background: `radial-gradient(ellipse ${L.vertical ? "95% 50%" : "60% 75%"} at 50% -10%, #ffffff 0%, rgba(255,255,255,0.7) 45%, rgba(255,255,255,0) 80%)`,
-        }}
-      />
-      <MorphShapes tone="light" />
-      <AbsoluteFill
-        style={{
-          backgroundImage: "radial-gradient(rgba(16,40,28,0.10) 1.4px, transparent 1.6px)",
-          backgroundSize: "34px 34px",
-          backgroundPosition: `${(frame * 0.15) % 34}px ${(frame * 0.25) % 34}px`,
-          WebkitMaskImage: "radial-gradient(ellipse 55% 55% at 50% 50%, rgba(0,0,0,0) 30%, #000 100%)",
-          maskImage: "radial-gradient(ellipse 55% 55% at 50% 50%, rgba(0,0,0,0) 30%, #000 100%)",
-          opacity: 0.8,
-        }}
-      />
-      <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 55%, rgba(20,40,30,0.05) 100%)" }} />
-      <AbsoluteFill
-        style={{
-          backgroundImage: `url(${staticFile("images/grain.png")})`,
-          backgroundSize: "512px 512px",
-          opacity: 0.08,
-          mixBlendMode: "multiply",
-        }}
-      />
-    </AbsoluteFill>
+    <AbsoluteFill
+      style={{
+        WebkitMaskImage: mask,
+        maskImage: mask,
+        background: `radial-gradient(ellipse ${L.vertical ? "120% 70%" : "75% 90%"} at 50% 45%, #fbfcfb 0%, #f3f5f4 55%, #eceeed 100%)`,
+      }}
+    />
   );
 };
 
@@ -77,23 +53,19 @@ const Window: React.FC<{ from: number; to: number; children: React.ReactNode }> 
 };
 
 export const HandlyExplainer: React.FC = () => {
-  useExplainerFonts();
+  const fontsReady = useExplainerFonts();
   const frame = useCurrentFrame();
   // the top light is dim during the problem, opens up on the drop
   const light = 0.55 + 0.45 * clamp01((frame - MUSIC_LIFT_FRAME + 4) / 10) - 0.2 * clamp01((frame - 790) / 10);
+
+  if (!fontsReady) return <AbsoluteFill style={{ background: "#000" }} />;
 
   return (
     <AbsoluteFill style={{ background: "#000" }}>
       <Stage light={light} />
       <WhiteSet />
-      <Window from={0} to={124}>
-        <S1Hook />
-      </Window>
-      <Window from={116} to={182}>
-        <S2Calendar />
-      </Window>
-      <Window from={168} to={352}>
-        <S3Chores />
+      <Window from={0} to={352}>
+        <Problem />
       </Window>
       <Window from={328} to={452}>
         <InsideIris>

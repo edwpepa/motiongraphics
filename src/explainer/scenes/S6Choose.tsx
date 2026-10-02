@@ -107,8 +107,8 @@ export const S6Choose: React.FC = () => {
           { words: [{ text: "Tu", at: f(VO.tuAlegi) - 3 }, { text: "alegi", at: f(VO.tuAlegi) + 1 }, { text: "cu", at: f(VO.cuCine) - 3 }, { text: "cine", at: f(VO.cuCine) }, { text: "lucrezi", at: f(VO.lucrezi) - 3 }], out: f(VO.laPretul) - 4, breaks: V ? [1] : [] },
           { words: [{ text: "Prețul", at: f(VO.laPretul) - 2 }, { text: "stabilit", at: f(VO.stabilit) - 3 }, { text: "de", at: f(VO.voiDoi) - 4 }, { text: "voi", at: f(VO.voiDoi) - 2 }, { text: "doi", at: f(VO.doi) - 3 }], out: 618, breaks: V ? [1] : [] },
         ]}
-        fontSize={V ? 92 : 76}
-        y={V ? -760 : -400}
+        fontSize={V ? 70 : 60}
+        y={V ? -740 : -410}
       />
 
       {TASKERS.map((t, i) => {

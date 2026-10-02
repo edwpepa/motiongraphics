@@ -14,10 +14,12 @@ export const Orb: React.FC<{
   glow?: number;
   /** extra softness on the final shape (px) */
   soften?: number;
+  /** blur radius of the liquid merge (defaults to 5% of size) */
+  gooRadius?: number;
   style?: React.CSSProperties;
-}> = ({ blobs, size, glow = 1, soften = 0, style }) => {
+}> = ({ blobs, size, glow = 1, soften = 0, gooRadius, style }) => {
   const id = "orb" + useId().replace(/[^a-zA-Z0-9]/g, "");
-  const goo = Math.max(10, size * 0.05);
+  const goo = gooRadius ?? Math.max(10, size * 0.05);
   // one gradient across the whole merged shape (per-circle gradients leave dark seams where blobs overlap)
   const x0 = Math.min(...blobs.map((b) => b.x - b.r));
   const x1 = Math.max(...blobs.map((b) => b.x + b.r));
@@ -41,7 +43,7 @@ export const Orb: React.FC<{
           </radialGradient>
         </defs>
         {/* bloom */}
-        <g style={{ filter: `blur(${size * 0.12}px)` }} opacity={0.75 * glow}>
+        <g style={{ filter: `blur(${(gooRadius ? gooRadius * 2.4 : size * 0.12)}px)` }} opacity={0.75 * glow}>
           {blobs.map((b, i) => (
             <circle key={i} cx={b.x} cy={b.y} r={b.r * 1.25} fill="#00e676" />
           ))}

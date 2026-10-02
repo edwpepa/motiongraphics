@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { continueRender, delayRender, staticFile } from "remotion";
 
 const LATIN =
@@ -35,13 +35,20 @@ function loadInter() {
   return loading;
 }
 
-/** Self-hosted Inter Bold (Latin + Latin Extended for ă â î ș ț); blocks rendering until loaded. */
+/**
+ * Self-hosted Inter Bold (Latin + Latin Extended for ă â î ș ț). Blocks rendering until loaded and
+ * returns `ready`, so text that is laid out from measured widths is only built with the real metrics.
+ */
 export function useExplainerFonts() {
-  useState(() => {
-    const handle = delayRender("Loading Inter");
+  const [handle] = useState(() => delayRender("Loading Inter"));
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
     loadInter()
       .catch((err) => console.error(err))
-      .finally(() => continueRender(handle));
-    return null;
-  });
+      .finally(() => setReady(true));
+  }, []);
+  useEffect(() => {
+    if (ready) continueRender(handle);
+  }, [ready, handle]);
+  return ready;
 }

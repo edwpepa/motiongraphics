@@ -1,9 +1,10 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { clamp01, ease } from "../lib/anim";
-import { INK_DARK, KineticText, KWord, SHADOW_DARK } from "./KineticText";
+import { INK, INK_DARK, KineticText, KWord, SHADOW, SHADOW_DARK } from "./KineticText";
 
 export const ACCENT: [string, string] = ["#b9ffd6", "#00c46a"];
+export const ACCENT_LIGHT: [string, string] = ["#2be38a", "#00964d"];
 
 export type PhraseDef = {
   words: KWord[];
@@ -16,7 +17,7 @@ export type PhraseDef = {
  * A few big words at a time, centred: they rise in letter by letter, then leave with an Apple-style
  * blur + slight scale back before the next phrase lands in the same spot.
  */
-export const PhraseSeq: React.FC<{ phrases: PhraseDef[]; fontSize: number; y?: number; dur?: number }> = ({ phrases, fontSize, y = 0, dur = 14 }) => {
+export const PhraseSeq: React.FC<{ phrases: PhraseDef[]; fontSize: number; y?: number; dur?: number; light?: boolean }> = ({ phrases, fontSize, y = 0, dur = 14, light = false }) => {
   const frame = useCurrentFrame();
   return (
     <>
@@ -38,7 +39,7 @@ export const PhraseSeq: React.FC<{ phrases: PhraseDef[]; fontSize: number; y?: n
               filter: t > 0 ? `blur(${18 * t}px)` : undefined,
             }}
           >
-            <KineticText words={p.words} fontSize={fontSize} breaks={p.breaks} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} dur={dur} style={{ letterSpacing: "-0.035em", textAlign: "center" }} />
+            <KineticText words={p.words} fontSize={fontSize} breaks={p.breaks} ink={light ? INK : INK_DARK} tint={light ? ACCENT_LIGHT : ACCENT} shadow={light ? SHADOW : SHADOW_DARK} dur={dur} style={{ letterSpacing: "-0.035em", textAlign: "center" }} />
           </AbsoluteFill>
         );
       })}

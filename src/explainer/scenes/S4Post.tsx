@@ -7,7 +7,6 @@ import { GlassPill } from "../components/Pill";
 import { useLayout } from "../layout";
 import { DirBlur } from "../lib/Blur";
 import { clamp01, drift, ease, keys, pop } from "../lib/anim";
-import { ACCENT, PhraseSeq } from "../components/Phrase";
 import { f, VO } from "../timing";
 
 const ENTER = 330;
@@ -20,10 +19,10 @@ const EXIT = 436;
 
 type ChipDef = { icon: GlyphName; tile: TileColor; label: string; at: number; pos: [number, number]; vpos: [number, number]; z: number; size?: number };
 const CHIPS: ChipDef[] = [
-  { icon: "wrench", tile: "blue", label: "Instalații", at: CATEGORY + 4, pos: [-330, -330], vpos: [-200, -545], z: 120 },
-  { icon: "pin", tile: "red", label: "În zona ta", at: PRESS + 2, pos: [340, -200], vpos: [225, -470], z: 90 },
-  { icon: "check", tile: "green", label: "Task postat", at: SUCCESS + 5, pos: [330, 250], vpos: [230, 470], z: 140 },
-  { icon: "timer", tile: "orange", label: "Gata în câteva secunde", at: SECONDS_CHIP, pos: [-300, 360], vpos: [-95, 565], z: 170, size: 34 },
+  { icon: "wrench", tile: "blue", label: "Instalații", at: SUCCESS + 12, pos: [-360, -320], vpos: [-200, -545], z: 120 },
+  { icon: "pin", tile: "red", label: "În zona ta", at: SUCCESS + 16, pos: [370, -200], vpos: [225, -470], z: 90 },
+  { icon: "check", tile: "green", label: "Task postat", at: SUCCESS + 20, pos: [370, 250], vpos: [230, 470], z: 140 },
+  { icon: "timer", tile: "orange", label: "Gata în câteva secunde", at: Math.max(SECONDS_CHIP, SUCCESS + 24), pos: [-470, 330], vpos: [-95, 565], z: 170, size: 34 },
 ];
 
 const phoneMotion = (frame: number, vertical: boolean) => {
@@ -39,7 +38,7 @@ const phoneMotion = (frame: number, vertical: boolean) => {
     rotY,
     rotX: 5 + 60 * outT,
     y: 300 * outT + drift(frame, 7, 120),
-    scale: (vertical ? 1.12 : 0.86) * (1.6 - 0.6 * inT) * (1 - 0.18 * outT),
+    scale: (vertical ? 1.12 : 0.92) * (1.6 - 0.6 * inT) * (1 - 0.18 * outT) * keys(frame, [[SUCCESS + 6, 1], [SUCCESS + 24, vertical ? 0.78 : 0.74]], ease.inOutCubic),
     opacity: 1 - clamp01((frame - EXIT - 9) / 5),
   };
 };
@@ -77,28 +76,11 @@ export const S4Post: React.FC = () => {
   const blurY = Math.min(28, Math.abs(m.y - mp.y) * 0.35);
 
   const V = L.vertical;
-  const OX = V ? 0 : 430;
-  const OY = V ? 170 : 20;
+  const OX = 0;
+  const OY = 0;
   const halo = clamp01((frame - ENTER) / 10) * (1 - clamp01((frame - EXIT) / 10)) * (1 + 0.6 * Math.max(0, 1 - (frame - ENTER - 6) / 14));
-  const phrases = [
-    { words: [{ text: "Postează", at: f(VO.postezi) - 3 }, { text: "task-ul", at: f(VO.taskul) - 3 }], out: f(VO.peHandly) - 4 },
-    { words: [{ text: "pe", at: f(VO.peHandly) - 3 }, { text: "handly.ro", at: f(VO.handlyWord) - 3, color: ACCENT }], out: f(VO.dureaza) - 4 },
-    {
-      words: [
-        { text: "Durează", at: f(VO.dureaza) - 3 },
-        { text: "câteva", at: f(VO.cateva) - 3 },
-        { text: "secunde", at: f(VO.secunde) - 3 },
-      ],
-      out: EXIT - 2,
-      breaks: [0],
-    },
-  ];
-
   return (
     <AbsoluteFill>
-      <div style={{ position: "absolute", inset: 0, transform: `translateX(${V ? 0 : -470}px)` }}>
-        <PhraseSeq phrases={phrases} fontSize={V ? 108 : 96} y={V ? -700 : 0} />
-      </div>
       {/* glow behind the phone */}
       <div
         style={{

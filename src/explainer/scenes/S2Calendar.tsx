@@ -39,6 +39,7 @@ export const S2Calendar: React.FC = () => {
         phrases={[{ words: VO.postpone.map(([text, sec]) => ({ text, at: f(sec) - 3 })), out: exit, breaks: V ? [2] : [] }]}
         fontSize={V ? 112 : 104}
         y={V ? -300 : -190}
+        light
       />
       <div
         style={{
@@ -68,7 +69,7 @@ export const S2Calendar: React.FC = () => {
                 fontWeight: BOLD,
                 fontSize: cell * 0.42,
                 letterSpacing: "-0.04em",
-                color: `rgba(255,255,255,${Math.max(0.08, 0.5 - dist * 0.11) + near * 0.5})`,
+                color: `rgba(16,22,19,${Math.max(0.07, 0.4 - dist * 0.09) + near * 0.6})`,
                 filter: dist > 2.5 ? `blur(${(dist - 2.5) * 2}px)` : undefined,
               }}
             >
@@ -83,8 +84,8 @@ export const S2Calendar: React.FC = () => {
               width: cell * 0.84,
               height: cell * 0.84,
               borderRadius: "50%",
-              border: `${cell * 0.035}px solid #22e07f`,
-              boxShadow: "0 0 30px rgba(0,230,118,0.65), inset 0 0 24px rgba(0,230,118,0.35)",
+              border: `${cell * 0.035}px solid #00c46a`,
+              boxShadow: "0 10px 30px rgba(0,196,106,0.35), inset 0 0 18px rgba(0,196,106,0.2)",
             }}
           />
         </DirBlur>

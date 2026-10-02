@@ -13,6 +13,39 @@ import { S7NoFees } from "./scenes/S7NoFees";
 import { S8Words } from "./scenes/S8Words";
 import { S9Logo } from "./scenes/S9Logo";
 import { MUSIC_LIFT_FRAME } from "./timing";
+import { useLayout } from "./layout";
+import { ease } from "./lib/anim";
+
+/** White set for the problem half; a black iris opens from the charging orb and lands on the drop. */
+const irisR = (frame: number, W: number, H: number) =>
+  (Math.hypot(W, H) / 2 + 40) * ease.inCubic(clamp01((frame - (MUSIC_LIFT_FRAME - 16)) / 16));
+
+const WhiteSet: React.FC = () => {
+  const frame = useCurrentFrame();
+  const L = useLayout();
+  if (frame > MUSIC_LIFT_FRAME) return null;
+  const R = irisR(frame, L.W, L.H);
+  const mask = R > 0 ? `radial-gradient(circle at 50% 50%, transparent ${R}px, #000 ${R + 3}px)` : undefined;
+  return (
+    <AbsoluteFill
+      style={{
+        background: "radial-gradient(ellipse 80% 70% at 50% 30%, #ffffff 0%, #f4f5f7 60%, #eceef1 100%)",
+        WebkitMaskImage: mask,
+        maskImage: mask,
+      }}
+    />
+  );
+};
+
+/** Keeps the dark world (the phone flying in) inside the iris until it has fully opened. */
+const InsideIris: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const frame = useCurrentFrame();
+  const L = useLayout();
+  if (frame >= MUSIC_LIFT_FRAME) return <>{children}</>;
+  const R = irisR(frame, L.W, L.H);
+  const mask = `radial-gradient(circle at 50% 50%, #000 ${R}px, transparent ${R + 3}px)`;
+  return <AbsoluteFill style={{ WebkitMaskImage: mask, maskImage: mask }}>{children}</AbsoluteFill>;
+};
 
 /** Mounts a scene only inside its window. Scenes read the absolute frame, so every beat is authored in VO frames. */
 const Window: React.FC<{ from: number; to: number; children: React.ReactNode }> = ({ from, to, children }) => {
@@ -29,17 +62,20 @@ export const HandlyExplainer: React.FC = () => {
   return (
     <AbsoluteFill style={{ background: "#000" }}>
       <Stage light={light} />
+      <WhiteSet />
       <Window from={0} to={124}>
         <S1Hook />
       </Window>
       <Window from={116} to={182}>
         <S2Calendar />
       </Window>
-      <Window from={168} to={344}>
+      <Window from={168} to={352}>
         <S3Chores />
       </Window>
       <Window from={328} to={452}>
-        <S4Post />
+        <InsideIris>
+          <S4Post />
+        </InsideIris>
       </Window>
       <Window from={436} to={526}>
         <S5Radar />

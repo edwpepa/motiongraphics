@@ -18,6 +18,12 @@ export const Orb: React.FC<{
 }> = ({ blobs, size, glow = 1, soften = 0, style }) => {
   const id = "orb" + useId().replace(/[^a-zA-Z0-9]/g, "");
   const goo = Math.max(10, size * 0.05);
+  // one gradient across the whole merged shape (per-circle gradients leave dark seams where blobs overlap)
+  const x0 = Math.min(...blobs.map((b) => b.x - b.r));
+  const x1 = Math.max(...blobs.map((b) => b.x + b.r));
+  const y0 = Math.min(...blobs.map((b) => b.y - b.r));
+  const y1 = Math.max(...blobs.map((b) => b.y + b.r));
+  const gr = Math.max(x1 - x0, y1 - y0) * 0.75;
   return (
     <div style={{ position: "absolute", left: 0, top: 0, width: size, height: size, ...style }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", inset: 0, overflow: "visible" }}>
@@ -27,7 +33,7 @@ export const Orb: React.FC<{
             <feColorMatrix in="b" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 26 -11" result="goo" />
             <feGaussianBlur in="goo" stdDeviation={soften} />
           </filter>
-          <radialGradient id={`${id}f`} cx="38%" cy="30%" r="75%">
+          <radialGradient id={`${id}f`} gradientUnits="userSpaceOnUse" cx={x0 + (x1 - x0) * 0.38} cy={y0 + (y1 - y0) * 0.3} r={gr}>
             <stop offset="0%" stopColor="#d9ffe9" />
             <stop offset="22%" stopColor="#7dffb4" />
             <stop offset="55%" stopColor="#00c866" />

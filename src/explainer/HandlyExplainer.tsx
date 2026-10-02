@@ -1,5 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Audio, staticFile, useCurrentFrame } from "remotion";
+import { Grid } from "./components/Grid";
 import { Stage } from "./components/Stage";
 import { useExplainerFonts } from "./fonts";
 import { clamp01 } from "./lib/anim";
@@ -24,7 +25,7 @@ const WhiteSet: React.FC = () => {
   if (frame > MUSIC_LIFT_FRAME) return null;
   const R = irisR(frame, L.W, L.H);
   const mask = R > 0 ? `radial-gradient(circle at 50% 50%, transparent ${R}px, #000 ${R + 3}px)` : undefined;
-  // clean daylight set (Google reference): near-flat pale grey-white, a touch brighter in the middle
+  // clean daylight set: near-flat pale grey-white with a fine, quiet grid (the liquid glass bends it)
   return (
     <AbsoluteFill
       style={{
@@ -32,7 +33,9 @@ const WhiteSet: React.FC = () => {
         maskImage: mask,
         background: `radial-gradient(ellipse ${L.vertical ? "120% 70%" : "75% 90%"} at 50% 45%, #fbfcfb 0%, #f3f5f4 55%, #eceeed 100%)`,
       }}
-    />
+    >
+      <Grid color="rgba(16,40,28,0.075)" />
+    </AbsoluteFill>
   );
 };
 

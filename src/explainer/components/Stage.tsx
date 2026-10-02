@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { AbsoluteFill, staticFile, useCurrentFrame } from "remotion";
 import { seeded } from "../lib/anim";
 import { useLayout } from "../layout";
+import { Grid } from "./Grid";
 
 /**
  * The one set: near-black, a single soft green light falling from the top, slow dust motes and
@@ -37,6 +38,7 @@ export const Stage: React.FC<{ light?: number; lightX?: number }> = ({ light = 1
           background: `radial-gradient(ellipse ${L.vertical ? "60% 30%" : "35% 45%"} at ${lightX * 100}% -4%, rgba(160,255,200,${0.12 * light}) 0%, rgba(0,0,0,0) 70%)`,
         }}
       />
+      <Grid color="rgba(160,255,200,0.05)" />
       {/* dust */}
       <svg width={L.W} height={L.H} style={{ position: "absolute", inset: 0 }}>
         {motes.map((m, i) => {

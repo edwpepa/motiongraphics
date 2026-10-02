@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Img, staticFile, useCurrentFrame } from "remotion";
-import { AppleLine } from "../components/AppleText";
+import { INK_DARK, KineticText, SHADOW_DARK } from "../components/KineticText";
 import { Orb } from "../components/Orb";
 import { clamp01, ease, keys, lerp, pop } from "../lib/anim";
 import { useLayout } from "../layout";
@@ -8,13 +8,6 @@ import { BOLD, C, FONT } from "../theme";
 import { StoreBadge } from "../components/StoreBadge";
 import { CTA_FRAME, DURATION_IN_FRAMES, LOGO_HIT_FRAME } from "../timing";
 import { LOGO_START } from "./S8Words";
-
-/** gives a zero-size AppleLine a box so it can sit in a flex column */
-const Centered: React.FC<{ h: number; children: React.ReactNode }> = ({ h, children }) => (
-  <div style={{ position: "relative", height: h, width: 0 }}>
-    <div style={{ position: "absolute", left: 0, top: h / 2 }}>{children}</div>
-  </div>
-);
 
 // Three drops of light gather and melt into one orb; on the hit the orb blooms and resolves into
 // the green handly logo. Nothing from the previous shot is carried in — the frame is clean.
@@ -97,9 +90,7 @@ export const S9Logo: React.FC = () => {
 
       {frame >= wordAt && (
         <div style={{ position: "absolute", left: 0, right: 0, top: L.cy + (V ? 80 : 90), display: "flex", flexDirection: "column", alignItems: "center", gap: V ? 30 : 22, transform: `translateY(${wordY}px) scale(${wordS})`, transformOrigin: "50% 0%" }}>
-          <Centered h={(V ? 136 : 120) * 1.18}>
-            <AppleLine words={[{ text: "handly.ro", at: wordAt }]} fontSize={V ? 136 : 120} tracking={-0.045} style={{ filter: "drop-shadow(0 0 28px rgba(0,191,99,0.25))" }} />
-          </Centered>
+          <KineticText words={[{ text: "handly.ro", at: wordAt }]} fontSize={V ? 136 : 120} ink={INK_DARK} tint={INK_DARK} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.045em" }} />
           <div
             style={{
               fontFamily: FONT,
@@ -118,9 +109,7 @@ export const S9Logo: React.FC = () => {
 
       {frame >= ctaAt - 2 && (
         <div style={{ position: "absolute", left: 0, right: 0, top: L.cy + (V ? 140 : 60), display: "flex", flexDirection: "column", alignItems: "center", gap: V ? 64 : 50 }}>
-          <Centered h={(V ? 76 : 64) * 1.18}>
-            <AppleLine words={[{ text: "Descarcă", at: ctaAt }, { text: "acum", at: ctaAt + 4 }]} fontSize={V ? 76 : 64} tracking={-0.035} />
-          </Centered>
+          <KineticText words={[{ text: "Descarcă", at: ctaAt }, { text: "acum", at: ctaAt + 3 }]} fontSize={V ? 84 : 68} ink={INK_DARK} tint={INK_DARK} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.04em" }} />
           <div style={{ display: "flex", gap: V ? 26 : 30 }}>
             {(["apple", "google"] as const).map((st, i) => {
               // each badge glides up out of a soft blur on its own beat

@@ -75,6 +75,8 @@ export type GlassProps = {
   frost?: number;
   /** 0..1 position of the sheen sweep; leave undefined for a slow automatic drift */
   sheen?: number;
+  /** white body tint (0..1) over the refracted backdrop */
+  tint?: number;
   style?: React.CSSProperties;
   children?: React.ReactNode;
 };
@@ -88,6 +90,7 @@ export const LiquidGlass: React.FC<GlassProps> = ({
   bezel,
   frost = 3,
   sheen,
+  tint,
   style,
   children,
 }) => {
@@ -115,7 +118,7 @@ export const LiquidGlass: React.FC<GlassProps> = ({
           clipPath: `inset(0 round ${radius}px)`,
           backdropFilter: `url(#${id}) blur(${frost}px) saturate(${light ? 1.7 : 1.5}) brightness(${light ? 1.06 : 1.1})`,
           WebkitBackdropFilter: `url(#${id}) blur(${frost}px) saturate(${light ? 1.7 : 1.5})`,
-          background: light ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.045)",
+          background: light ? `rgba(255,255,255,${tint ?? 0.16})` : `rgba(255,255,255,${tint ?? 0.045})`,
         }}
       />
       {/* lighting: rim, inner glow, specular sheen */}

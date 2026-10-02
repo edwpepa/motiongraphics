@@ -1,7 +1,9 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
-import { AppleLine, GREEN_D, textWidth } from "../components/AppleText";
-import { clamp01, ease, pop } from "../lib/anim";
+import { INK_DARK, KineticText, SHADOW_DARK } from "../components/KineticText";
+import { ACCENT } from "../components/Phrase";
+import { clamp01, ease } from "../lib/anim";
+import { SuccessMark } from "../components/SuccessMark";
 import { useLayout } from "../layout";
 import { f, VO } from "../timing";
 
@@ -37,44 +39,31 @@ export const S8Words: React.FC = () => {
   const frame = useCurrentFrame();
   const L = useLayout();
   const V = L.vertical;
-  const check = clamp01((frame - (REZOLVA + 5)) / 12);
-  const checkPop = pop(frame, REZOLVA + 3, 12, 170);
-  const cs = V ? 120 : 116;
-  const rezW = textWidth("Se rezolvă!", V ? 120 : 130, -0.04);
+  const cs = V ? 130 : 132;
   const style = { letterSpacing: "-0.045em" };
 
   return (
     <AbsoluteFill>
       <Beat from={HANDLY} to={POSTEZI - 2}>
-        <AppleLine words={[{ text: "handly.ro", at: HANDLY, color: GREEN_D }]} fontSize={V ? 160 : 190} tracking={-0.045} style={{ filter: "drop-shadow(0 0 40px rgba(0,230,118,0.35))" }} />
+        <KineticText words={[{ text: "handly.ro", at: HANDLY }]} fontSize={V ? 190 : 250} ink={ACCENT} tint={ACCENT} shadow="drop-shadow(0 0 50px rgba(0,230,118,0.45))" style={style} />
       </Beat>
       <Beat from={POSTEZI} to={REZOLVA - 2}>
-        <AppleLine words={[{ text: "Postezi.", at: POSTEZI }]} fontSize={V ? 140 : 160} tracking={-0.04} style={{ filter: "drop-shadow(0 0 30px rgba(0,191,99,0.25))" }} />
+        <KineticText words={[{ text: "Postezi.", at: POSTEZI }]} fontSize={V ? 180 : 230} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={style} />
       </Beat>
       <Beat from={REZOLVA} to={LOGO_START - 1}>
-        <div style={{ display: "flex", flexDirection: V ? "column" : "row", alignItems: "center", gap: V ? 30 : 40 }}>
-          <div
-            style={{
-              width: cs,
-              height: cs,
-              borderRadius: "50%",
-              background: "radial-gradient(circle at 35% 30%, #9dffc9 0%, #00d26a 45%, #008f47 100%)",
-              boxShadow: "inset 0 3px 0 rgba(255,255,255,0.35), 0 0 60px rgba(0,230,118,0.55)",
-              transform: `scale(${checkPop})`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <svg width={cs * 0.6} height={cs * 0.6} viewBox="0 0 70 70">
-              <path d="M18 36 L30 48 L53 22" fill="none" stroke="#fff" strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - ease.outCubic(check)} />
-            </svg>
-          </div>
-          <div style={{ position: "relative", width: V ? 0 : rezW, height: V ? 130 : 0 }}>
-            <div style={{ position: "absolute", left: V ? 0 : rezW / 2, top: V ? 65 : 0 }}>
-              <AppleLine words={[{ text: "Se", at: REZOLVA }, { text: "rezolvă!", at: f(VO.rezolva) - LEAD }]} fontSize={V ? 120 : 130} tracking={-0.04} style={{ filter: "drop-shadow(0 0 30px rgba(0,191,99,0.25))" }} />
-            </div>
-          </div>
+        <div style={{ display: "flex", flexDirection: V ? "column" : "row", alignItems: "center", gap: 60 }}>
+          <SuccessMark frame={frame} at={REZOLVA - 1} size={cs} />
+          <KineticText
+            words={[
+              { text: "Se", at: REZOLVA },
+              { text: "rezolvă!", at: f(VO.rezolva) - LEAD },
+            ]}
+            fontSize={V ? 150 : 180}
+            ink={INK_DARK}
+            tint={ACCENT}
+            shadow={SHADOW_DARK}
+            style={style}
+          />
         </div>
       </Beat>
     </AbsoluteFill>

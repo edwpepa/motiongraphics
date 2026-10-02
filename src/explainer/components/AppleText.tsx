@@ -35,8 +35,8 @@ const fill = (c: [string, string]): React.CSSProperties => ({
 });
 
 /**
- * Apple-style line reveal: every word arrives on its own beat out of a soft blur, rising a touch and
- * settling from the accent tint into ink, while the line it belongs to glides to stay centred — no
+ * Line reveal: every word's letters rise in from below on a soft wave, left to right, out of a blur and
+ * from the accent tint into ink, while the line it belongs to glides to stay centred — no
  * empty slots waiting for words that haven't been said yet.
  */
 export const AppleLine: React.FC<{
@@ -81,10 +81,12 @@ export const AppleLine: React.FC<{
           x += width * grow[i];
           const local = frame - w.at;
           if (local < -1) return null;
-          const p = ease.outCubic(clamp01(local / dur));
-          const c = clamp01((local - 3) / 16);
+          // letters rise in on a soft wave from below, left to right, blurred and tinted, then settle to ink
           const settled = w.color ?? ink;
-          const col: [string, string] = [mixColor(tint[0], settled[0], c), mixColor(tint[1], settled[1], c)];
+          const letters = Array.from(w.text);
+          const seed = li * 7 + i * 3;
+          const wordP = clamp01(local / (dur + letters.length * 0.55));
+          const blur = (1 - ease.outCubic(clamp01(local / (dur * 0.9)))) * fs * 0.11;
           return (
             <span
               key={`${li}-${i}`}
@@ -95,14 +97,30 @@ export const AppleLine: React.FC<{
                 height: fs * lineHeight,
                 display: "flex",
                 alignItems: "center",
-                opacity: clamp01(local / 7),
-                transform: `translateY(${(1 - p) * fs * 0.2}px) scale(${0.94 + 0.06 * p})`,
-                transformOrigin: "50% 70%",
-                filter: p < 0.99 ? `blur(${(1 - p) * fs * 0.13}px)` : undefined,
-                ...fill(col),
+                transform: `skewX(${(1 - ease.outExpo(wordP)) * -10}deg)`,
+                filter: blur > 0.2 ? `blur(${blur}px)` : undefined,
               }}
             >
-              {w.text}
+              {letters.map((ch, k) => {
+                const l = local - k * 0.55;
+                const e = ease.outExpo(clamp01(l / dur));
+                const wave = Math.sin(k * 0.85 + seed) * 0.16 + 0.42;
+                const c = clamp01((l - 3) / 13);
+                return (
+                  <span
+                    key={k}
+                    style={{
+                      display: "inline-block",
+                      whiteSpace: "pre",
+                      opacity: clamp01(l / 4),
+                      transform: `translateY(${(1 - e) * wave}em) rotate(${(1 - e) * Math.sin(k * 1.7 + seed) * 12}deg)`,
+                      ...fill([mixColor(tint[0], settled[0], c), mixColor(tint[1], settled[1], c)]),
+                    }}
+                  >
+                    {ch}
+                  </span>
+                );
+              })}
             </span>
           );
         });

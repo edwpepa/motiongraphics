@@ -1,6 +1,7 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { AppleLine, AWord, GREEN_L, lineWidth, wordGrow } from "../components/AppleText";
+import { LiquidGlass } from "../components/Glass";
 import { Orb } from "../components/Orb";
 import { DirBlur } from "../lib/Blur";
 import { clamp01, ease, lerp, pop } from "../lib/anim";
@@ -70,30 +71,39 @@ export const Problem: React.FC = () => {
 
   // ---------------------------------------------------------------- the pill's text and width
   const dotsW = FS * 0.7;
-  let textW = 0;
-  PILL.forEach((p) => {
-    // the pill only starts closing once the old words have mostly faded
-    const keep = 1 - ease.inOutCubic(clamp01((frame - p.out - 2) / 8));
-    // the pill opens a beat ahead of each word so nothing ever pokes out of it
-    textW += lineWidth(p.words, FS, frame + 5) * keep;
-    if (p.dots) textW += dotsW * wordGrow(frame + 5, p.dots) * keep;
-  });
-  const pillW = Math.max(PH, textW + PH * 0.9);
+  const geom = (fr: number) => {
+    let textW = 0;
+    PILL.forEach((p) => {
+      // the pill only starts closing once the old words have mostly faded
+      const keep = 1 - ease.inOutCubic(clamp01((fr - p.out - 2) / 8));
+      // the pill opens a beat ahead of each word so nothing ever pokes out of it
+      textW += lineWidth(p.words, FS, fr + 5) * keep;
+      if (p.dots) textW += dotsW * wordGrow(fr + 5, p.dots) * keep;
+    });
+    const pillW = Math.max(PH, textW + PH * 0.9);
+    const tp = ease.inOutCubic(clamp01((fr - 9) / 12));
+    const tc = ease.inOutCubic(clamp01((fr - CAL0) / 14));
+    const tl = ease.inOutCubic(clamp01((fr - LIST0) / 14));
+    let gw = lerp(D, pillW, tp);
+    let gh = lerp(D, PH, tp);
+    gw = lerp(gw, CW, tc);
+    gh = lerp(gh, CH, tc);
+    gw = lerp(gw, LW, tl);
+    gh = lerp(gh, LH, tl);
+    return { w: gw, h: gh, tc, tl };
+  };
 
   // ---------------------------------------------------------------- container morph
   const birth = pop(frame, 1, 12, 150);
-  const toPill = ease.inOutCubic(clamp01((frame - 9) / 12));
   const open = ease.outCubic(clamp01((frame - 7) / 12));
-  const toCal = ease.inOutCubic(clamp01((frame - CAL0) / 14));
-  const toList = ease.inOutCubic(clamp01((frame - LIST0) / 14));
   const fade = ease.inOutCubic(clamp01((frame - (END + 4)) / 10));
-
-  let w = lerp(D, pillW, toPill);
-  let h = lerp(D, PH, toPill);
-  w = lerp(w, CW, toCal);
-  h = lerp(h, CH, toCal);
-  w = lerp(w, LW, toList);
-  h = lerp(h, LH, toList);
+  const G = geom(frame);
+  const { w, h } = G;
+  const toCal = G.tc;
+  const toList = G.tl;
+  // liquid squash & stretch: the pill bulges along the way it's growing, then settles
+  const dw = (G.w - geom(frame - 2).w) / 2;
+  const squash = Math.max(-1, Math.min(1, dw / 45)) * (1 - toCal);
   const r = lerp(lerp(h / 2, 46, toCal), 44, toList);
   const boxY = lerp(lerp(0, V ? 90 : 70, toCal), 0, toList);
   const ring = 1 - toCal;
@@ -125,6 +135,12 @@ export const Problem: React.FC = () => {
   // ---------------------------------------------------------------- bloom behind the thinking pill
   const bloom = (0.55 + 0.45 * Math.max(0, 1 - frame / 22)) * birth * ring;
   const angle = frame * 4;
+  // conic fill cut down to a ring (content-box punched out)
+  const ringMask: React.CSSProperties = {
+    WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+    WebkitMaskComposite: "xor",
+    maskComposite: "exclude",
+  };
   const conic = `conic-gradient(from ${angle}deg, #00e676, #b9ffd6, #00c46a, #7dffb4, #00a352, #d4ffe6, #00e676)`;
 
   // ---------------------------------------------------------------- pill text
@@ -314,22 +330,25 @@ export const Problem: React.FC = () => {
             {/* glow ring */}
             {ring > 0 && (
               <>
-                <div style={{ position: "absolute", left: -w / 2 - 14, top: -h / 2 - 14, width: w + 28, height: h + 28, borderRadius: r + 14, background: conic, filter: "blur(26px)", opacity: 0.75 * ring }} />
-                <div style={{ position: "absolute", left: -w / 2 - 4, top: -h / 2 - 4, width: w + 8, height: h + 8, borderRadius: r + 4, background: conic, opacity: ring }} />
+                <div style={{ position: "absolute", left: -w / 2 - 16, top: -h / 2 - 16, width: w + 32, height: h + 32, borderRadius: r + 16, padding: 18, boxSizing: "border-box", background: conic, ...ringMask, filter: "blur(18px)", opacity: 0.85 * ring }} />
+                <div style={{ position: "absolute", left: -w / 2 - 3, top: -h / 2 - 3, width: w + 6, height: h + 6, borderRadius: r + 3, padding: 5, boxSizing: "border-box", background: conic, ...ringMask, opacity: ring }} />
               </>
             )}
-            {/* body */}
-            <div
+            {/* body: liquid glass that refracts the grid and the green glow behind it */}
+            <LiquidGlass
+              width={Math.round(w)}
+              height={Math.round(h)}
+              radius={Math.min(r, Math.round(h) / 2)}
+              tone="light"
+              strength={lerp(70, 46, toCal)}
+              frost={lerp(3, 16, toCal)}
+              tint={lerp(0.3, 0.72, toCal)}
+              bezel={lerp(Math.min(h / 2, 60), 44, toCal)}
               style={{
                 position: "absolute",
-                left: -w / 2,
-                top: -h / 2,
-                width: w,
-                height: h,
-                borderRadius: r,
-                background: "#ffffff",
-                transform: `scale(${toCal > 0 ? 1 : open})`,
-                boxShadow: `0 30px 80px rgba(16,40,28,${0.12 * toCal}), 0 4px 14px rgba(16,40,28,${0.05 * toCal}), inset 0 0 0 1px rgba(16,40,28,${0.04 * toCal})`,
+                left: -Math.round(w) / 2,
+                top: -Math.round(h) / 2,
+                transform: `scale(${(toCal > 0 ? 1 : open) * (1 + 0.05 * squash)}, ${(toCal > 0 ? 1 : open) * (1 - 0.07 * squash)})`,
               }}
             />
             {/* pill text, clipped to the pill */}

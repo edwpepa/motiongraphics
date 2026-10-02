@@ -393,7 +393,9 @@ export const Problem: React.FC = () => {
 
   return (
     <AbsoluteFill>
-      <DarkSet shift={pan * SPAN * 0.3} />
+      <div style={{ position: "absolute", inset: 0, opacity: ease.inOutCubic(clamp01(frame / 14)) }}>
+        <DarkSet shift={pan * SPAN * 0.3} />
+      </div>
       <DirBlur x={panBlur} style={{ position: "absolute", inset: 0 }}>
         {/* opening lines — small, calm type that builds word by word; one word goes huge */}
         {pan < 1 && (
@@ -410,33 +412,28 @@ export const Problem: React.FC = () => {
                 </AbsoluteFill>
               );
             })()}
-            {/* "obositoare" punches in huge, cropped by the frame, then sags */}
+            {/* "obositoare" punches in huge, cropped by the frame — then a hard match cut to the next line */}
             {(() => {
               const at = hw(6);
-              const out = hw(7) - 4;
-              if (frame < at - 2) return null;
-              const t = clamp01((frame - out) / 6);
-              if (t >= 1) return null;
+              const cut = hw(7) - 1;
+              if (frame < at - 2 || frame >= cut) return null;
               const z = ease.outExpo(clamp01((frame - (at - 2)) / 12));
               return (
-                <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", transform: `scale(${(0.25 + 0.75 * z) * (1 + 0.25 * ease.inCubic(t))})`, opacity: clamp01(z * 3) * (1 - ease.inCubic(t)), filter: t > 0 || z < 0.9 ? `blur(${Math.max(t * 20, (1 - z) * 16)}px)` : undefined }}>
-                  {/* a long exhale: the letters drift apart, the word swells a touch and dims */}
-                  <div style={{ transform: `scale(${1 + 0.06 * ease.inOutCubic(clamp01((frame - at - 8) / 22))})`, opacity: 1 - 0.35 * ease.inOutCubic(clamp01((frame - at - 10) / 18)) }}>
-                    <KineticText words={[{ text: VO.hook[6][0], at, color: ACCENT }]} fontSize={HUGE} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: `${lerp(-0.05, 0.06, ease.inOutCubic(clamp01((frame - at - 8) / 22)))}em` }} />
-                  </div>
+                <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", transform: `scale(${0.25 + 0.75 * z})`, opacity: clamp01(z * 3), filter: z < 0.9 ? `blur(${(1 - z) * 16}px)` : undefined }}>
+                  <KineticText words={[{ text: VO.hook[6][0], at, color: ACCENT }]} fontSize={HUGE} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.05em" }} />
                 </AbsoluteFill>
               );
             })()}
             {/* "prin casă…" small again, the dots hopping */}
             {(() => {
               const at = hw(7);
-              if (frame < at - 2) return null;
-              const k = 1 - ease.outExpo(clamp01((frame - (at - 1)) / 12));
+              if (frame < at - 1) return null;
+              const k = 0;
               const w2 = textWidth("prin casă", SMALL, -0.035);
               return (
                 <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", transform: `scale(${1 + 0.08 * k})` }}>
                   <div style={{ position: "relative" }}>
-                    <KineticText words={[{ text: "prin", at }, { text: "casă", at: hw(8) }]} fontSize={SMALL} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.035em" }} />
+                    <KineticText words={[{ text: "prin", at: at - 12 }, { text: "casă", at: hw(8) }]} fontSize={SMALL} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.035em" }} />
                     <div style={{ position: "absolute", left: w2 + SMALL * 0.08, bottom: SMALL * 0.26, display: "flex", gap: SMALL * 0.1 }}>
                       {[0, 1, 2].map((d) => {
                         const local = frame - (hw(8) + 8) - d * 3;

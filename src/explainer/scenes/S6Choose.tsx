@@ -106,7 +106,7 @@ export const S6Choose: React.FC = () => {
   const handPos = V ? { x: pillX - 185, y: pillY } : { x: pillX, y: pillY - 112 };
 
   // the whole scene clears (blur + recede) well before "Fără tarife…" lands
-  const exitT = ease.inCubic(clamp01((frame - 604) / 10));
+  const exitT = ease.inCubic(clamp01((frame - 613) / 8));
   if (exitT >= 1) return null;
 
   return (
@@ -114,7 +114,7 @@ export const S6Choose: React.FC = () => {
       <PhraseSeq
         phrases={[
           { words: [{ text: "Tu", at: f(VO.tuAlegi) - 3 }, { text: "alegi", at: f(VO.tuAlegi) + 1 }, { text: "cu", at: f(VO.cuCine) - 3 }, { text: "cine", at: f(VO.cuCine) }, { text: "lucrezi", at: f(VO.lucrezi) - 3 }], out: f(VO.laPretul) - 4, breaks: V ? [1] : [] },
-          { words: [{ text: "Prețul", at: f(VO.laPretul) - 2 }, { text: "stabilit", at: f(VO.stabilit) - 3 }, { text: "de", at: f(VO.voiDoi) - 4 }, { text: "voi", at: f(VO.voiDoi) - 2 }, { text: "doi", at: f(VO.doi) - 3 }], out: 604, breaks: V ? [1] : [] },
+          { words: [{ text: "Prețul", at: f(VO.laPretul) - 2 }, { text: "stabilit", at: f(VO.stabilit) - 3 }, { text: "de", at: f(VO.voiDoi) - 4 }, { text: "voi", at: f(VO.voiDoi) - 2 }, { text: "doi", at: f(VO.doi) - 3 }], out: 613, breaks: V ? [1] : [] },
         ]}
         fontSize={V ? 80 : 68}
         y={V ? -740 : -410}

@@ -9,7 +9,7 @@ import { Layout, useLayout } from "../layout";
 import { BOLD, C, FONT } from "../theme";
 import { f, VO } from "../timing";
 
-const IN = 476;
+const IN = 528;
 const SELECT = f(VO.lucrezi) - 3;
 const SPLIT = f(VO.laPretul) - 3;
 const PRICE = f(VO.stabilit);

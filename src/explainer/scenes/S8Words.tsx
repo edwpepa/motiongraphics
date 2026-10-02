@@ -3,7 +3,6 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { KineticText } from "../components/KineticText";
 import { clamp01, drift, ease, keys, pop } from "../lib/anim";
 import { useLayout } from "../layout";
-import { C } from "../theme";
 import { f, VO } from "../timing";
 import { swapOut } from "./S7NoFees";
 
@@ -13,9 +12,15 @@ const POSTEZI = f(VO.postezi2) - LEAD;
 const REZOLVA = f(VO.seRezolva) - LEAD;
 export const LOGO_START = f(VO.voEnd) + 2;
 
-const Centered: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
-  <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", ...style }}>{children}</AbsoluteFill>
-);
+const Centered: React.FC<{ children: React.ReactNode; style?: React.CSSProperties; punchAt?: number }> = ({ children, style, punchAt }) => {
+  const frame = useCurrentFrame();
+  const k = punchAt === undefined ? 0 : 1 - ease.outExpo(clamp01((frame - punchAt) / 12));
+  return (
+    <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", ...style }}>
+      <div style={{ transform: `scale(${1 + 0.22 * k})` }}>{children}</div>
+    </AbsoluteFill>
+  );
+};
 
 // "Handly. Postezi. Se rezolvă." — one big beat per word, swapping in place (brand always written handly.ro)
 export const S8Words: React.FC = () => {
@@ -33,17 +38,17 @@ export const S8Words: React.FC = () => {
   return (
     <AbsoluteFill style={{ transform: `scale(${push}) translateY(${drift(frame, 3, 140)}px)` }}>
       {frame < POSTEZI + 6 && (
-        <Centered style={swapOut(frame, POSTEZI - 1)}>
+        <Centered style={swapOut(frame, POSTEZI - 1)} punchAt={HANDLY}>
           <KineticText words={[{ text: "handly.ro", at: HANDLY }]} fontSize={V ? 178 : 220} style={{ letterSpacing: "-0.045em" }} />
         </Centered>
       )}
       {frame >= POSTEZI - 1 && frame < REZOLVA + 6 && (
-        <Centered style={swapOut(frame, REZOLVA - 1)}>
+        <Centered style={swapOut(frame, REZOLVA - 1)} punchAt={POSTEZI}>
           <KineticText words={[{ text: "Postezi.", at: POSTEZI }]} fontSize={V ? 168 : 190} style={{ letterSpacing: "-0.04em" }} />
         </Centered>
       )}
       {frame >= REZOLVA - 1 && (
-        <Centered>
+        <Centered punchAt={REZOLVA}>
           <div style={{ display: "flex", flexDirection: V ? "column" : "row", alignItems: "center", gap: V ? 40 : 44 }}>
             <div
               style={{
@@ -75,10 +80,9 @@ export const S8Words: React.FC = () => {
             <KineticText
               words={[
                 { text: "Se", at: REZOLVA },
-                { text: "rezolvă.", at: f(VO.seRezolva + 0.11) - LEAD },
+                { text: "rezolvă!", at: f(VO.rezolva) - LEAD },
               ]}
               fontSize={V ? 136 : 150}
-              ink={C.ink}
               style={{ letterSpacing: "-0.04em" }}
             />
           </div>

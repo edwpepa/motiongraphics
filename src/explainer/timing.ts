@@ -19,83 +19,85 @@ export type TimedWord = [text: string, sec: number];
 export const VO = {
   hook: [
     ["Te", 0.1],
-    ["tot", 0.22],
-    ["gândești", 0.36],
-    ["la", 0.9],
-    ["treaba", 0.99],
-    ["aia", 1.2],
-    ["obositoare", 1.45],
-    ["prin", 2.1],
-    ["casă...", 2.34],
+    ["tot", 0.3],
+    ["gândești", 0.45],
+    ["la", 1.0],
+    ["treaba", 1.08],
+    ["aia", 1.3],
+    ["obositoare", 1.65],
+    ["prin", 2.55],
+    ["casă...", 2.75],
   ] as TimedWord[],
-  hookEnd: 2.92,
+  hookEnd: 3.45,
 
   // "pe care o tot amâni?" — one calendar hop per syllable
-  postponeSyllables: [3.21, 3.33, 3.5, 3.61, 3.76, 3.92],
-  postponeEnd: 4.15,
+  postponeSyllables: [3.47, 3.6, 3.75, 3.97, 4.13, 4.3],
+  postponeEnd: 4.65,
 
-  chores: [4.83, 6.52, 8.04],
-  choresEnd: 9.3,
+  chores: [5.17, 6.92, 8.57],
+  choresEnd: 10.1,
 
-  postezi: 9.87,
-  taskul: 10.3,
-  peHandly: 10.66,
-  postEnd: 11.28,
-  dureaza: 11.48,
-  cateva: 12.05,
-  secunde: 12.42,
-  secundeEnd: 12.92,
+  // [long pause] then the energetic half
+  postezi: 11.59,
+  taskul: 12.2,
+  peHandly: 12.61,
+  postEnd: 13.21,
+  dureaza: 13.42,
+  cateva: 13.95,
+  secunde: 14.35,
+  secundeEnd: 14.87,
 
-  taskerii: 13.32,
-  dinZona: 13.75,
-  vad: 14.42,
-  vadTaskul: 14.86,
-  radarEnd: 15.38,
+  taskerii: 15.18,
+  dinZona: 15.6,
+  vad: 16.17,
+  vadTaskul: 16.7,
+  radarEnd: 17.17,
 
-  tuAlegi: 15.63,
-  cuCine: 16.06,
-  lucrezi: 16.54,
-  laPretul: 17.02,
-  stabilit: 17.6,
-  chiar: 18.1,
-  voiDoi: 18.45,
-  doi: 18.7,
-  pretEnd: 18.95,
+  tuAlegi: 17.39,
+  cuCine: 17.88,
+  lucrezi: 18.3,
+  laPretul: 18.73,
+  stabilit: 18.99,
+  chiar: 19.94,
+  voiDoi: 20.3,
+  doi: 20.5,
+  pretEnd: 20.75,
 
   noFees: [
-    ["Fără", 19.38],
-    ["tarife", 19.69],
-    ["de", 20.12],
-    ["firmă.", 20.18],
+    ["Fără", 20.95],
+    ["tarife", 21.25],
+    ["de", 21.65],
+    ["firmă.", 21.75],
   ] as TimedWord[],
   noMiddlemen: [
-    ["Fără", 20.62],
-    ["intermediari.", 20.98],
+    ["Fără", 22.26],
+    ["intermediari.", 22.55],
   ] as TimedWord[],
-  noMiddlemenEnd: 21.65,
+  noMiddlemenEnd: 23.33,
 
-  handly: 22.2,
-  postezi2: 22.97,
-  seRezolva: 23.75,
-  voEnd: 24.39,
+  handly: 23.62,
+  postezi2: 24.36,
+  seRezolva: 25.15,
+  rezolva: 25.35,
+  voEnd: 26.0,
 };
 
-// Original score: 110 BPM, the "solution" lift lands on frame 300 and the logo hit 7 bars later.
-export const BPM = 110;
-export const MUSIC_LIFT_FRAME = 300;
-export const LOGO_HIT_FRAME = 758;
+// Original score: 112 BPM; the drop lands on "Postează" (frame 360), the logo hit 7 bars later.
+export const BPM = 112;
+export const MUSIC_LIFT_FRAME = 360;
+export const LOGO_HIT_FRAME = 810;
 
-export const DURATION_IN_FRAMES = 870;
+export const DURATION_IN_FRAMES = 915;
 
 // Scene windows (frames, inclusive start / exclusive end incl. transition overlaps)
 export const SCENES = {
-  hook: [0, 108],
-  calendar: [98, 160],
-  chores: [146, 304],
-  post: [286, 418],
-  radar: [398, 490],
-  choose: [466, 600],
-  noFees: [584, 690],
-  words: [668, 746],
-  logo: [746, DURATION_IN_FRAMES],
+  hook: [0, 122],
+  calendar: [112, 175],
+  chores: [158, 372],
+  post: [348, 472],
+  radar: [452, 548],
+  choose: [524, 656],
+  noFees: [640, 730],
+  words: [712, 796],
+  logo: [796, DURATION_IN_FRAMES],
 } as const;

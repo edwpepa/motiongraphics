@@ -72,8 +72,8 @@ const Numbers: React.FC<{ color?: string; muted?: string }> = ({ color = C.ink, 
 export const S2Calendar: React.FC = () => {
   const frame = useCurrentFrame();
   const L = useLayout();
-  const enter = 98;
-  const exitStart = 147;
+  const enter = 112;
+  const exitStart = 160;
 
   const m = markerPos(frame);
   const mPrev = markerPos(frame - 1);
@@ -131,7 +131,7 @@ export const S2Calendar: React.FC = () => {
           >
             <div style={{ position: "absolute", transform: `translate(${tx - gridW / 2}px, ${ty}px)` }}>
               {/* the sheet extends well past the frame so the tilt never shows an edge */}
-              <div style={{ position: "absolute", left: -1600, top: -1400, width: gridW + 3200, height: 5 * CELL_H + 2800, background: "#f4f5f4" }} />
+              <div style={{ position: "absolute", left: -1600, top: -1400, width: gridW + 3200, height: 5 * CELL_H + 2800, background: "rgba(247,250,248,0.78)" }} />
               {WEEKDAYS.map((d, i) => (
                 <div
                   key={i}
@@ -155,7 +155,16 @@ export const S2Calendar: React.FC = () => {
 
               {/* red day marker, smeared along its hop */}
               <DirBlur x={markerVel * 0.55} style={{ position: "absolute", left: m.x - R, top: m.y - R }}>
-                <div style={{ width: R * 2, height: R * 2, borderRadius: "50%", background: C.red, transform: `scale(${lift})`, boxShadow: "0 18px 40px rgba(255,59,48,0.35)" }} />
+                <div
+                  style={{
+                    width: R * 2,
+                    height: R * 2,
+                    borderRadius: "50%",
+                    background: "radial-gradient(circle at 35% 28%, #ff8a80 0%, #ff3b30 45%, #d91e14 100%)",
+                    transform: `scale(${lift})`,
+                    boxShadow: "inset 0 3px 0 rgba(255,255,255,0.45), inset 0 -6px 14px rgba(120,0,0,0.25), 0 22px 44px rgba(255,59,48,0.38)",
+                  }}
+                />
               </DirBlur>
               {/* the same numbers in white, clipped to the marker */}
               <div style={{ position: "absolute", left: 0, top: 0, clipPath: `circle(${R * lift}px at ${m.x}px ${m.y}px)` }}>

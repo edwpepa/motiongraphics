@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Audio, staticFile, useCurrentFrame } from "remotion";
-import { WaveBackground } from "./components/Backgrounds";
+import { LightBackground } from "./components/Backgrounds";
 import { DarkStage } from "./components/DarkStage";
 import { useExplainerFonts } from "./fonts";
 import { S1Hook } from "./scenes/S1Hook";
@@ -25,7 +25,7 @@ export const HandlyExplainer: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ background: "#000" }}>
-      <WaveBackground />
+      <LightBackground />
       <Window range={SCENES.hook}>
         <S1Hook />
       </Window>

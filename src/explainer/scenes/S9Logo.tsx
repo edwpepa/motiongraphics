@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Img, staticFile, useCurrentFrame } from "remotion";
-import { NightBackground, WaveBackground } from "../components/Backgrounds";
-import { KineticText } from "../components/KineticText";
+import { LightBackground, NightBackground } from "../components/Backgrounds";
+import { INK_DARK, KineticText, SHADOW_DARK } from "../components/KineticText";
 import { clamp01, ease, keys, lerp, pop } from "../lib/anim";
 import { useLayout } from "../layout";
 import { BOLD, C, FONT } from "../theme";
@@ -9,7 +9,7 @@ import { DURATION_IN_FRAMES, LOGO_HIT_FRAME } from "../timing";
 import { LOGO_START, S8Words } from "./S8Words";
 
 // The whole light frame collapses into an icon-sized square that dissolves into the bare white logo
-// (reference ending) — no tile, no glow behind it.
+// (reference ending) — the original green logo, no tile behind it.
 export const S9Logo: React.FC = () => {
   const frame = useCurrentFrame();
   const L = useLayout();
@@ -41,7 +41,7 @@ export const S9Logo: React.FC = () => {
   return (
     <AbsoluteFill style={{ background: "#000" }}>
       <AbsoluteFill style={{ opacity: outro }}>
-        <NightBackground intensity={0} />
+        <NightBackground intensity={0.45} />
 
         {/* shrinking frame → icon-sized square */}
         {melt < 1 && (
@@ -60,13 +60,13 @@ export const S9Logo: React.FC = () => {
             }}
           >
             <div style={{ position: "absolute", left: "50%", top: "50%", width: L.W, height: L.H, transform: `translate(-50%, -50%) scale(${inner})` }}>
-              <WaveBackground />
+              <LightBackground />
               <S8Words />
             </div>
           </div>
         )}
 
-        {/* bare white logo */}
+        {/* bare green logo */}
         {frame >= LOGO_HIT_FRAME - 2 && (
           <Img
             src={staticFile("images/logo.webp")}
@@ -76,7 +76,7 @@ export const S9Logo: React.FC = () => {
               top: L.cy,
               width: ICON * 0.9,
               height: ICON * 0.9,
-              filter: `brightness(0) invert(1)${logo < 0.98 ? ` blur(${(1 - Math.min(1, logo)) * 8}px)` : ""}`,
+              filter: `drop-shadow(0 18px 40px rgba(0,191,99,0.35))${logo < 0.98 ? ` blur(${(1 - Math.min(1, logo)) * 8}px)` : ""}`,
               opacity: clamp01(logo * 1.6),
               transform: `translate(-50%, -50%) translateY(${lift}px) scale(${logo * settle * (1 - 0.14 * rise)})`,
             }}
@@ -97,7 +97,7 @@ export const S9Logo: React.FC = () => {
               gap: L.vertical ? 30 : 22,
             }}
           >
-            <KineticText words={[{ text: "handly.ro", at: wordAt }]} fontSize={L.vertical ? 132 : 112} ink={C.white} tint="#ffffff" style={{ letterSpacing: "-0.045em" }} />
+            <KineticText words={[{ text: "handly.ro", at: wordAt }]} fontSize={L.vertical ? 132 : 112} ink={INK_DARK} tint={INK_DARK} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.045em" }} />
             <div
               style={{
                 fontFamily: FONT,
@@ -109,7 +109,7 @@ export const S9Logo: React.FC = () => {
                 filter: tagline < 1 ? `blur(${(1 - tagline) * 6}px)` : undefined,
               }}
             >
-              Postezi. Se rezolvă.
+              Postezi. Se rezolvă!
             </div>
           </div>
         )}

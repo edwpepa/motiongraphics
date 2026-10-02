@@ -1,145 +1,114 @@
 import React, { useLayoutEffect, useRef } from "react";
 import { AbsoluteFill, staticFile, useCurrentFrame } from "remotion";
 import { useLayout } from "../layout";
-import { C } from "../theme";
 
-// Both backgrounds are painted on a small canvas with a canvas-level blur and scaled up by CSS.
-// The heavy Gaussian blur then costs almost nothing per frame and the soft edges stay buttery.
+// Backgrounds are painted on a quarter-resolution canvas with canvas-level blur and scaled up by
+// CSS: heavy, silky gradients for almost no per-frame cost.
 const canvasSize = (W: number, H: number) => ({ CW: Math.round(W / 4), CH: Math.round(H / 4) });
 
-type WaveLayer = {
-  base: number;
-  amps: [number, number, number];
-  freqs: [number, number, number];
-  speeds: [number, number, number];
-  phases: [number, number, number];
-  top: string;
-  bottom: string;
-  alpha: number;
-  blur: number;
-};
+type Blob = { x: number; y: number; r: number; color: string; ax: number; ay: number; px: number; py: number; phase: number };
 
-const LAYERS: WaveLayer[] = [
-  {
-    base: 0.6,
-    amps: [0.1, 0.04, 0.018],
-    freqs: [0.7, 1.45, 2.6],
-    speeds: [0.16, -0.23, 0.31],
-    phases: [0.4, 1.9, 0.2],
-    top: "rgba(205,236,221,0.9)",
-    bottom: "rgba(166,221,195,0.9)",
-    alpha: 0.7,
-    blur: 16,
-  },
-  {
-    base: 0.71,
-    amps: [0.11, 0.035, 0.015],
-    freqs: [0.55, 1.2, 2.3],
-    speeds: [-0.12, 0.19, -0.27],
-    phases: [2.2, 0.6, 1.1],
-    top: "rgba(164,222,195,1)",
-    bottom: "rgba(118,203,163,1)",
-    alpha: 0.92,
-    blur: 12,
-  },
+// Light "mesh" — mint / aqua / lime / lavender clouds drifting over a cool white.
+const LIGHT_BLOBS: Blob[] = [
+  { x: 0.12, y: 0.82, r: 0.55, color: "120,220,172", ax: 0.08, ay: 0.05, px: 11, py: 13, phase: 0 },
+  { x: 0.85, y: 0.9, r: 0.6, color: "102,206,214", ax: 0.07, ay: 0.06, px: 13, py: 9, phase: 1.3 },
+  { x: 0.55, y: 1.05, r: 0.5, color: "185,236,140", ax: 0.1, ay: 0.04, px: 9, py: 12, phase: 2.2 },
+  { x: 0.95, y: 0.15, r: 0.42, color: "205,200,250", ax: 0.06, ay: 0.06, px: 12, py: 10, phase: 0.7 },
+  { x: 0.05, y: 0.1, r: 0.38, color: "170,232,214", ax: 0.06, ay: 0.05, px: 10, py: 14, phase: 2.9 },
 ];
 
-function drawWave(ctx: CanvasRenderingContext2D, layer: WaveLayer, t: number, lift: number, CW: number, CH: number) {
-  ctx.save();
-  ctx.filter = `blur(${layer.blur}px)`;
-  ctx.globalAlpha = layer.alpha;
-  ctx.beginPath();
-  ctx.moveTo(-40, CH + 40);
-  for (let x = -40; x <= CW + 40; x += 6) {
-    const u = x / CW;
-    let y = layer.base + lift;
-    for (let k = 0; k < 3; k++) {
-      y += layer.amps[k] * Math.sin(Math.PI * 2 * (u * layer.freqs[k] + t * layer.speeds[k]) + layer.phases[k]);
-    }
-    ctx.lineTo(x, y * CH);
+// Night aurora — deep green / teal / lime light.
+const NIGHT_BLOBS: Blob[] = [
+  { x: 0.25, y: 0.7, r: 0.5, color: "0,170,90", ax: 0.1, ay: 0.06, px: 9, py: 11, phase: 0 },
+  { x: 0.8, y: 0.3, r: 0.42, color: "0,120,130", ax: 0.08, ay: 0.08, px: 11, py: 8, phase: 1.7 },
+  { x: 0.6, y: 0.85, r: 0.36, color: "90,200,90", ax: 0.09, ay: 0.05, px: 8, py: 12, phase: 3.1 },
+  { x: 0.1, y: 0.15, r: 0.3, color: "20,90,120", ax: 0.07, ay: 0.07, px: 12, py: 10, phase: 0.9 },
+];
+
+function paint(ctx: CanvasRenderingContext2D, CW: number, CH: number, blobs: Blob[], t: number, alpha: number, base: string, beam: number) {
+  ctx.globalCompositeOperation = "source-over";
+  ctx.filter = "none";
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, CW, CH);
+  const U = Math.max(CW, CH);
+  for (const b of blobs) {
+    const cx = (b.x + b.ax * Math.sin((t / b.px) * Math.PI * 2 + b.phase)) * CW;
+    const cy = (b.y + b.ay * Math.cos((t / b.py) * Math.PI * 2 + b.phase)) * CH;
+    const r = b.r * U * (1 + 0.08 * Math.sin(t * 0.5 + b.phase));
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, `rgba(${b.color},${alpha})`);
+    g.addColorStop(0.55, `rgba(${b.color},${alpha * 0.45})`);
+    g.addColorStop(1, `rgba(${b.color},0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, CW, CH);
   }
-  ctx.lineTo(CW + 40, CH + 40);
-  ctx.closePath();
-  const g = ctx.createLinearGradient(0, CH * (layer.base - 0.12), 0, CH);
-  g.addColorStop(0, layer.top);
-  g.addColorStop(1, layer.bottom);
-  ctx.fillStyle = g;
-  ctx.fill();
-  ctx.restore();
+  // soft diagonal light beam drifting across
+  if (beam > 0) {
+    ctx.save();
+    ctx.filter = `blur(${U * 0.03}px)`;
+    ctx.translate(((t * 0.035) % 1.6 - 0.3) * CW, 0);
+    ctx.rotate(-0.5);
+    const lg = ctx.createLinearGradient(-U * 0.12, 0, U * 0.12, 0);
+    lg.addColorStop(0, "rgba(255,255,255,0)");
+    lg.addColorStop(0.5, `rgba(255,255,255,${beam})`);
+    lg.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = lg;
+    ctx.fillRect(-U * 0.12, -U, U * 0.24, U * 3);
+    ctx.restore();
+  }
 }
 
-/** Light theme: soft grey paper + a slow, heavily blurred mint wave (brand-tinted take on the reference's sky wave). */
-export const WaveBackground: React.FC<{ lift?: number }> = ({ lift = 0 }) => {
+const useCanvas = (draw: (ctx: CanvasRenderingContext2D, CW: number, CH: number, t: number) => void, deps: unknown[]) => {
   const frame = useCurrentFrame();
   const ref = useRef<HTMLCanvasElement>(null);
   const L = useLayout();
   const { CW, CH } = canvasSize(L.W, L.H);
-  // in the tall reel the wave sits lower so it stays a band at the bottom
-  const shift = lift + (L.vertical ? 0.08 : 0);
-
   useLayoutEffect(() => {
     const ctx = ref.current?.getContext("2d");
     if (!ctx) return;
-    const t = frame / 30;
-    ctx.clearRect(0, 0, CW, CH);
-    for (const layer of LAYERS) drawWave(ctx, layer, t, shift, CW, CH);
-  }, [frame, shift, CW, CH]);
+    draw(ctx, CW, CH, frame / 30);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frame, CW, CH, ...deps]);
+  return <canvas ref={ref} width={CW} height={CH} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />;
+};
 
+/** Fine grid that gives the liquid glass something to bend. */
+const Grid: React.FC<{ color: string; opacity: number }> = ({ color, opacity }) => {
+  const frame = useCurrentFrame();
   return (
-    <AbsoluteFill style={{ background: C.paper }}>
-      <canvas ref={ref} width={CW} height={CH} style={{ width: "100%", height: "100%" }} />
+    <AbsoluteFill
+      style={{
+        opacity,
+        backgroundImage: `linear-gradient(${color} 1px, transparent 1px), linear-gradient(90deg, ${color} 1px, transparent 1px)`,
+        backgroundSize: "72px 72px",
+        backgroundPosition: `${(frame * 0.25) % 72}px ${(frame * 0.12) % 72}px`,
+        WebkitMaskImage: "radial-gradient(ellipse 75% 70% at 50% 45%, #000 20%, transparent 85%)",
+        maskImage: "radial-gradient(ellipse 75% 70% at 50% 45%, #000 20%, transparent 85%)",
+      }}
+    />
+  );
+};
+
+/** Light theme: animated mint/aqua mesh gradient, a drifting light beam, a faint grid and grain. */
+export const LightBackground: React.FC = () => {
+  const canvas = useCanvas((ctx, CW, CH, t) => paint(ctx, CW, CH, LIGHT_BLOBS, t, 0.85, "#f1f5f3", 0.35), []);
+  return (
+    <AbsoluteFill style={{ background: "#f1f5f3", overflow: "hidden" }}>
+      {canvas}
+      <Grid color="rgba(20,60,40,0.06)" opacity={1} />
       <Grain opacity={0.05} />
     </AbsoluteFill>
   );
 };
 
-type Glow = { x: number; y: number; rx: number; ry: number; rot: number; color: string; alpha: number; blur: number };
-
-/** Dark theme: near-black with a drifting green light ribbon (the reference's magenta flame, in brand colour). */
-export const NightBackground: React.FC<{ cx?: number; cy?: number; scale?: number; intensity?: number }> = ({
-  cx = 0.42,
-  cy = 0.5,
-  scale = 1,
-  intensity = 1,
-}) => {
-  const frame = useCurrentFrame();
-  const ref = useRef<HTMLCanvasElement>(null);
-  const L = useLayout();
-  const { CW, CH } = canvasSize(L.W, L.H);
-  const U = Math.min(CW, CH);
-
-  useLayoutEffect(() => {
-    const ctx = ref.current?.getContext("2d");
-    if (!ctx) return;
-    const t = frame / 30;
-    ctx.clearRect(0, 0, CW, CH);
-    const sway = Math.sin(t * 0.9) * 0.06;
-    const glows: Glow[] = [
-      { x: 0, y: 0, rx: 0.3, ry: 0.1, rot: -0.75 + sway, color: "0,191,99", alpha: 0.5, blur: 24 },
-      { x: 0.05, y: -0.03, rx: 0.19, ry: 0.04, rot: -0.95 + sway * 1.6, color: "30,215,125", alpha: 0.5, blur: 10 },
-      { x: -0.08, y: 0.06, rx: 0.25, ry: 0.07, rot: -0.45 - sway, color: "0,140,120", alpha: 0.4, blur: 20 },
-      { x: 0.1, y: 0.02, rx: 0.11, ry: 0.025, rot: -1.15 + sway * 2, color: "150,240,190", alpha: 0.28, blur: 7 },
-    ];
-    ctx.globalCompositeOperation = "lighter";
-    for (const g of glows) {
-      ctx.save();
-      ctx.filter = `blur(${g.blur * scale}px)`;
-      ctx.globalAlpha = g.alpha * intensity;
-      ctx.translate(cx * CW + g.x * scale * U * 1.78 + Math.sin(t * 0.7 + g.rot) * 6, cy * CH + g.y * scale * U);
-      ctx.rotate(g.rot);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, g.rx * U * 1.78 * scale, g.ry * U * scale * 1.8, 0, 0, Math.PI * 2);
-      ctx.fillStyle = `rgb(${g.color})`;
-      ctx.fill();
-      ctx.restore();
-    }
-    ctx.globalCompositeOperation = "source-over";
-  }, [frame, cx, cy, scale, intensity, CW, CH, U]);
-
+/** Dark theme: near-black with slow green/teal aurora light. */
+export const NightBackground: React.FC<{ intensity?: number }> = ({ intensity = 1 }) => {
+  const canvas = useCanvas((ctx, CW, CH, t) => paint(ctx, CW, CH, NIGHT_BLOBS, t, 0.55 * intensity, "#060a08", 0.05 * intensity), [intensity]);
   return (
-    <AbsoluteFill style={{ background: C.night }}>
-      <canvas ref={ref} width={CW} height={CH} style={{ width: "100%", height: "100%" }} />
-      <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55) 100%)" }} />
+    <AbsoluteFill style={{ background: "#060a08", overflow: "hidden" }}>
+      {canvas}
+      <Grid color="rgba(255,255,255,0.035)" opacity={intensity} />
+      <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.6) 100%)" }} />
       <Grain opacity={0.06} />
     </AbsoluteFill>
   );

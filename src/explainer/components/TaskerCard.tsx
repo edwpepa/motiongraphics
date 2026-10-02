@@ -3,6 +3,7 @@ import { BOLD, C, FONT } from "../theme";
 import { mixColor } from "../lib/anim";
 import { Avatar, Person } from "./Avatar";
 import { Glyph, GlyphName } from "./Icons";
+import { LiquidGlass } from "./Glass";
 
 export const CARD_W = 390;
 export const CARD_H = 440;
@@ -19,21 +20,9 @@ export const TaskerCard: React.FC<{
   selected?: number;
   note?: string;
 }> = ({ person, name, role, roleIcon, rating, jobs, km, selected = 0, note }) => (
-  <div
-    style={{
-      position: "relative",
-      width: CARD_W,
-      height: CARD_H,
-      borderRadius: 34,
-      overflow: "hidden",
-      background: C.nightCard,
-      border: `${1.5 + 1.5 * selected}px solid ${selected > 0 ? mixColor("#2b302e", C.green, selected) : "rgba(255,255,255,0.08)"}`,
-      boxShadow: `0 40px 80px rgba(0,0,0,0.55), 0 0 ${70 * selected}px rgba(0,191,99,${0.35 * selected})`,
-      fontFamily: FONT,
-      fontWeight: BOLD,
-    }}
-  >
-    <div style={{ position: "absolute", left: 0, top: 0, right: 0, height: "47%", background: `linear-gradient(180deg, #2a2f2d 0%, ${C.nightCardTop} 100%)` }} />
+  <div style={{ position: "relative", width: CARD_W, height: CARD_H, fontFamily: FONT, fontWeight: BOLD, borderRadius: 38, boxShadow: `0 0 ${80 * selected}px rgba(0,191,99,${0.4 * selected})` }}>
+    <LiquidGlass width={CARD_W} height={CARD_H} radius={38} tone="dark" strength={70} frost={18} style={{ position: "absolute", left: 0, top: 0 }} />
+    <div style={{ position: "absolute", inset: 0, borderRadius: 38, border: `${2 * selected}px solid rgba(0,191,99,${selected})`, pointerEvents: "none" }} />
     <div style={{ position: "absolute", left: 34, top: 44 }}>
       <Avatar person={person} size={124} lit={selected} />
     </div>

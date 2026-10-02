@@ -33,40 +33,36 @@ const ScanLines: React.FC<{ start: number; dur: number }> = ({ start, dur }) => 
   );
 };
 
-// "Fără tarife de firmă. Fără intermediari."
+// "Fără tarife de firmă. Fără intermediari." — the first line lifts and steps back, the second lands under it
 export const S7NoFees: React.FC = () => {
   const frame = useCurrentFrame();
   const L = useLayout();
-  const fs = L.vertical ? 108 : 82;
-  const swap = f(VO.noMiddlemen[0][1]) - LEAD - 1;
+  const V = L.vertical;
+  const fs = V ? 108 : 92;
+  const swap = f(VO.noMiddlemen[0][1]) - LEAD - 2;
   const exit = f(VO.handly) - LEAD - 1;
   const push = keys(frame, [
-    [585, 0.97],
-    [exit, 1.04],
+    [640, 0.97],
+    [exit, 1.03],
   ], ease.linear);
+  const lift = ease.inOutCubic(clamp01((frame - swap) / 12));
+  const half = V ? 150 : 72;
 
   return (
     <AbsoluteFill style={{ justifyContent: "center", alignItems: "center" }}>
-      <ScanLines start={584} dur={16} />
-      <div style={{ position: "relative", transform: `scale(${push}) translateY(${drift(frame, 4, 150)}px)` }}>
-        {frame < swap + 7 && (
-          <div style={swapOut(frame, swap)}>
-            <KineticText words={VO.noFees.map(([text, sec]) => ({ text, at: f(sec) - LEAD }))} fontSize={fs} breaks={L.vertical ? [1] : []} />
-          </div>
-        )}
+      <ScanLines start={640} dur={16} />
+      <AbsoluteFill style={{ transform: `scale(${push}) translateY(${drift(frame, 4, 150)}px)` }}>
+      <AbsoluteFill style={swapOut(frame, exit)}>
+        <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", transform: `translateY(${-half * lift}px) scale(${1 - 0.14 * lift})`, opacity: 1 - 0.62 * lift }}>
+          <KineticText words={VO.noFees.map(([text, sec]) => ({ text, at: f(sec) - LEAD }))} fontSize={fs} breaks={V ? [1] : []} />
+        </AbsoluteFill>
         {frame >= swap && (
-          <div style={{ position: "absolute", left: "50%", top: 0, transform: "translateX(-50%)" }}>
-            <div style={swapOut(frame, exit)}>
-              <KineticText
-                words={VO.noMiddlemen.map(([text, sec]) => ({ text, at: f(sec) - LEAD - 1 }))}
-                fontSize={fs}
-                breaks={L.vertical ? [0] : []}
-                mode="track"
-              />
-            </div>
-          </div>
+          <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", transform: `translateY(${half}px)` }}>
+            <KineticText words={VO.noMiddlemen.map(([text, sec]) => ({ text, at: f(sec) - LEAD - 1 }))} fontSize={fs} breaks={V ? [0] : []} mode="track" />
+          </AbsoluteFill>
         )}
-      </div>
+      </AbsoluteFill>
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };

@@ -1,5 +1,6 @@
 import React from "react";
 import { BOLD, C, FONT } from "../theme";
+import { LiquidGlass } from "./Glass";
 
 /** Floating tag with an icon — the reference's "Health Goals / Workouts" chips. */
 export const Pill: React.FC<{
@@ -32,3 +33,39 @@ export const Pill: React.FC<{
     <span>{label}</span>
   </div>
 );
+
+/** Liquid-glass variant of the tag (width estimated from the label, Inter Bold ≈ 0.6em per glyph). */
+export const GlassPill: React.FC<{ icon?: React.ReactNode; label: string; size?: number; tone?: "light" | "dark"; iconSize?: number }> = ({
+  icon,
+  label,
+  size = 30,
+  tone = "light",
+  iconSize,
+}) => {
+  const h = size * 2.2;
+  const w = label.length * size * 0.6 + (icon ? (iconSize ?? size * 1.45) + size * 0.45 : 0) + size * 1.5;
+  return (
+    <LiquidGlass width={w} height={h} radius={h / 2} tone={tone} strength={36} frost={10}>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: size * 0.45,
+          fontFamily: FONT,
+          fontWeight: BOLD,
+          fontSize: size,
+          letterSpacing: "-0.01em",
+          whiteSpace: "nowrap",
+          color: tone === "light" ? C.ink : C.nightInk,
+          paddingRight: icon ? size * 0.15 : 0,
+        }}
+      >
+        {icon}
+        <span>{label}</span>
+      </div>
+    </LiquidGlass>
+  );
+};

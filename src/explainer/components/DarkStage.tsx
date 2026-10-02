@@ -21,10 +21,7 @@ export const DarkStage: React.FC<{ revealAt: number; exitAt: number; children: R
 
   // the light ribbon sits low behind the radar, then drifts up behind the cards
   const k = ease.inOutCubic(clamp01((frame - (revealAt + 72)) / 30));
-  const glowX = 0.3 - 0.02 * k;
-  const glowY = 0.62 + 0.02 * k;
   const glowI = 0.55 + 0.1 * k;
-  const glowS = 1 - 0.12 * k;
 
   return (
     <AbsoluteFill
@@ -35,7 +32,7 @@ export const DarkStage: React.FC<{ revealAt: number; exitAt: number; children: R
       }}
     >
       <DirBlur x={Math.abs(ex - exPrev) * 260} style={{ position: "absolute", inset: 0, transform: `translateX(${shift}px)` }}>
-        <NightBackground cx={glowX} cy={glowY} intensity={glowI} scale={glowS} />
+        <NightBackground intensity={glowI} />
         {children}
       </DirBlur>
     </AbsoluteFill>

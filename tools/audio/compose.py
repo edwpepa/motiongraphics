@@ -25,7 +25,7 @@ from scipy import signal
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SR = 44100
 FPS = 30
-DUR = 870 / FPS
+DUR = 915 / FPS
 N = int(DUR * SR)
 VO_OFFSET = 0.4
 
@@ -373,10 +373,10 @@ def glitch(dur=0.36):
 
 # ----------------------------------------------------------------------------- score
 
-BPM = 110
+BPM = 112
 BEAT = 60 / BPM
 BAR = 4 * BEAT
-LIFT = 10.0
+LIFT = 12.0
 HIT = LIFT + 7 * BAR  # = frame 758 (logo lands)
 
 
@@ -394,7 +394,7 @@ CHORDS = {
     "Am7": (45, [57, 60, 64, 67]),
 }
 
-INTRO = ["Am9", "Fmaj7", "Am9", "G"]  # bars -4 .. -1
+INTRO = ["Am9", "Fmaj7", "Am9", "Fmaj7", "G"]  # bars -5 .. -1
 MAIN = ["Cadd9", "G", "Am7", "Fmaj7", "Cadd9", "G"]  # bars 0 .. 5
 BREAK = "Fmaj7"  # bar 6
 
@@ -407,9 +407,9 @@ def build_music():
     fx = np.zeros((2, N))
 
     # pad: swell in on the intro chord, then one chord per bar
-    place(pad, pad_chord(CHORDS["Am9"][1], bar_t(-4) + 0.25, attack=0.45, release=0.4), 0.0, 0.9)
+    place(pad, pad_chord(CHORDS["Am9"][1], bar_t(-5) + 0.25, attack=0.45, release=0.4), 0.0, 0.9)
     for k, name in enumerate(INTRO):
-        place(pad, pad_chord(CHORDS[name][1], BAR + 0.5, attack=0.35, release=0.6), bar_t(k - 4))
+        place(pad, pad_chord(CHORDS[name][1], BAR + 0.5, attack=0.35, release=0.6), bar_t(k - 5))
     for k, name in enumerate(MAIN):
         place(pad, pad_chord(CHORDS[name][1], BAR + 0.5, attack=0.15, release=0.5), bar_t(k), 1.1)
     place(pad, pad_chord(CHORDS[BREAK][1], BAR + 0.3, attack=0.25, release=0.2), bar_t(6), 1.15)
@@ -425,7 +425,7 @@ def build_music():
     for k, name in enumerate(INTRO):
         tones = CHORDS[name][1]
         for b, idx in enumerate((0, 2, 1, 3)):
-            place(plk, stereo(pluck(tones[idx] + 12, 1.2, tau=0.3, bright=0.6), (-0.3, 0.3)[b % 2]), bar_t(k - 4) + b * BEAT, 0.5)
+            place(plk, stereo(pluck(tones[idx] + 12, 1.2, tau=0.3, bright=0.6), (-0.3, 0.3)[b % 2]), bar_t(k - 5) + b * BEAT, 0.5 if k < 4 else 0.25)
     pattern = (0, 2, 3, 1, 2, 3, 1, 2)
     for k, name in enumerate(MAIN):
         tones = CHORDS[name][1]
@@ -436,7 +436,7 @@ def build_music():
 
     # bass
     for k, name in enumerate(INTRO):
-        place(bass, bass_note(CHORDS[name][0], BAR - 0.05, attack=0.25, release=0.4), bar_t(k - 4), 0.55)
+        place(bass, bass_note(CHORDS[name][0], BAR - 0.05, attack=0.25, release=0.4), bar_t(k - 5), 0.55 if k < 4 else 0.3)
     for k, name in enumerate(MAIN):
         root = CHORDS[name][0]
         for s in range(8):
@@ -445,9 +445,9 @@ def build_music():
     place(bass, bass_note(36, DUR - HIT, attack=0.005, release=2.0), HIT, 0.7)
 
     # drums: shaker builds in the intro, half-time groove after the lift
-    for k in (-2, -1):
+    for k in (-3, -2):
         for s in range(8):
-            place(drums, stereo(shaker(), 0.25 if s % 2 else -0.15), bar_t(k) + s * BEAT / 2, 0.22 + 0.12 * (s % 2) + (0.08 if k == -1 else 0))
+            place(drums, stereo(shaker(), 0.25 if s % 2 else -0.15), bar_t(k) + s * BEAT / 2, 0.22 + 0.12 * (s % 2) + (0.08 if k == -2 else 0))
     sidechain = np.ones(N)
     for k in range(6):
         t0 = bar_t(k)
@@ -470,9 +470,11 @@ def build_music():
         place(drums, stereo(clap(), 0.0), tt, 0.12 + 0.35 * (i / n_roll) ** 1.5)
 
     # transitions / impacts in the score
-    place(fx, reverse_swell(1.4), LIFT - 1.4, 0.55)
-    place(fx, stereo(crash(), -0.2), LIFT, 0.35)
-    place(fx, stereo(riser(1.9, 300, 5000, 0.6), 0.0), LIFT - 1.9, 0.45)
+    # the long pause before "Postează": a big riser + reverse swell, then an explosive drop
+    place(fx, reverse_swell(1.9), LIFT - 1.9, 0.75)
+    place(fx, stereo(riser(2.4, 200, 9000, 1.0), 0.0), LIFT - 2.4, 0.75)
+    place(fx, stereo(sub_drop(2.0), 0.0), LIFT, 0.85)
+    place(fx, stereo(crash(), -0.2), LIFT, 0.6)
     place(fx, stereo(riser(BAR, 250, 7500, 1.0), 0.0), bar_t(6), 0.6)
     place(fx, reverse_swell(1.8), HIT - 1.8, 0.7)
     place(fx, stereo(sub_drop(2.6), 0.0), HIT, 0.95)
@@ -496,71 +498,75 @@ def build_music():
 def build_sfx():
     sfx = np.zeros((2, N))
 
-    # soft air swell into the first word
-    place(sfx, whoosh(0.55, 300, 2400, 0.9, (-0.2, 0.2), air=0.7), 0.0, 0.18)
+    # light bloom + liquid glass drop at the very start
+    place(sfx, whoosh(0.55, 300, 2400, 0.9, (-0.2, 0.2), air=0.7), 0.0, 0.2)
+    place(sfx, chime([84, 91], gap=0.09, tau=0.5), fr(4), 0.08)
     # S1 → S2: whip left / calendar in from the right
-    place(sfx, whoosh(0.5, 300, 4200, 0.6, (0.7, -0.7)), fr(99) - 0.22, 0.5)
+    place(sfx, whoosh(0.5, 300, 4200, 0.6, (0.7, -0.7)), fr(115) - 0.22, 0.5)
     # calendar hops ("pe care o tot amâni?")
-    for s in (3.21, 3.33, 3.5, 3.61, 3.76, 3.92):
+    for s in (3.47, 3.6, 3.75, 3.97, 4.13, 4.3):
         place(sfx, stereo(flip(), 0.15), fr(f(s) + 1), 0.32)
-    # vertical whip into the task list
-    place(sfx, whoosh(0.55, 220, 3000, 0.55, (0.0, 0.0), low=0.5), fr(147) - 0.2, 0.48)
-    # chores appear + "for 2 weeks" tags
-    for s in (4.83, 6.52, 8.04):
-        place(sfx, stereo(pop_sfx(), -0.1), fr(f(s) - 3), 0.28)
-    for s in (5.74, 7.08, 8.74):
-        place(sfx, stereo(tick(2600), 0.2), fr(f(s) + 7), 0.16)
-    # list whips out, phone spins in (into the music lift)
-    place(sfx, whoosh(0.7, 250, 5000, 0.5, (0.8, -0.4), low=0.35), fr(287) - 0.12, 0.55)
+    # calendar dissolves into the notification stack
+    place(sfx, whoosh(0.55, 220, 3000, 0.55, (0.0, 0.0), low=0.5), fr(160) - 0.2, 0.42)
+    # notifications land + their "postponed for…" subtitles
+    for s in (5.17, 6.92, 8.57):
+        place(sfx, stereo(pop_sfx(1150, 700), -0.1), fr(f(s) - 3), 0.26)
+        place(sfx, chime([86], tau=0.3), fr(f(s) - 2), 0.05)
+    for s in (5.85, 7.45, 9.15):
+        place(sfx, stereo(tick(2600), 0.2), fr(f(s) + 4), 0.14)
+    # stack squeezes, camera punches through, white flash, phone slams in on the drop
+    place(sfx, whoosh(0.9, 5000, 400, 0.85, (0.0, 0.0), low=0.4), fr(346) - 0.5, 0.45)
+    place(sfx, whoosh(0.6, 250, 5000, 0.4, (0.8, -0.4), low=0.5), fr(352), 0.6)
     # typing "Robinet care curge"
-    type_start = f(9.87) + 1
+    type_start = f(11.59) + 1
     for i in range(18):
         place(sfx, stereo(key_click(), 0.05), fr(type_start + 16 * (i + 1) / 18), 0.13 + 0.04 * rng.random())
-    category = f(10.3) + 9
-    press = f(10.66) + 4
+    category = f(12.2) + 9
+    press = f(12.61) + 4
     success = press + 10
     place(sfx, stereo(tap(), 0.0), fr(category), 0.28)
     place(sfx, whoosh(0.35, 500, 2500, 0.5, (0.0, 0.0), air=0.6), fr(category) - 0.1, 0.12)
     place(sfx, stereo(tap(), 0.0), fr(press), 0.42)
     place(sfx, chime([88, 95]), fr(success), 0.2)
-    for at, pan in ((category + 4, -0.5), (press + 2, 0.5), (success + 5, 0.55), (f(12.05) - 2, -0.55)):
+    for at, pan in ((category + 4, -0.5), (press + 2, 0.5), (success + 5, 0.55), (f(13.95) - 2, -0.55)):
         place(sfx, stereo(pop_sfx(1100, 600), pan), fr(at), 0.2)
     # phone drops away, radar reveal + pings
-    place(sfx, whoosh(0.55, 260, 2600, 0.45, (0.0, 0.0), low=0.4), fr(397) - 0.05, 0.4)
-    rings = (f(13.32) - 1, f(13.32) + 17, f(14.42) + 1)
+    place(sfx, whoosh(0.55, 260, 2600, 0.45, (0.0, 0.0), low=0.4), fr(449) - 0.05, 0.4)
+    rings = (f(15.18) - 1, f(15.18) + 17, f(16.17) + 1)
     for i, r in enumerate(rings):
         place(sfx, reverb(sonar(1180 if i != 2 else 1320), IR_HALL) * 0.6 + stereo(sonar(1180 if i != 2 else 1320)), fr(r), 0.22 if i == 0 else 0.15)
-    # taskers light up as the first ring reaches them
     for k, (x, y) in enumerate(((-520, -215), (430, -255), (-330, 240), (560, 175), (-770, 30), (195, 320))):
         d = math.hypot(x, y)
         tt = (1 - (1 - (d - 40) / 960) ** (1 / 3)) * 50  # inverse of ease-out-cubic ring growth
         place(sfx, stereo(tick(1500 + 160 * k), x / 900), fr(rings[0] + tt), 0.11)
-    place(sfx, stereo(pop_sfx(1000, 650), 0.0), fr(f(14.42) - 6), 0.16)
+    place(sfx, stereo(pop_sfx(1000, 650), 0.0), fr(f(16.17) - 6), 0.16)
     # radar slides out, tasker cards slide in
-    place(sfx, whoosh(0.5, 300, 3600, 0.55, (0.6, -0.6)), fr(474) - 0.08, 0.32)
+    place(sfx, whoosh(0.5, 300, 3600, 0.55, (0.6, -0.6)), fr(526) - 0.08, 0.32)
     for i in range(3):
-        place(sfx, whoosh(0.3, 600, 4500, 0.5, (0.8, 0.0), air=0.8), fr(476 + i * 5) - 0.05, 0.14)
-    select = f(16.54) - 3
+        place(sfx, whoosh(0.3, 600, 4500, 0.5, (0.8, 0.0), air=0.8), fr(528 + i * 5) - 0.05, 0.14)
+    select = f(18.3) - 3
     place(sfx, stereo(tap(), 0.0), fr(select), 0.3)
     place(sfx, chime([84]), fr(select + 2), 0.12)
-    split = f(17.02) - 3
+    split = f(18.73) - 3
     place(sfx, whoosh(0.45, 300, 3800, 0.5, (0.0, 0.0)), fr(split) - 0.05, 0.3)
     place(sfx, whoosh(0.35, 500, 4200, 0.5, (0.8, 0.2)), fr(split + 4), 0.16)
-    price = f(17.6)
+    price = f(18.99)
     place(sfx, stereo(pop_sfx(1200, 700), 0.0), fr(price), 0.28)
     place(sfx, chime([91, 96], gap=0.06, tau=0.4), fr(price + 1), 0.1)
-    deal = f(18.45)
+    deal = f(20.3)
     place(sfx, chime([79, 84, 88], gap=0.07, tau=0.7), fr(deal - 1), 0.17)
     # dark → light glitch cut
-    place(sfx, stereo(glitch(), 0.0), fr(585), 0.22)
-    place(sfx, whoosh(0.35, 400, 5000, 0.6, (0.4, -0.4)), fr(585) - 0.05, 0.22)
-    # text swaps
-    for at in (f(20.62) - 4, f(22.2) - 4, f(22.97) - 4, f(23.75) - 4):
-        place(sfx, whoosh(0.32, 700, 5500, 0.55, (0.15, -0.15), air=0.7), fr(at) - 0.06, 0.12)
-    place(sfx, stereo(pop_sfx(900, 600), 0.0), fr(f(23.75)), 0.18)
-    # frame collapses into the app icon → hit (score carries the impact)
-    place(sfx, whoosh(0.42, 5500, 300, 0.85, (0.0, 0.0), low=0.3), fr(746) - 0.02, 0.38)
-    place(sfx, whoosh(0.6, 500, 4000, 0.5, (-0.3, 0.3), air=0.6), fr(778) - 0.1, 0.1)
+    place(sfx, stereo(glitch(), 0.0), fr(641), 0.22)
+    place(sfx, whoosh(0.35, 400, 5000, 0.6, (0.4, -0.4)), fr(641) - 0.05, 0.22)
+    # text beats (the last three punch in)
+    place(sfx, whoosh(0.32, 700, 5500, 0.55, (0.15, -0.15), air=0.7), fr(f(22.26) - 4) - 0.06, 0.12)
+    for at in (f(23.62) - 3, f(24.36) - 3, f(25.15) - 3):
+        place(sfx, whoosh(0.3, 900, 6000, 0.6, (0.1, -0.1), air=0.8), fr(at) - 0.07, 0.16)
+        place(sfx, stereo(kick() * 0.6, 0.0), fr(at), 0.35)
+    place(sfx, stereo(pop_sfx(900, 600), 0.0), fr(f(25.15)), 0.18)
+    # frame collapses into the logo → hit (score carries the impact)
+    place(sfx, whoosh(0.5, 5500, 300, 0.85, (0.0, 0.0), low=0.3), fr(794), 0.38)
+    place(sfx, whoosh(0.6, 500, 4000, 0.5, (-0.3, 0.3), air=0.6), fr(830) - 0.1, 0.1)
     return sfx
 
 
@@ -642,7 +648,7 @@ def main():
 
     # let the score open up once the voice is done (logo hit + end card)
     tt = np.arange(N) / SR
-    music *= np.interp(tt, [VO_OFFSET + 24.45, HIT - 0.1], [1.0, 1.55])[None, :]
+    music *= np.interp(tt, [VO_OFFSET + 10.1, VO_OFFSET + 10.4, VO_OFFSET + 11.5, LIFT, VO_OFFSET + 26.0, HIT - 0.1], [1.0, 1.9, 1.9, 1.15, 1.15, 1.7])[None, :]
 
     mix = vo_st + music + sfx
     mix *= 10 ** ((-14.5 - lufs(mix)) / 20)

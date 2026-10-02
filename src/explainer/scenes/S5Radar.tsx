@@ -2,7 +2,7 @@ import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { Avatar, Person } from "../components/Avatar";
 import { Glyph, IconTile } from "../components/Icons";
-import { Pill } from "../components/Pill";
+import { GlassPill } from "../components/Pill";
 import { DirBlur } from "../lib/Blur";
 import { clamp01, drift, ease, keys, pop } from "../lib/anim";
 import { useLayout } from "../layout";
@@ -45,10 +45,10 @@ const Pin: React.FC = () => (
 export const S5Radar: React.FC = () => {
   const frame = useCurrentFrame();
   const L = useLayout();
-  const exitStart = 474;
+  const exitStart = 526;
 
   const camScale = keys(frame, [
-    [398, 1.16],
+    [452, 1.16],
     [exitStart, 1.0],
   ], ease.outCubic);
   const exitX = -L.W * 0.47 * ease.inCubic(clamp01((frame - exitStart) / 14));
@@ -60,7 +60,7 @@ export const S5Radar: React.FC = () => {
   const seen = lits.filter((l) => frame >= l + 3).length;
   const label = pop(frame, f(VO.vad) - 6, 13, 150);
 
-  const pinDrop = pop(frame, 404, 11, 140);
+  const pinDrop = pop(frame, 458, 11, 140);
 
   return (
     <AbsoluteFill style={{ opacity: exitFade }}>
@@ -109,7 +109,7 @@ export const S5Radar: React.FC = () => {
           {/* taskers nearby */}
           {TASKERS.map((t, i) => {
             const [x, y] = positions[i];
-            const appear = pop(frame, 403 + i * 2, 14, 150);
+            const appear = pop(frame, 457 + i * 2, 14, 150);
             const lit = clamp01((frame - lits[i]) / 6);
             const bump = 1 + 0.14 * Math.sin(clamp01((frame - lits[i]) / 9) * Math.PI);
             const badge = pop(frame, lits[i] + 3, 11, 190);
@@ -163,10 +163,10 @@ export const S5Radar: React.FC = () => {
               position: "absolute",
               left: L.cx,
               top: L.cy - 150,
-              transform: `translate(-50%, -100%) scale(${pop(frame, 410, 12, 160)})`,
+              transform: `translate(-50%, -100%) scale(${pop(frame, 464, 12, 160)})`,
             }}
           >
-            <Pill icon={<IconTile name="droplet" color="blue" size={44} />} label="Robinet care curge" size={30} />
+            <GlassPill tone="dark" icon={<IconTile name="droplet" color="blue" size={44} />} label="Robinet care curge" size={30} />
           </div>
         </AbsoluteFill>
       </DirBlur>
@@ -181,7 +181,7 @@ export const S5Radar: React.FC = () => {
           opacity: clamp01(label * 2) * (1 - clamp01((frame - exitStart + 2) / 8)),
         }}
       >
-        <Pill dark icon={<Glyph name="eye" size={32} color={C.green} weight={2.4} />} label={`${Math.max(1, seen)} taskeri din zona ta au văzut task-ul`} size={30} />
+        <GlassPill tone="dark" icon={<Glyph name="eye" size={32} color={C.green} weight={2.4} />} iconSize={32} label={`${Math.max(1, seen)} taskeri din zona ta au văzut task-ul`} size={30} />
       </div>
     </AbsoluteFill>
   );

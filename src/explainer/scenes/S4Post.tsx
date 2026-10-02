@@ -3,19 +3,19 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { AppScreen, TASK_TEXT } from "../components/AppScreen";
 import { Phone, PHONE_H, PHONE_W } from "../components/Phone";
 import { GlyphName, IconTile, TileColor } from "../components/Icons";
-import { Pill } from "../components/Pill";
+import { GlassPill } from "../components/Pill";
 import { useLayout } from "../layout";
 import { DirBlur } from "../lib/Blur";
 import { clamp01, drift, ease, keys, pop } from "../lib/anim";
 import { f, VO } from "../timing";
 
-const ENTER = 287;
+const ENTER = 348;
 const TYPE_START = f(VO.postezi) + 1;
 const CATEGORY = f(VO.taskul) + 9;
 const PRESS = f(VO.peHandly) + 4;
 const SUCCESS = PRESS + 10;
 const SECONDS_CHIP = f(VO.cateva) - 2;
-const EXIT = 397;
+const EXIT = 449;
 
 type ChipDef = { icon: GlyphName; tile: TileColor; label: string; at: number; pos: [number, number]; vpos: [number, number]; z: number; size?: number };
 const CHIPS: ChipDef[] = [
@@ -26,11 +26,11 @@ const CHIPS: ChipDef[] = [
 ];
 
 const phoneMotion = (frame: number, vertical: boolean) => {
-  const inT = ease.outExpo(clamp01((frame - ENTER) / 24));
+  const inT = ease.outExpo(clamp01((frame - ENTER) / 16));
   const outT = ease.inCubic(clamp01((frame - EXIT) / 13));
   const rotY = keys(frame, [
-    [ENTER, 82],
-    [ENTER + 24, -16],
+    [ENTER, 160],
+    [ENTER + 16, -16],
     [EXIT, 9],
   ], ease.outCubic) - 26 * outT;
   return {
@@ -38,7 +38,7 @@ const phoneMotion = (frame: number, vertical: boolean) => {
     rotY,
     rotX: 5 + 60 * outT,
     y: 300 * outT + drift(frame, 7, 120),
-    scale: (vertical ? 1.04 + 0.08 * inT : 0.8 + 0.06 * inT) * (1 - 0.18 * outT),
+    scale: (vertical ? 1.12 : 0.86) * (1.6 - 0.6 * inT) * (1 - 0.18 * outT),
     opacity: 1 - clamp01((frame - EXIT - 9) / 5),
   };
 };
@@ -111,7 +111,7 @@ export const S4Post: React.FC = () => {
                   opacity: clamp01(p * 3),
                 }}
               >
-                <Pill icon={<IconTile name={c.icon} color={c.tile} size={(c.size ?? 30) * 1.45} />} label={c.label} size={c.size ?? 30} />
+                <GlassPill icon={<IconTile name={c.icon} color={c.tile} size={(c.size ?? 30) * 1.45} />} label={c.label} size={c.size ?? 30} />
               </DirBlur>
             );
           })}

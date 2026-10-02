@@ -1,14 +1,28 @@
 import React from "react";
 import { useCurrentFrame } from "remotion";
-import { BOLD, C, FONT } from "../theme";
+import { BOLD, FONT } from "../theme";
 import { clamp01, ease, mixColor } from "../lib/anim";
+
+// premium type: vertical gradient fills + soft shadow (Apple marketing style)
+export const INK: [string, string] = ["#34463d", "#050a07"];
+export const INK_DARK: [string, string] = ["#ffffff", "#b4c4bb"];
+export const TINT: [string, string] = ["#7af0b4", "#00a957"];
+export const SHADOW = "drop-shadow(0 10px 22px rgba(8,48,28,0.16))";
+export const SHADOW_DARK = "drop-shadow(0 0 28px rgba(0,191,99,0.28)) drop-shadow(0 8px 20px rgba(0,0,0,0.5))";
+
+const grad = (a: [string, string], b: [string, string], t: number): React.CSSProperties => ({
+  backgroundImage: `linear-gradient(180deg, ${mixColor(a[0], b[0], t)} 10%, ${mixColor(a[1], b[1], t)} 90%)`,
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+});
 
 export type KWord = {
   text: string;
   /** frame the word starts entering */
   at: number;
-  /** final colour override (e.g. brand green for the product name) */
-  color?: string;
+  /** final colour override as a [top, bottom] gradient */
+  color?: [string, string];
   /** glue to the next word without a space (e.g. "handly" + ".ro") */
   joinNext?: boolean;
 };
@@ -17,8 +31,12 @@ type Props = {
   words: KWord[];
   fontSize: number;
   weight?: number;
-  ink?: string;
-  tint?: string;
+  /** final text gradient [top, bottom] */
+  ink?: [string, string];
+  /** entrance gradient [top, bottom] */
+  tint?: [string, string];
+  /** CSS drop-shadow filter for the settled text */
+  shadow?: string;
   /** word indices after which a new line starts */
   breaks?: number[];
   /** entrance length per letter, frames */
@@ -38,8 +56,9 @@ export const KineticText: React.FC<Props> = ({
   words,
   fontSize,
   weight = BOLD,
-  ink = C.ink,
-  tint = C.green,
+  ink = INK,
+  tint = TINT,
+  shadow = SHADOW,
   breaks = [],
   dur = 13,
   mode = "rise",
@@ -65,6 +84,7 @@ export const KineticText: React.FC<Props> = ({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
+        filter: shadow,
         ...style,
       }}
     >
@@ -84,8 +104,8 @@ export const KineticText: React.FC<Props> = ({
 const Word: React.FC<{
   word: KWord;
   frame: number;
-  ink: string;
-  tint: string;
+  ink: [string, string];
+  tint: [string, string];
   dur: number;
   mode: "rise" | "track";
   seed: number;
@@ -106,12 +126,11 @@ const Word: React.FC<{
         style={{
           display: "inline-block",
           opacity: clamp01(local / 5),
-          color: mixColor(tint, ink, clamp01((local - 6) / 14)),
           filter: blur > 0.2 ? `blur(${blur}px)` : undefined,
         }}
       >
         {letters.map((ch, i) => (
-          <span key={i} style={{ display: "inline-block", whiteSpace: "pre", transform: `translateX(${(i - mid) * 0.42 * (1 - p)}em)` }}>
+          <span key={i} style={{ display: "inline-block", whiteSpace: "pre", transform: `translateX(${(i - mid) * 0.42 * (1 - p)}em)`, ...grad(tint, ink, clamp01((local - 6) / 14)) }}>
             {ch}
           </span>
         ))}
@@ -142,7 +161,7 @@ const Word: React.FC<{
               whiteSpace: "pre",
               opacity: clamp01(l / 4),
               transform: `translateY(${y}em) rotate(${rot}deg)`,
-              color: mixColor(tint, ink, clamp01((l - 3) / 13)),
+              ...grad(tint, ink, clamp01((l - 3) / 13)),
             }}
           >
             {ch}

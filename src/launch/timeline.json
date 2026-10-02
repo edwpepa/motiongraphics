@@ -1,0 +1,42 @@
+{
+  "fps": 30,
+  "drop": 39.75,
+  "end": 120.0,
+  "songFile": "launch-song.mp3",
+  "pre": [
+    { "vo": [0.0, 21.25], "at": 1.2 },
+    { "vo": [21.95, 33.6], "at": 24.0 },
+    { "vo": [33.85, 36.3], "at": 37.0 }
+  ],
+  "post": {
+    "postezi": 2.2,
+    "taskeri": 5.7,
+    "alegi": 9.6,
+    "cash": 15.15,
+    "urmaresti": 18.1,
+    "fara1": 22.5,
+    "fara2": 24.3,
+    "dar": 31.5,
+    "daca": 36.6,
+    "skills": 38.6,
+    "cont": 43.2,
+    "program": 50.4,
+    "taskurile": 52.6,
+    "muncesti": 54.9,
+    "handly": 62.2,
+    "ajutor": 64.6,
+    "bani": 66.8,
+    "cta": 69.6
+  },
+  "song": [
+    { "at": 0.0, "from": 0.0, "to": 36.4, "muffle": true },
+    { "at": "drop", "from": 116.17, "to": 189.11 },
+    { "at": "drop+72.94", "from": 203.03, "to": 210.3 }
+  ],
+  "bridgeR": 29.93,
+  "bassBackR": 43.8,
+  "quietR": 51.8,
+  "breakR": 62.03,
+  "finalR": 63.82,
+  "endHitR": 76.78
+}

@@ -1,0 +1,1039 @@
+{
+ "sigh": {
+  "start": 0.08,
+  "end": 0.7,
+  "text": "[oftat]",
+  "words": []
+ },
+ "of": {
+  "start": 0.84,
+  "end": 1.48,
+  "text": "Of...",
+  "words": [
+   [
+    "Of...",
+    0.84
+   ]
+  ]
+ },
+ "cap": {
+  "start": 1.92,
+  "end": 3.28,
+  "text": "câte avem pe cap, nu?",
+  "words": [
+   [
+    "câte",
+    1.92
+   ],
+   [
+    "avem",
+    2.18
+   ],
+   [
+    "pe",
+    2.54
+   ],
+   [
+    "cap,",
+    2.74
+   ],
+   [
+    "nu?",
+    3.0
+   ]
+  ]
+ },
+ "robinet": {
+  "start": 4.32,
+  "end": 6.84,
+  "text": "Robinetul care curge de două săptămâni.",
+  "words": [
+   [
+    "Robinetul",
+    4.32
+   ],
+   [
+    "care",
+    5.02
+   ],
+   [
+    "curge",
+    5.31
+   ],
+   [
+    "de",
+    5.73
+   ],
+   [
+    "două",
+    5.93
+   ],
+   [
+    "săptămâni.",
+    6.19
+   ]
+  ]
+ },
+ "perete": {
+  "start": 7.34,
+  "end": 9.81,
+  "text": "Peretele care are nevoie de o mână de vopsea",
+  "words": [
+   [
+    "Peretele",
+    7.34
+   ],
+   [
+    "care",
+    7.94
+   ],
+   [
+    "are",
+    8.25
+   ],
+   [
+    "nevoie",
+    8.48
+   ],
+   [
+    "de",
+    8.94
+   ],
+   [
+    "o",
+    8.94
+   ],
+   [
+    "mână",
+    9.21
+   ],
+   [
+    "de",
+    9.35
+   ],
+   [
+    "vopsea",
+    9.52
+   ]
+  ]
+ },
+ "situ": {
+  "start": 10.23,
+  "end": 10.78,
+  "text": "și tu.",
+  "words": [
+   [
+    "și",
+    10.23
+   ],
+   [
+    "tu.",
+    10.59
+   ]
+  ]
+ },
+ "nici1": {
+  "start": 11.22,
+  "end": 13.66,
+  "text": "care n-ai nici timpul, nici sculele,",
+  "words": [
+   [
+    "care",
+    11.22
+   ],
+   [
+    "n-ai",
+    11.7
+   ],
+   [
+    "nici",
+    11.96
+   ],
+   [
+    "timpul,",
+    12.3
+   ],
+   [
+    "nici",
+    12.72
+   ],
+   [
+    "sculele,",
+    13.01
+   ]
+  ]
+ },
+ "nici2": {
+  "start": 13.87,
+  "end": 15.74,
+  "text": "nici nervii pentru toate astea.",
+  "words": [
+   [
+    "nici",
+    13.87
+   ],
+   [
+    "nervii",
+    14.11
+   ],
+   [
+    "pentru",
+    14.65
+   ],
+   [
+    "toate",
+    15.01
+   ],
+   [
+    "astea.",
+    15.35
+   ]
+  ]
+ },
+ "amani": {
+  "start": 16.33,
+  "end": 17.61,
+  "text": "Și tot amâni.",
+  "words": [
+   [
+    "Și",
+    16.33
+   ],
+   [
+    "tot",
+    16.71
+   ],
+   [
+    "amâni.",
+    16.99
+   ]
+  ]
+ },
+ "speri1": {
+  "start": 18.09,
+  "end": 18.88,
+  "text": "Și speri că,",
+  "words": [
+   [
+    "Și",
+    18.09
+   ],
+   [
+    "speri",
+    18.4
+   ],
+   [
+    "că,",
+    18.66
+   ]
+  ]
+ },
+ "speri2": {
+  "start": 19.1,
+  "end": 19.65,
+  "text": "cumva,",
+  "words": [
+   [
+    "cumva,",
+    19.1
+   ]
+  ]
+ },
+ "speri3": {
+  "start": 19.9,
+  "end": 20.98,
+  "text": "se rezolvă singur.",
+  "words": [
+   [
+    "se",
+    19.9
+   ],
+   [
+    "rezolvă",
+    20.11
+   ],
+   [
+    "singur.",
+    20.66
+   ]
+  ]
+ },
+ "lumea": {
+  "start": 22.13,
+  "end": 25.74,
+  "text": "Nu toată lumea are pe cineva de încredere la un telefon distanță.",
+  "words": [
+   [
+    "Nu",
+    22.13
+   ],
+   [
+    "toată",
+    22.34
+   ],
+   [
+    "lumea",
+    22.54
+   ],
+   [
+    "are",
+    22.9
+   ],
+   [
+    "pe",
+    23.23
+   ],
+   [
+    "cineva",
+    23.36
+   ],
+   [
+    "de",
+    23.8
+   ],
+   [
+    "încredere",
+    24.01
+   ],
+   [
+    "la",
+    24.55
+   ],
+   [
+    "un",
+    24.72
+   ],
+   [
+    "telefon",
+    24.93
+   ],
+   [
+    "distanță.",
+    25.35
+   ]
+  ]
+ },
+ "obositor": {
+  "start": 26.12,
+  "end": 29.77,
+  "text": "Și e obositor să cauți, să suni, să negociezi,",
+  "words": [
+   [
+    "Și",
+    26.12
+   ],
+   [
+    "e",
+    26.41
+   ],
+   [
+    "obositor",
+    26.68
+   ],
+   [
+    "să",
+    27.51
+   ],
+   [
+    "cauți,",
+    27.81
+   ],
+   [
+    "să",
+    28.21
+   ],
+   [
+    "suni,",
+    28.41
+   ],
+   [
+    "să",
+    28.77
+   ],
+   [
+    "negociezi,",
+    28.92
+   ]
+  ]
+ },
+ "rogi": {
+  "start": 30.06,
+  "end": 33.4,
+  "text": "și să te rogi să nu dai peste cineva care te păcălește.",
+  "words": [
+   [
+    "și",
+    30.06
+   ],
+   [
+    "să",
+    30.29
+   ],
+   [
+    "te",
+    30.43
+   ],
+   [
+    "rogi",
+    30.59
+   ],
+   [
+    "să",
+    30.85
+   ],
+   [
+    "nu",
+    31.04
+   ],
+   [
+    "dai",
+    31.26
+   ],
+   [
+    "peste",
+    31.42
+   ],
+   [
+    "cineva",
+    31.64
+   ],
+   [
+    "care",
+    32.22
+   ],
+   [
+    "te",
+    32.64
+   ],
+   [
+    "păcălește.",
+    32.8
+   ]
+  ]
+ },
+ "aici": {
+  "start": 34.07,
+  "end": 36.05,
+  "text": "Aici intervine Handly.",
+  "words": [
+   [
+    "Aici",
+    34.07
+   ],
+   [
+    "intervine",
+    34.45
+   ],
+   [
+    "Handly.",
+    35.56
+   ]
+  ]
+ },
+ "postezi": {
+  "start": 36.65,
+  "end": 39.41,
+  "text": "Postezi ce ai nevoie, în mai puțin de un minut.",
+  "words": [
+   [
+    "Postezi",
+    36.65
+   ],
+   [
+    "ce",
+    37.17
+   ],
+   [
+    "ai",
+    37.22
+   ],
+   [
+    "nevoie,",
+    37.54
+   ],
+   [
+    "în",
+    38.04
+   ],
+   [
+    "mai",
+    38.25
+   ],
+   [
+    "puțin",
+    38.4
+   ],
+   [
+    "de",
+    38.71
+   ],
+   [
+    "un",
+    38.82
+   ],
+   [
+    "minut.",
+    39.15
+   ]
+  ]
+ },
+ "taskeri": {
+  "start": 39.77,
+  "end": 42.86,
+  "text": "Taskeri verificați din orașul tău îți trimit oferte.",
+  "words": [
+   [
+    "Taskeri",
+    39.77
+   ],
+   [
+    "verificați",
+    40.21
+   ],
+   [
+    "din",
+    40.89
+   ],
+   [
+    "orașul",
+    41.11
+   ],
+   [
+    "tău",
+    41.53
+   ],
+   [
+    "îți",
+    41.81
+   ],
+   [
+    "trimit",
+    42.03
+   ],
+   [
+    "oferte.",
+    42.31
+   ]
+  ]
+ },
+ "alegi": {
+  "start": 43.2,
+  "end": 48.52,
+  "text": "Tu alegi pe cine vrei, vorbești cu el direct în aplicație, și plătești în siguranță",
+  "words": [
+   [
+    "Tu",
+    43.2
+   ],
+   [
+    "alegi",
+    43.38
+   ],
+   [
+    "pe",
+    43.88
+   ],
+   [
+    "cine",
+    44.17
+   ],
+   [
+    "vrei,",
+    44.55
+   ],
+   [
+    "vorbești",
+    44.65
+   ],
+   [
+    "cu",
+    45.11
+   ],
+   [
+    "el",
+    45.42
+   ],
+   [
+    "direct",
+    45.55
+   ],
+   [
+    "în",
+    45.89
+   ],
+   [
+    "aplicație,",
+    46.16
+   ],
+   [
+    "și",
+    46.85
+   ],
+   [
+    "plătești",
+    47.1
+   ],
+   [
+    "în",
+    47.64
+   ],
+   [
+    "siguranță",
+    47.8
+   ]
+  ]
+ },
+ "cash": {
+  "start": 48.74,
+  "end": 50.78,
+  "text": "fără cash care dispare în neștire.",
+  "words": [
+   [
+    "fără",
+    48.74
+   ],
+   [
+    "cash",
+    49.12
+   ],
+   [
+    "care",
+    49.32
+   ],
+   [
+    "dispare",
+    49.6
+   ],
+   [
+    "în",
+    50.11
+   ],
+   [
+    "neștire.",
+    50.24
+   ]
+  ]
+ },
+ "urmaresti": {
+  "start": 51.16,
+  "end": 54.43,
+  "text": "Urmărești tot, în timp real, până task-ul e gata.",
+  "words": [
+   [
+    "Urmărești",
+    51.16
+   ],
+   [
+    "tot,",
+    51.87
+   ],
+   [
+    "în",
+    52.25
+   ],
+   [
+    "timp",
+    52.48
+   ],
+   [
+    "real,",
+    52.69
+   ],
+   [
+    "până",
+    52.85
+   ],
+   [
+    "task-ul",
+    53.27
+   ],
+   [
+    "e",
+    53.83
+   ],
+   [
+    "gata.",
+    54.07
+   ]
+  ]
+ },
+ "fara1": {
+  "start": 55.05,
+  "end": 56.26,
+  "text": "Fără bătaie de cap.",
+  "words": [
+   [
+    "Fără",
+    55.05
+   ],
+   [
+    "bătaie",
+    55.49
+   ],
+   [
+    "de",
+    55.93
+   ],
+   [
+    "cap.",
+    56.17
+   ]
+  ]
+ },
+ "fara2": {
+  "start": 56.53,
+  "end": 57.38,
+  "text": "Fără stres.",
+  "words": [
+   [
+    "Fără",
+    56.53
+   ],
+   [
+    "stres.",
+    57.02
+   ]
+  ]
+ },
+ "dar": {
+  "start": 58.18,
+  "end": 61.63,
+  "text": "Dar Handly nu e doar pentru cei care au nevoie de ajutor.",
+  "words": [
+   [
+    "Dar",
+    58.18
+   ],
+   [
+    "Handly",
+    58.41
+   ],
+   [
+    "nu",
+    58.76
+   ],
+   [
+    "e",
+    59.0
+   ],
+   [
+    "doar",
+    59.12
+   ],
+   [
+    "pentru",
+    59.19
+   ],
+   [
+    "cei",
+    59.73
+   ],
+   [
+    "care",
+    59.75
+   ],
+   [
+    "au",
+    60.27
+   ],
+   [
+    "nevoie",
+    60.3
+   ],
+   [
+    "de",
+    60.83
+   ],
+   [
+    "ajutor.",
+    61.07
+   ]
+  ]
+ },
+ "daca": {
+  "start": 62.18,
+  "end": 63.71,
+  "text": "Dacă știi să faci ceva",
+  "words": [
+   [
+    "Dacă",
+    62.18
+   ],
+   [
+    "știi",
+    62.68
+   ],
+   [
+    "să",
+    62.72
+   ],
+   [
+    "faci",
+    63.03
+   ],
+   [
+    "ceva",
+    63.32
+   ]
+  ]
+ },
+ "skills": {
+  "start": 63.96,
+  "end": 67.67,
+  "text": "montezi mobilă, zugrăvești, repari, cureți, muți",
+  "words": [
+   [
+    "montezi",
+    63.96
+   ],
+   [
+    "mobilă,",
+    64.48
+   ],
+   [
+    "zugrăvești,",
+    65.27
+   ],
+   [
+    "repari,",
+    66.2
+   ],
+   [
+    "cureți,",
+    66.66
+   ],
+   [
+    "muți",
+    67.24
+   ]
+  ]
+ },
+ "cont": {
+  "start": 67.92,
+  "end": 73.31,
+  "text": "îți faci cont de tasker în câteva minute, și începi să câștigi din ce știi deja să faci.",
+  "words": [
+   [
+    "îți",
+    67.92
+   ],
+   [
+    "faci",
+    68.3
+   ],
+   [
+    "cont",
+    68.44
+   ],
+   [
+    "de",
+    68.63
+   ],
+   [
+    "tasker",
+    68.89
+   ],
+   [
+    "în",
+    69.34
+   ],
+   [
+    "câteva",
+    69.38
+   ],
+   [
+    "minute,",
+    69.93
+   ],
+   [
+    "și",
+    70.56
+   ],
+   [
+    "începi",
+    70.85
+   ],
+   [
+    "să",
+    71.26
+   ],
+   [
+    "câștigi",
+    71.48
+   ],
+   [
+    "din",
+    71.82
+   ],
+   [
+    "ce",
+    72.03
+   ],
+   [
+    "știi",
+    72.35
+   ],
+   [
+    "deja",
+    72.38
+   ],
+   [
+    "să",
+    72.91
+   ],
+   [
+    "faci.",
+    73.06
+   ]
+  ]
+ },
+ "program": {
+  "start": 73.7,
+  "end": 74.8,
+  "text": "Tu alegi programul.",
+  "words": [
+   [
+    "Tu",
+    73.7
+   ],
+   [
+    "alegi",
+    73.96
+   ],
+   [
+    "programul.",
+    74.22
+   ]
+  ]
+ },
+ "taskurile": {
+  "start": 75.07,
+  "end": 76.24,
+  "text": "Tu alegi task-urile.",
+  "words": [
+   [
+    "Tu",
+    75.07
+   ],
+   [
+    "alegi",
+    75.27
+   ],
+   [
+    "task-urile.",
+    75.6
+   ]
+  ]
+ },
+ "muncesti": {
+  "start": 76.54,
+  "end": 78.0,
+  "text": "Tu alegi cât muncești.",
+  "words": [
+   [
+    "Tu",
+    76.54
+   ],
+   [
+    "alegi",
+    76.77
+   ],
+   [
+    "cât",
+    77.2
+   ],
+   [
+    "muncești.",
+    77.43
+   ]
+  ]
+ },
+ "handly": {
+  "start": 78.54,
+  "end": 79.05,
+  "text": "Handly.",
+  "words": [
+   [
+    "Handly.",
+    78.54
+   ]
+  ]
+ },
+ "ajutor": {
+  "start": 79.39,
+  "end": 80.82,
+  "text": "Ajutor când ai nevoie.",
+  "words": [
+   [
+    "Ajutor",
+    79.39
+   ],
+   [
+    "când",
+    79.96
+   ],
+   [
+    "ai",
+    80.13
+   ],
+   [
+    "nevoie.",
+    80.31
+   ]
+  ]
+ },
+ "bani": {
+  "start": 81.01,
+  "end": 82.42,
+  "text": "Bani când ai timp.",
+  "words": [
+   [
+    "Bani",
+    81.01
+   ],
+   [
+    "când",
+    81.53
+   ],
+   [
+    "ai",
+    81.77
+   ],
+   [
+    "timp.",
+    82.05
+   ]
+  ]
+ },
+ "cta": {
+  "start": 82.9,
+  "end": 85.45,
+  "text": "Descarcă aplicația și hai să rezolvăm.",
+  "words": [
+   [
+    "Descarcă",
+    82.9
+   ],
+   [
+    "aplicația",
+    83.58
+   ],
+   [
+    "și",
+    84.31
+   ],
+   [
+    "hai",
+    84.54
+   ],
+   [
+    "să",
+    84.59
+   ],
+   [
+    "rezolvăm.",
+    84.95
+   ]
+  ]
+ }
+}

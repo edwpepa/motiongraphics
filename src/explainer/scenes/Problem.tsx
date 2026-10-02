@@ -5,7 +5,7 @@ import { LiquidDrop } from "../components/LightWorld";
 import { INK, KineticText, SHADOW } from "../components/KineticText";
 import { ACCENT_LIGHT, PhraseSeq } from "../components/Phrase";
 import { DirBlur } from "../lib/Blur";
-import { clamp01, ease, lerp, pop } from "../lib/anim";
+import { clamp01, ease, lerp, pop, seeded } from "../lib/anim";
 import { useLayout } from "../layout";
 import { BOLD, FONT } from "../theme";
 import { f, MUSIC_LIFT_FRAME, VO } from "../timing";
@@ -162,65 +162,99 @@ const LeftFace: React.FC<{ w: number; h: number; idx?: number }> = ({ w, h, idx 
   </div>
 );
 
+type PlantKind = "broad" | "tall" | "fern";
+
 /**
- * The room the camera drifts through: a white wall with a quiet grid and a few line-drawn objects
- * (lamp, frames, window, shelf, plants), all kept faint. Layers slide at different speeds (parallax)
- * as the camera trucks right towards the table with the planner.
+ * A potted plant drawn as clean vector shapes: a soft white ceramic pot and gradient leaves that grow
+ * in one after another, then keep swaying gently from their base, each on its own phase.
  */
-const Room: React.FC<{ cam: number; W: number; H: number; vertical: boolean }> = ({ cam, W, H, vertical }) => {
-  const line = "rgba(16,40,28,0.16)";
-  const soft = "rgba(16,40,28,0.06)";
-  const green = "rgba(0,163,82,0.35)";
+const Plant: React.FC<{ x: number; floor: number; s: number; frame: number; at: number; kind: PlantKind; seed: number }> = ({ x, floor, s, frame, at, kind, seed }) => {
+  const id = `pl${seed}`;
+  const n = kind === "tall" ? 6 : kind === "fern" ? 9 : 7;
+  const leaves = Array.from({ length: n }, (_, i) => {
+    const u = i / (n - 1) - 0.5;
+    const spread = kind === "tall" ? 34 : kind === "fern" ? 120 : 100;
+    const base = u * spread + (seeded(i, seed) - 0.5) * 10;
+    const len = (kind === "tall" ? 300 + 90 * (1 - Math.abs(u) * 1.6) : kind === "fern" ? 170 + 40 * seeded(i, seed + 3) : 190 + 70 * (1 - Math.abs(u))) * (0.85 + 0.3 * seeded(i, seed + 1));
+    const w = kind === "tall" ? 34 : kind === "fern" ? 26 : 74;
+    const grow = ease.outBack(clamp01((frame - at - i * 2) / 16));
+    const sway = Math.sin(frame / (22 + 6 * seeded(i, seed + 2)) + seeded(i, seed + 4) * 6.28) * (kind === "fern" ? 5 : 3.5);
+    return { rot: base + sway, len, w, grow, i };
+  });
+  const pot = ease.outCubic(clamp01((frame - at + 6) / 12));
+  return (
+    <svg width={600 * s} height={700 * s} viewBox="-300 -620 600 700" style={{ position: "absolute", left: x - 300 * s, top: floor - 620 * s, overflow: "visible" }}>
+      <defs>
+        <linearGradient id={`${id}l`} x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%" stopColor="#0b7a45" />
+          <stop offset="100%" stopColor="#35d488" />
+        </linearGradient>
+        <linearGradient id={`${id}p`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="70%" stopColor="#f1f4f2" />
+          <stop offset="100%" stopColor="#e2e8e4" />
+        </linearGradient>
+      </defs>
+      {/* leaves */}
+      <g transform="translate(0 -120)">
+        {leaves.map((l) => (
+          <g key={l.i} transform={`rotate(${l.rot}) scale(${l.grow})`}>
+            {kind === "fern" ? (
+              <path d={`M0 0 Q ${-l.w} ${-l.len * 0.5} 0 ${-l.len} Q ${l.w} ${-l.len * 0.5} 0 0 Z`} fill={`url(#${id}l)`} opacity={0.92} />
+            ) : (
+              <path d={`M0 0 C ${-l.w} ${-l.len * 0.25} ${-l.w * 0.9} ${-l.len * 0.8} 0 ${-l.len} C ${l.w * 0.9} ${-l.len * 0.8} ${l.w} ${-l.len * 0.25} 0 0 Z`} fill={`url(#${id}l)`} />
+            )}
+            <path d={`M0 -6 Q ${l.w * 0.08} ${-l.len * 0.5} 0 ${-l.len * 0.92}`} fill="none" stroke="rgba(220,255,236,0.45)" strokeWidth={3} strokeLinecap="round" />
+          </g>
+        ))}
+      </g>
+      {/* pot */}
+      <g transform={`translate(0 ${(1 - pot) * 30})`} opacity={pot}>
+        <ellipse cx={0} cy={0} rx={110} ry={16} fill="rgba(16,40,28,0.10)" />
+        <path d="M-92 -130 H92 L74 -4 Q72 4 62 4 H-62 Q-72 4 -74 -4 Z" fill={`url(#${id}p)`} stroke="rgba(16,40,28,0.08)" strokeWidth={2} />
+        <rect x={-100} y={-142} width={200} height={20} rx={8} fill="#ffffff" stroke="rgba(16,40,28,0.08)" strokeWidth={2} />
+      </g>
+    </svg>
+  );
+};
+
+/**
+ * The room the camera drifts through: a clean white wall with a quiet grid and potted plants at three
+ * depths (wall, mid, a soft out-of-focus foreground one), sliding at different speeds as it trucks right.
+ */
+const Room: React.FC<{ cam: number; W: number; H: number; vertical: boolean; frame: number; panAt: number }> = ({ cam, W, H, vertical, frame, panAt }) => {
   const cell = vertical ? 90 : 96;
   const wallX = -cam * 0.55;
   const midX = -cam * 0.85;
-  const floorY = H * (vertical ? 0.8 : 0.83);
-  const sw = { fill: "none", stroke: line, strokeWidth: 3, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const nearX = -cam * 1.35;
+  const floorY = H * (vertical ? 0.8 : 0.84);
+  const k = vertical ? 0.9 : 1;
   return (
     <AbsoluteFill style={{ overflow: "hidden" }}>
-      {/* wall grid */}
       <AbsoluteFill
         style={{
-          backgroundImage: `linear-gradient(rgba(16,40,28,0.06) 1.5px, transparent 1.5px), linear-gradient(90deg, rgba(16,40,28,0.06) 1.5px, transparent 1.5px)`,
+          backgroundImage: `linear-gradient(rgba(16,40,28,0.055) 1.5px, transparent 1.5px), linear-gradient(90deg, rgba(16,40,28,0.055) 1.5px, transparent 1.5px)`,
           backgroundSize: `${cell}px ${cell}px`,
           backgroundPosition: `${(W / 2 + wallX) % cell}px ${(H / 2) % cell}px`,
-          WebkitMaskImage: "linear-gradient(180deg, transparent 0%, #000 18%, #000 70%, transparent 100%)",
-          maskImage: "linear-gradient(180deg, transparent 0%, #000 18%, #000 70%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(180deg, transparent 0%, #000 16%, #000 72%, transparent 100%)",
+          maskImage: "linear-gradient(180deg, transparent 0%, #000 16%, #000 72%, transparent 100%)",
         }}
       />
-      {/* far wall */}
-      <svg width={W} height={H} style={{ position: "absolute", inset: 0, overflow: "visible" }}>
-        <g transform={`translate(${wallX} 0)`}>
-          {/* pendant lamp */}
-          <path d={`M ${W * 0.16} 0 V ${H * 0.16}`} {...sw} />
-          <path d={`M ${W * 0.16 - 60} ${H * 0.16 + 52} Q ${W * 0.16} ${H * 0.16 - 20} ${W * 0.16 + 60} ${H * 0.16 + 52} Z`} {...sw} fill="#ffffff" />
-          <circle cx={W * 0.16} cy={H * 0.16 + 62} r={9} fill={green} />
-          {/* two frames */}
-          <rect x={W * 0.8} y={H * 0.16} width={150} height={190} rx={10} {...sw} />
-          <path d={`M ${W * 0.8 + 26} ${H * 0.16 + 150} l 36 -46 l 28 30 l 22 -20 l 34 36`} {...sw} stroke={green} />
-          <rect x={W * 0.8 + 180} y={H * 0.22} width={110} height={110} rx={10} {...sw} />
-          <circle cx={W * 0.8 + 235} cy={H * 0.22 + 55} r={22} {...sw} stroke={green} />
-          {/* window */}
-          <rect x={W * 1.25} y={H * 0.12} width={360} height={420} rx={22} {...sw} fill="rgba(240,247,243,0.6)" />
-          <path d={`M ${W * 1.25 + 180} ${H * 0.12} V ${H * 0.12 + 420} M ${W * 1.25} ${H * 0.12 + 210} H ${W * 1.25 + 360}`} {...sw} />
-          <path d={`M ${W * 1.25 + 40} ${H * 0.12 + 90} q 30 -26 60 0 q 26 -18 46 6`} {...sw} stroke={soft} strokeWidth={4} />
-          {/* shelf with books + a little plant */}
-          <path d={`M ${W * 1.62} ${H * 0.36} H ${W * 1.62 + 360}`} {...sw} />
-          {[0, 1, 2, 3].map((i) => (
-            <rect key={i} x={W * 1.62 + 24 + i * 34} y={H * 0.36 - (70 + (i % 2) * 18)} width={26} height={70 + (i % 2) * 18} rx={4} {...sw} stroke={i === 2 ? green : line} />
-          ))}
-          <path d={`M ${W * 1.62 + 250} ${H * 0.36} h 50 l -6 -40 h -38 z`} {...sw} />
-          <path d={`M ${W * 1.62 + 275} ${H * 0.36 - 40} q -20 -40 -34 -46 M ${W * 1.62 + 275} ${H * 0.36 - 40} q 6 -44 26 -56 M ${W * 1.62 + 275} ${H * 0.36 - 40} q 22 -26 40 -26`} {...sw} stroke={green} />
-          {/* baseboard */}
-          <path d={`M ${-W} ${floorY} H ${W * 4}`} {...sw} stroke={soft} strokeWidth={4} />
-        </g>
-        {/* nearer: a floor plant and a stool slide by faster */}
-        <g transform={`translate(${midX} 0)`}>
-          <path d={`M ${W * 0.95} ${floorY + 40} l 18 -110 h 76 l 18 110 z`} {...sw} fill="#ffffff" />
-          <path d={`M ${W * 0.95 + 56} ${floorY - 70} q -50 -90 -90 -110 M ${W * 0.95 + 56} ${floorY - 70} q 10 -120 50 -160 M ${W * 0.95 + 56} ${floorY - 70} q 60 -60 100 -70`} {...sw} stroke={green} strokeWidth={4} />
-          <path d={`M ${W * 1.5} ${floorY - 110} h 150 M ${W * 1.5 + 20} ${floorY - 110} l -10 150 M ${W * 1.5 + 130} ${floorY - 110} l 10 150`} {...sw} />
-        </g>
-      </svg>
+      {/* floor line */}
+      <div style={{ position: "absolute", left: 0, right: 0, top: floorY, height: 2, background: "rgba(16,40,28,0.06)" }} />
+      <div style={{ position: "absolute", left: wallX }}>
+        <Plant x={W * 0.1} floor={floorY} s={0.75 * k} frame={frame} at={2} kind="tall" seed={1} />
+        <Plant x={W * 0.9} floor={floorY} s={0.65 * k} frame={frame} at={8} kind="broad" seed={2} />
+        <Plant x={W * 1.4} floor={floorY} s={0.7 * k} frame={frame} at={panAt + 4} kind="fern" seed={3} />
+      </div>
+      <div style={{ position: "absolute", left: midX }}>
+        <Plant x={W * 1.18} floor={floorY + 60} s={0.95 * k} frame={frame} at={panAt} kind="broad" seed={4} />
+        <Plant x={W * 1.95} floor={floorY + 40} s={0.85 * k} frame={frame} at={panAt + 8} kind="tall" seed={5} />
+      </div>
+      {/* a big soft foreground plant brushes past the lens during the move */}
+      <div style={{ position: "absolute", left: nearX, filter: "blur(7px)", opacity: 0.9 }}>
+        <Plant x={W * 1.05} floor={H + 160} s={1.9 * k} frame={frame} at={panAt - 6} kind="broad" seed={6} />
+      </div>
     </AbsoluteFill>
   );
 };
@@ -280,7 +314,7 @@ export const Problem: React.FC = () => {
     <AbsoluteFill>
 
       <DirBlur x={panBlur} style={{ position: "absolute", inset: 0 }}>
-      <Room cam={pan * SPAN} W={L.W} H={L.H} vertical={V} />
+      <Room cam={pan * SPAN} W={L.W} H={L.H} vertical={V} frame={frame} panAt={PAN} />
       {/* intro phrases */}
       {pan < 1 && (
       <AbsoluteFill style={{ transform: `translateX(${-pan * SPAN}px) scale(${push})` }}>

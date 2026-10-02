@@ -150,6 +150,51 @@ const Roll: React.FC<{ frame: number; values: string[]; changes: number[]; style
   );
 };
 
+/**
+ * A dial of dates (Visa-reference clock): 31 days around a ring with fine ticks. On every syllable of
+ * "pe care o tot amâni?" the ring clicks one day forward under the marker at the top — the day keeps
+ * slipping. The question sits in the middle of it.
+ */
+const DateRing: React.FC<{ frame: number; R: number; inA: number; outA: number }> = ({ frame, R, inA, outA }) => {
+  const N = 31;
+  const step = 360 / N;
+  const START = 14;
+  let day = START;
+  TAPS.forEach((t) => (day += ease.outBack(clamp01((frame - t) / 6), 1.4)));
+  const rot = -(day - 1) * step - frame * 0.08;
+  const sel = Math.round(day);
+  return (
+    <div style={{ position: "absolute", left: 0, top: 0, opacity: inA * (1 - outA), transform: `scale(${(0.85 + 0.15 * inA) * (1 + 0.6 * outA)})`, filter: outA > 0 ? `blur(${outA * 14}px)` : undefined }}>
+      <svg width={R * 2.6} height={R * 2.6} viewBox={`${-R * 1.3} ${-R * 1.3} ${R * 2.6} ${R * 2.6}`} style={{ position: "absolute", left: -R * 1.3, top: -R * 1.3, overflow: "visible" }}>
+        <circle r={R * 0.84} fill="none" stroke="rgba(160,255,200,0.10)" strokeWidth={2} />
+        <circle r={R * 1.12} fill="none" stroke="rgba(160,255,200,0.06)" strokeWidth={2} />
+        <g transform={`rotate(${rot})`}>
+          {Array.from({ length: N * 4 }, (_, i) => {
+            const a = (i / (N * 4)) * Math.PI * 2 - Math.PI / 2;
+            const major = i % 4 === 0;
+            const reveal = clamp01(inA * 1.6 - (i / (N * 4)) * 0.6);
+            return <line key={i} x1={Math.cos(a) * R * 0.88} y1={Math.sin(a) * R * 0.88} x2={Math.cos(a) * R * (major ? 0.94 : 0.91)} y2={Math.sin(a) * R * (major ? 0.94 : 0.91)} stroke={major ? "rgba(220,255,236,0.5)" : "rgba(220,255,236,0.18)"} strokeWidth={major ? 3 : 2} strokeLinecap="round" opacity={reveal} />;
+          })}
+          {Array.from({ length: N }, (_, i) => {
+            const n = i + 1;
+            const a = (i / N) * Math.PI * 2 - Math.PI / 2;
+            const on = n === sel;
+            const reveal = clamp01(inA * 1.6 - (i / N) * 0.6);
+            return (
+              <text key={n} x={Math.cos(a) * R * 1.03} y={Math.sin(a) * R * 1.03} transform={`rotate(${-rot} ${Math.cos(a) * R * 1.03} ${Math.sin(a) * R * 1.03})`} textAnchor="middle" dominantBaseline="central" fontFamily="Inter" fontWeight={700} fontSize={on ? R * 0.105 : R * 0.075} fill={on ? "#ffffff" : "rgba(220,255,236,0.35)"} opacity={reveal}>
+                {n}
+              </text>
+            );
+          })}
+        </g>
+        {/* the marker at the top the days keep slipping past */}
+        <circle cx={0} cy={-R * 1.03} r={R * 0.1} fill="none" stroke="#2be38a" strokeWidth={4} opacity={inA} />
+        <circle cx={0} cy={-R * 0.8} r={6} fill="#2be38a" opacity={inA} />
+      </svg>
+    </div>
+  );
+};
+
 /** a soft streak of light that sweeps across a line once it has landed (only lights the letters) */
 const Streak: React.FC<{ frame: number; at: number }> = ({ frame, at }) => {
   const p = clamp01((frame - at) / 16);
@@ -237,7 +282,7 @@ export const Problem: React.FC = () => {
   const notifIn = ease.outExpo(clamp01((frame - (PAN + 6)) / 18));
   const notifOut = ease.inCubic(clamp01((frame - NOTE_OUT) / 10));
   const taps = TAPS.filter((t) => frame >= t).length;
-  const amana = { x: NW / 2 - 108, y: 0 };
+  const RING_Y = V ? 0 : 20;
   const notification = (depth: number, label: number, key: string) => (
     <div
       key={key}
@@ -314,14 +359,12 @@ export const Problem: React.FC = () => {
                 0,
                 <>
                   <KineticText words={[0, 1, 2].map((i) => ({ text: VO.hook[i][0], at: hw(i) }))} fontSize={FS} breaks={V ? [1] : []} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.04em" }} />
-                  <Streak frame={frame} at={hw(2) + 12} />
                 </>,
               )}
               {lineBox(
                 1,
                 <>
                   <KineticText words={[3, 4, 5].map((i) => ({ text: VO.hook[i][0], at: hw(i) }))} fontSize={FS} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.04em" }} />
-                  <Streak frame={frame} at={hw(5) + 10} />
                 </>,
               )}
               {lineBox(2, <Tired frame={frame} at={hw(6)} sag={hw(6) + 13} fs={FS * 1.12} />)}
@@ -346,25 +389,16 @@ export const Problem: React.FC = () => {
         {/* the UI, arriving with the camera */}
         {pan > 0 && collapse < 1 && (
           <AbsoluteFill style={{ transform: `translateX(${(1 - pan) * SPAN}px)` }}>
-            <PhraseSeq
-              fontSize={V ? 84 : 76}
-              y={V ? -330 : -250}
-              phrases={[{ words: VO.postpone.map(([text, sec]) => ({ text, at: f(sec) - LEAD, color: text.startsWith("amâni") ? ACCENT : undefined })), out: NOTE_OUT - 6 }]}
-            />
             {notifOut < 1 && (
-              <div style={{ position: "absolute", left: L.cx, top: L.cy + 60, transform: `translateY(${notifOut * 260}px) scale(${(0.92 + 0.08 * notifIn) * (1 - 0.4 * notifOut)})`, opacity: notifIn * (1 - notifOut), filter: notifOut > 0 ? `blur(${notifOut * 10}px)` : undefined }}>
-                {Array.from({ length: Math.min(4, taps) }, (_, k) => {
-                  const depth = Math.min(4, taps) - k;
-                  const settle = ease.outCubic(clamp01((frame - TAPS[taps - depth]) / 7));
-                  return notification(depth - 1 + settle, taps - depth, `b${k}`);
-                })}
-                {notification(0, 0, "front")}
-                {TAPS.map((t, k) => (
-                  <Touch key={k} frame={frame} at={t} x={amana.x} y={amana.y} />
-                ))}
+              <div style={{ position: "absolute", left: L.cx, top: L.cy + RING_Y }}>
+                <DateRing frame={frame} R={V ? 420 : 380} inA={notifIn} outA={notifOut} />
               </div>
             )}
-
+            <PhraseSeq
+              fontSize={V ? 84 : 80}
+              y={RING_Y}
+              phrases={[{ words: VO.postpone.map(([text, sec]) => ({ text, at: f(sec) - LEAD, color: text.startsWith("amâni") ? ACCENT : undefined })), out: NOTE_OUT - 4, breaks: [2] }]}
+            />
             {/* the notebook */}
             {planIn > 0 && (
               <DirBlur x={camBlur} style={{ position: "absolute", inset: 0, opacity: 1 - collapse, filter: collapse > 0 ? `blur(${collapse * 16}px)` : undefined }}>

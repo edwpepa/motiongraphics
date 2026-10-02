@@ -8,6 +8,7 @@ import { ACCENT, PhraseSeq } from "../components/Phrase";
 import { useLayout } from "../layout";
 import { DirBlur } from "../lib/Blur";
 import { clamp01, drift, ease, keys, pop } from "../lib/anim";
+import { BOLD, FONT } from "../theme";
 import { f, VO } from "../timing";
 
 const ENTER = 330;
@@ -47,6 +48,39 @@ const phoneMotion = (frame: number, vertical: boolean) => {
     scale: (vertical ? 1.12 : 0.92) * (1.6 - 0.6 * inT) * (1 - 0.18 * outT) * keys(frame, [[SUCCESS + 2, 1], [SUCCESS + 16, vertical ? 0.8 : 0.76]], ease.inOutCubic),
     opacity: 1 - clamp01((frame - EXIT - 9) / 5),
   };
+};
+
+/**
+ * A ribbon of green light looping around the phone (Visa-reference): a bright comet that runs
+ * round an ellipse; the upper half sits behind the phone, the lower half in front of it.
+ */
+const Ribbon: React.FC<{ half: "back" | "front"; frame: number; a: number; boost: number }> = ({ half, frame, a, boost }) => {
+  const rx = PHONE_W * 1.05;
+  const ry = PHONE_H * 0.26;
+  const W = rx * 2 + 200;
+  const H = ry * 2 + 200;
+  const run = (frame - ENTER) / 34;
+  const id = `rb${half}`;
+  const d = `M ${-rx} 0 A ${rx} ${ry} 0 1 0 ${rx} 0 A ${rx} ${ry} 0 1 0 ${-rx} 0`;
+  return (
+    <svg width={W} height={H} viewBox={`${-W / 2} ${-H / 2} ${W} ${H}`} style={{ position: "absolute", left: -W / 2, top: -H / 2, overflow: "visible", transform: `translateZ(${half === "front" ? 90 : -90}px) rotate(-16deg)`, opacity: a }}>
+      <defs>
+        <clipPath id={`${id}c`}>
+          {half === "front" ? <rect x={-W} y={0} width={W * 2} height={H} /> : <rect x={-W} y={-H} width={W * 2} height={H} />}
+        </clipPath>
+        <linearGradient id={`${id}g`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#00c46a" stopOpacity={0.2} />
+          <stop offset="50%" stopColor="#d9ffe9" />
+          <stop offset="100%" stopColor="#00c46a" stopOpacity={0.2} />
+        </linearGradient>
+      </defs>
+      <g clipPath={`url(#${id}c)`}>
+        <path d={d} fill="none" stroke="#00e676" strokeWidth={70} strokeLinecap="round" pathLength={1} strokeDasharray="0.42 0.58" strokeDashoffset={-run} opacity={0.35 + 0.3 * boost} style={{ filter: "blur(28px)" }} />
+        <path d={d} fill="none" stroke={`url(#${id}g)`} strokeWidth={16} strokeLinecap="round" pathLength={1} strokeDasharray="0.42 0.58" strokeDashoffset={-run} />
+        <path d={d} fill="none" stroke="#ffffff" strokeWidth={4} strokeLinecap="round" pathLength={1} strokeDasharray="0.18 0.82" strokeDashoffset={-run - 0.12} opacity={0.9} />
+      </g>
+    </svg>
+  );
 };
 
 // "Postezi task-ul pe handly.ro — durează câteva secunde."
@@ -100,6 +134,8 @@ export const S4Post: React.FC = () => {
   // on the wide cut the phone sits right and the line sits beside it
   const OX = V ? 0 : 430;
   const OY = 0;
+  const ribbonA = ease.outCubic(clamp01((frame - (ENTER + 6)) / 14)) * (1 - clamp01((frame - EXIT) / 6));
+  const ribbonBoost = Math.max(0, 1 - Math.abs(frame - SUCCESS) / 14);
   const phoneShrink = keys(frame, [[SUCCESS + 6, 1], [SUCCESS + 24, 0.85]], ease.inOutCubic);
   const halo = clamp01((frame - ENTER) / 10) * (1 - clamp01((frame - EXIT) / 10)) * (1 + 0.6 * Math.max(0, 1 - (frame - ENTER - 6) / 14));
   return (
@@ -115,6 +151,39 @@ export const S4Post: React.FC = () => {
           />
         </AbsoluteFill>
       )}
+      {/* a giant ghost word behind the phone, drifting slowly (Visa reference) */}
+      {(() => {
+        const word = frame < f(VO.dureaza) - 4 ? "POSTEZI" : "SECUNDE";
+        const swap = frame < f(VO.dureaza) - 4 ? 0 : clamp01((frame - (f(VO.dureaza) - 4)) / 10);
+        const inA = ease.outCubic(clamp01((frame - (ENTER + 4)) / 16)) * (1 - clamp01((frame - EXIT) / 8));
+        const gfs = V ? 330 : 520;
+        return (
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: L.cy - gfs * 0.62 + (V ? -380 : 0),
+              textAlign: "center",
+              whiteSpace: "nowrap",
+              fontFamily: FONT,
+              fontWeight: BOLD,
+              fontSize: gfs,
+              letterSpacing: "-0.06em",
+              lineHeight: 1.2,
+              backgroundImage: `linear-gradient(180deg, rgba(220,255,236,${V ? 0.16 : 0.1}) 0%, rgba(220,255,236,0.01) 85%)`,
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+              opacity: inA * (swap > 0 ? swap : 1),
+              transform: `translateX(${(V ? 0 : OX * 0.4) - (frame - ENTER) * 2.2}px) scale(${1.06 - 0.06 * inA})`,
+              filter: swap > 0 && swap < 1 ? `blur(${(1 - swap) * 14}px)` : undefined,
+            }}
+          >
+            {word}
+          </div>
+        );
+      })()}
       {/* one soft pool of green light under the phone (Google reference) */}
       <div
         style={{
@@ -140,11 +209,13 @@ export const S4Post: React.FC = () => {
             transform: `scale(${zoom}) translateY(${camY}px) translate(${m.x}px, ${m.y}px) scale(${m.scale}) rotateX(${m.rotX}deg) rotateY(${m.rotY}deg) rotateZ(${m.rotZ}deg)`,
           }}
         >
+          <Ribbon half="back" frame={frame} a={ribbonA} boost={ribbonBoost} />
           <div style={{ position: "absolute", left: -PHONE_W / 2, top: -PHONE_H / 2, transformStyle: "preserve-3d" }}>
             <Phone glare={clamp01((frame - ENTER) / 110)}>
               <AppScreen s={app} />
             </Phone>
           </div>
+          <Ribbon half="front" frame={frame} a={ribbonA} boost={ribbonBoost} />
 
           {CHIPS.map((c, i) => {
             const p = pop(frame, c.at, 12, 160);

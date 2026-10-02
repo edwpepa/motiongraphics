@@ -57,6 +57,8 @@ const LightWorld: React.FC = () => {
           maskComposite: "exclude",
         }
       : {};
+  // the logo itself stays solid green while it rushes at the camera, then clears to the window
+  const solid = t >= 0 ? 1 - ease.inOutCubic(clamp01((t / EXPAND - 0.45) / 0.4)) : 0;
   return (
     <AbsoluteFill>
       <AbsoluteFill style={{ background: "#030504", ...mask }}>
@@ -64,6 +66,7 @@ const LightWorld: React.FC = () => {
           <Problem />
         </Sequence>
       </AbsoluteFill>
+      {solid > 0 && <Img src={logo} style={{ position: "absolute", left: L.cx - S / 2, top: L.cy - S / 2, width: S, height: S, opacity: solid }} />}
     </AbsoluteFill>
   );
 };

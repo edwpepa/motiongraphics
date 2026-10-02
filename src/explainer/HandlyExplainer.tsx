@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Audio, Img, Sequence, staticFile, useCurrentFrame } from "remotion";
-import { BurstRing, burstRadius, LightBackdrop, RadarOpen } from "./components/LightWorld";
+import { BurstRing, burstRadius, LightBackdrop } from "./components/LightWorld";
 import { Stage } from "./components/Stage";
 import { useExplainerFonts } from "./fonts";
 import { clamp01, ease } from "./lib/anim";
@@ -39,7 +39,6 @@ const LightWorld: React.FC = () => {
   return (
     <AbsoluteFill style={mask ? { WebkitMaskImage: mask, maskImage: mask } : undefined}>
       <LightBackdrop frame={frame} frames={PRE_ROLL + MUSIC_LIFT_FRAME + 20} pull={clamp01((local - PULL_FROM) / (PULL_TO - PULL_FROM))} />
-      <RadarOpen frame={frame} end={PRE_ROLL + 8} />
       <Sequence from={PRE_ROLL} durationInFrames={MUSIC_LIFT_FRAME + 10} layout="none">
         <Problem />
       </Sequence>
@@ -73,7 +72,7 @@ const CornerLogo: React.FC = () => {
       }}
     >
       <Img src={staticFile("images/logo.webp")} style={{ width: s, height: s, filter: dark ? "drop-shadow(0 0 12px rgba(0,230,118,0.35))" : undefined }} />
-      <div style={{ fontFamily: FONT, fontWeight: BOLD, fontSize: s * 0.66, letterSpacing: "-0.035em", color: dark ? "#2be38a" : "#00a352" }}>handly.ro</div>
+      <div style={{ fontFamily: FONT, fontWeight: BOLD, fontSize: s * 0.66, lineHeight: 1, letterSpacing: "-0.035em", color: dark ? "#2be38a" : "#00a352", transform: `translateY(${-s * 0.06}px)` }}>handly.ro</div>
     </div>
   );
 };

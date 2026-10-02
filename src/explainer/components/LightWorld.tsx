@@ -2,7 +2,6 @@ import React, { useMemo } from "react";
 import { AbsoluteFill } from "remotion";
 import { clamp01, ease, lerp, seeded } from "../lib/anim";
 import { useLayout } from "../layout";
-import { LiquidGlass } from "./Glass";
 
 // ---------------------------------------------------------------------------------------------
 // Floating liquid-glass spheres for the white set. Their paths come from a small deterministic
@@ -80,6 +79,55 @@ const simulate = (W: number, H: number, vertical: boolean, frames: number) => {
   return { radii, out, n: balls.length };
 };
 
+/** clean vector glass bubble: pale mint body, fine rim, white highlight crescent, mint caustic */
+const Bubble: React.FC<{ r: number }> = ({ r }) => (
+  <svg width={r * 2} height={r * 2} viewBox={`${-r} ${-r} ${r * 2} ${r * 2}`} style={{ position: "absolute", left: -r, top: -r, overflow: "visible" }}>
+    <defs>
+      <radialGradient id={`bub${Math.round(r)}`} cx="38%" cy="32%" r="75%">
+        <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
+        <stop offset="55%" stopColor="rgba(232,248,239,0.75)" />
+        <stop offset="100%" stopColor="rgba(190,236,212,0.7)" />
+      </radialGradient>
+    </defs>
+    <circle r={r} fill={`url(#bub${Math.round(r)})`} stroke="rgba(0,163,82,0.28)" strokeWidth={Math.max(1.5, r * 0.012)} />
+    <circle r={r * 0.9} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth={Math.max(1, r * 0.01)} />
+    <path d={`M ${-r * 0.66} ${-r * 0.08} A ${r * 0.68} ${r * 0.68} 0 0 1 ${-r * 0.1} ${-r * 0.67}`} fill="none" stroke="#ffffff" strokeWidth={Math.max(3, r * 0.075)} strokeLinecap="round" />
+    <circle cx={r * 0.08} cy={-r * 0.7} r={Math.max(2, r * 0.045)} fill="#ffffff" />
+    <path d={`M ${r * 0.28} ${r * 0.72} A ${r * 0.78} ${r * 0.78} 0 0 0 ${r * 0.74} ${r * 0.24}`} fill="none" stroke="#2be38a" strokeWidth={Math.max(2, r * 0.035)} strokeLinecap="round" opacity={0.45} />
+  </svg>
+);
+
+/** index of the sphere that bounces in during the cold open */
+const BOUNCER = 3;
+/** frames the bouncing ball hits the floor (the audio's bounce thuds use the same frames) */
+export const BOUNCE_HITS = [13, 25, 33, 38];
+const BOUNCE_HEIGHTS = [260, 110, 40];
+const JOIN_FROM = 46;
+
+const bounceAt = (frame: number, x: number, floor: number, r: number) => {
+  const hits = BOUNCE_HITS;
+  let y = floor - r;
+  if (frame < hits[0]) {
+    const s = clamp01(frame / hits[0]);
+    y = lerp(-r * 1.4, floor - r, s * s);
+  } else {
+    for (let i = 0; i < hits.length - 1; i++) {
+      if (frame >= hits[i] && frame < hits[i + 1]) {
+        const s = (frame - hits[i]) / (hits[i + 1] - hits[i]);
+        y = floor - r - 4 * BOUNCE_HEIGHTS[i] * s * (1 - s);
+      }
+    }
+  }
+  // squash on every impact, stretch while falling fast
+  let squash = 0;
+  hits.forEach((h, i) => {
+    const d = frame - h;
+    if (d >= 0 && d < 6) squash = Math.max(squash, (1 - d / 6) * (0.28 - i * 0.06));
+  });
+  const stretch = frame < hits[0] ? 0.12 * clamp01(frame / hits[0]) : 0;
+  return { x, y, sx: 1 + squash - stretch * 0.5, sy: 1 - squash + stretch };
+};
+
 /**
  * White set: pale near-white base, quiet grid, and the glass spheres. `pull` (0..1) draws the spheres
  * into the frame centre one by one (smallest first), shrinking them into the charging orb.
@@ -107,24 +155,45 @@ export const LightBackdrop: React.FC<{ frame: number; frames: number; pull: numb
         const order = (sim.n - 1 - i) / (sim.n - 1);
         const k = ease.inCubic(clamp01(pull * 1.7 - order * 0.7));
         if (k >= 0.999) return null;
-        const x = lerp(sim.out[(fr * sim.n + i) * 2], L.cx, k);
-        const y = lerp(sim.out[(fr * sim.n + i) * 2 + 1], L.cy, k);
-        const d = Math.round(r * 2);
+        let x = sim.out[(fr * sim.n + i) * 2];
+        let y = sim.out[(fr * sim.n + i) * 2 + 1];
+        let sx = 1;
+        let sy = 1;
+        if (i === BOUNCER) {
+          // the cold open: this one drops in, bounces like a ball, then drifts off to join the others
+          const b = bounceAt(frame, L.cx, L.cy + (L.vertical ? 160 : 110), r);
+          const join = ease.inOutCubic(clamp01((frame - JOIN_FROM) / 26));
+          x = lerp(b.x, x, join);
+          y = lerp(b.y, y, join);
+          sx = lerp(b.sx, 1, join);
+          sy = lerp(b.sy, 1, join);
+        }
+        x = lerp(x, L.cx, k);
+        y = lerp(y, L.cy, k);
         return (
-          <div key={i} style={{ position: "absolute", left: x - d / 2, top: y - d / 2, transform: `scale(${1 - k})` }}>
-            <LiquidGlass width={d} height={d} radius={d / 2} tone="light" strength={Math.min(220, r * 1.3)} bezel={r} frost={0} tint={0} glow={0.08} shadow={false} />
-            {/* glass edge, a specular highlight and a mint caustic where light focuses */}
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                borderRadius: "50%",
-                pointerEvents: "none",
-                boxShadow: `inset 0 0 0 1.5px rgba(255,255,255,0.9), inset 0 0 0 ${Math.max(2, r * 0.02)}px rgba(16,60,40,0.08), inset ${-r * 0.06}px ${-r * 0.08}px ${r * 0.25}px rgba(16,60,40,0.07)`,
-                background: `radial-gradient(circle at 66% 76%, rgba(43,227,138,0.22) 0%, rgba(43,227,138,0) 30%), radial-gradient(ellipse 22% 13% at 32% 24%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%)`,
-              }}
-            />
-          </div>
+          <React.Fragment key={i}>
+            {i === BOUNCER && frame < JOIN_FROM + 20 && (
+              // contact shadow under the bouncing ball
+              <div
+                style={{
+                  position: "absolute",
+                  left: L.cx - r,
+                  top: L.cy + (L.vertical ? 160 : 110) - r * 0.12,
+                  width: r * 2,
+                  height: r * 0.24,
+                  borderRadius: "50%",
+                  background: "radial-gradient(ellipse, rgba(10,50,30,0.22) 0%, rgba(10,50,30,0) 70%)",
+                  opacity: clamp01(1 - (L.cy + (L.vertical ? 160 : 110) - r - y) / 320) * (1 - clamp01((frame - JOIN_FROM) / 16)),
+                  transform: `scaleX(${0.6 + 0.4 * clamp01(1 - (L.cy + (L.vertical ? 160 : 110) - r - y) / 320)})`,
+                }}
+              />
+            )}
+            <div style={{ position: "absolute", left: x - r, top: y - r, width: r * 2, height: r * 2, transform: `scale(${(1 - k) * sx}, ${(1 - k) * sy})`, transformOrigin: "50% 100%" }}>
+              <div style={{ position: "absolute", left: r, top: r }}>
+                <Bubble r={r} />
+              </div>
+            </div>
+          </React.Fragment>
         );
       })}
     </AbsoluteFill>

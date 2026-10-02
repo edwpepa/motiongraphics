@@ -1,9 +1,8 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { textWidth } from "../components/AppleText";
-import { HeroOrb } from "../components/HeroOrb";
+import { VectorOrb } from "../components/LightWorld";
 import { INK, KineticText, SHADOW } from "../components/KineticText";
-import { Particles } from "../components/Particles";
 import { ACCENT_LIGHT, PhraseSeq } from "../components/Phrase";
 import { DirBlur } from "../lib/Blur";
 import { clamp01, ease, lerp, pop } from "../lib/anim";
@@ -41,37 +40,6 @@ const PAGES: Page[] = [
   ...CHORES.map((c, i) => ({ day: c.day, date: c.date, month: c.month, chore: i })),
 ];
 const FLIPS = [...HOPS, ...CHORES.map((_, i) => arrive(i) - 7)];
-
-/** white set: a slow white-green gradient of soft shapes under a simple grid */
-const WhiteSet: React.FC<{ frame: number }> = ({ frame }) => {
-  const L = useLayout();
-  const t = frame / 30;
-  const M = Math.max(L.W, L.H);
-  const blobs = [
-    { x: 0.2 + 0.08 * Math.sin(t / 2.3), y: 0.25 + 0.06 * Math.cos(t / 2.9), r: 0.42, c: "rgba(0,200,110,0.16)" },
-    { x: 0.82 + 0.06 * Math.cos(t / 2.1), y: 0.7 + 0.07 * Math.sin(t / 2.5), r: 0.46, c: "rgba(60,220,160,0.14)" },
-    { x: 0.6 + 0.07 * Math.sin(t / 3.1 + 1), y: 0.1 + 0.05 * Math.cos(t / 2.2), r: 0.3, c: "rgba(190,255,120,0.14)" },
-  ];
-  const grid = "rgba(16,40,28,0.06)";
-  const cell = L.vertical ? 90 : 96;
-  const mask = `radial-gradient(ellipse ${L.vertical ? "95% 60%" : "70% 85%"} at 50% 50%, #000 30%, transparent 100%)`;
-  return (
-    <AbsoluteFill style={{ background: "#f7f9f8", overflow: "hidden" }}>
-      {blobs.map((b, i) => (
-        <div key={i} style={{ position: "absolute", left: b.x * L.W - b.r * M, top: b.y * L.H - b.r * M, width: b.r * M * 2, height: b.r * M * 2, borderRadius: "50%", background: `radial-gradient(circle, ${b.c} 0%, rgba(255,255,255,0) 68%)` }} />
-      ))}
-      <AbsoluteFill
-        style={{
-          backgroundImage: `linear-gradient(${grid} 1.5px, transparent 1.5px), linear-gradient(90deg, ${grid} 1.5px, transparent 1.5px)`,
-          backgroundSize: `${cell}px ${cell}px`,
-          backgroundPosition: `${(L.W / 2) % cell}px ${(L.H / 2) % cell}px`,
-          WebkitMaskImage: mask,
-          maskImage: mask,
-        }}
-      />
-    </AbsoluteFill>
-  );
-};
 
 /** one planner page (right-hand side) */
 const PageFace: React.FC<{ page: Page; w: number; h: number; frame: number; live: boolean }> = ({ page, w, h, frame, live }) => {
@@ -113,12 +81,84 @@ const PageFace: React.FC<{ page: Page; w: number; h: number; frame: number; live
   );
 };
 
-/** the left-hand page: blank, with a few faint ruled lines */
-const LeftFace: React.FC<{ w: number; h: number }> = ({ w, h }) => (
+// little hand-drawn doodles for the blank left pages (viewBox 100 × 125)
+const G = "#00a352";
+const K = "rgba(12,21,17,0.55)";
+const DOODLES: React.ReactNode[] = [
+  // coffee + zzz
+  <g key="0">
+    <path d="M30 72 h26 v12 a10 10 0 0 1 -10 10 h-6 a10 10 0 0 1 -10 -10 z" stroke={K} />
+    <path d="M56 76 c7 0 7 9 0 9" stroke={K} />
+    <path d="M37 64 c-3 -4 3 -6 0 -10 M45 64 c-3 -4 3 -6 0 -10" stroke={G} />
+    <path d="M62 44 h8 l-8 8 h8 M72 32 h6 l-6 6 h6" stroke={G} />
+    <text x="24" y="30" fontSize="7" fill={K} transform="rotate(-6 24 30)">azi nu…</text>
+  </g>,
+  // sun, cloud, smiley
+  <g key="1">
+    <circle cx="30" cy="40" r="8" stroke={G} />
+    {Array.from({ length: 8 }, (_, i) => {
+      const a = (i / 8) * Math.PI * 2;
+      return <path key={i} d={`M${30 + Math.cos(a) * 12} ${40 + Math.sin(a) * 12} L${30 + Math.cos(a) * 16} ${40 + Math.sin(a) * 16}`} stroke={G} />;
+    })}
+    <path d="M52 52 c0 -8 12 -10 15 -3 c6 -3 12 2 10 8 c4 2 2 9 -3 9 h-20 c-6 0 -7 -12 -2 -14 z" stroke={K} />
+    <circle cx="50" cy="90" r="10" stroke={K} />
+    <circle cx="46.5" cy="88" r="0.8" fill={K} stroke={K} />
+    <circle cx="53.5" cy="88" r="0.8" fill={K} stroke={K} />
+    <path d="M45.5 93 q4.5 4 9 0" stroke={K} />
+  </g>,
+  // arrow loop → "mâine?"
+  <g key="2">
+    <path d="M22 60 c8 -16 30 -18 36 -2 c4 12 -14 18 -14 4 c0 -10 18 -12 30 -4" stroke={G} />
+    <path d="M70 54 l5 5 l-7 2" stroke={G} />
+    <text x="28" y="88" fontSize="10" fill={K} transform="rotate(-5 28 88)">mâine?</text>
+    <path d="M28 92 q20 4 34 -1" stroke={G} />
+  </g>,
+  // little house + heart
+  <g key="3">
+    <path d="M28 92 v-22 l18 -15 l18 15 v22 z" stroke={K} />
+    <path d="M41 92 v-10 h10 v10" stroke={K} />
+    <path d="M46 70 c-3 -4 -9 -1 -6 3 l6 5 l6 -5 c3 -4 -3 -7 -6 -3 z" stroke={G} />
+    <path d="M66 40 l2 5 l5 1 l-4 3 l1 5 l-4 -3 l-4 3 l1 -5 l-4 -3 l5 -1 z" stroke={G} />
+  </g>,
+  // spiral + stars
+  <g key="4">
+    <path d="M45 62 c0 -3 4 -3 4 0 c0 5 -8 5 -8 0 c0 -8 12 -8 12 0 c0 11 -16 11 -16 0 c0 -14 20 -14 20 0" stroke={K} />
+    <path d="M28 34 l1.5 4 l4 0.5 l-3 2.5 l1 4 l-3.5 -2 l-3.5 2 l1 -4 l-3 -2.5 l4 -0.5 z" stroke={G} />
+    <path d="M70 90 l1.5 4 l4 0.5 l-3 2.5 l1 4 l-3.5 -2 l-3.5 2 l1 -4 l-3 -2.5 l4 -0.5 z" stroke={G} />
+    <circle cx="72" cy="38" r="1.5" fill={G} stroke={G} />
+  </g>,
+  // alarm clock "!!"
+  <g key="5">
+    <circle cx="46" cy="66" r="16" stroke={K} />
+    <path d="M46 56 v10 l7 5" stroke={G} />
+    <path d="M33 50 l-5 -4 M59 50 l5 -4 M36 82 l-3 5 M56 82 l3 5" stroke={K} />
+    <path d="M72 50 v10 M78 48 v10" stroke={G} />
+    <circle cx="72" cy="65" r="0.9" fill={G} stroke={G} />
+    <circle cx="78" cy="63" r="0.9" fill={G} stroke={G} />
+  </g>,
+  // lightbulb
+  <g key="6">
+    <path d="M38 70 c-8 -6 -8 -22 8 -24 c16 2 16 18 8 24 v6 h-16 z" stroke={K} />
+    <path d="M40 82 h12 M42 87 h8" stroke={K} />
+    <path d="M46 36 v-6 M30 44 l-4 -4 M62 44 l4 -4" stroke={G} />
+    <text x="60" y="96" fontSize="7" fill={K} transform="rotate(-8 60 96)">idee!</text>
+  </g>,
+  // paper plane
+  <g key="7">
+    <path d="M24 70 l50 -22 l-14 40 l-10 -12 z M50 76 l24 -28" stroke={K} />
+    <path d="M22 84 c8 6 14 -4 22 2 c6 4 10 -2 14 2" stroke={G} strokeDasharray="3 3" />
+  </g>,
+];
+
+/** the left-hand page: faint ruled lines and a hand-drawn doodle */
+const LeftFace: React.FC<{ w: number; h: number; idx?: number }> = ({ w, h, idx = 0 }) => (
   <div style={{ position: "absolute", inset: 0, borderRadius: "18px 4px 4px 18px", background: "linear-gradient(270deg, #e9ecea 0%, #f9faf9 8%, #ffffff 100%)", overflow: "hidden" }}>
     {Array.from({ length: 9 }, (_, i) => (
       <div key={i} style={{ position: "absolute", left: w * 0.11, right: w * 0.11, top: h * 0.42 + i * h * 0.068, height: 2, background: "rgba(16,40,28,0.05)" }} />
     ))}
+    <svg viewBox="0 0 100 125" width={w} height={h} style={{ position: "absolute", inset: 0 }} fill="none" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" fontFamily="Inter" fontWeight={500}>
+      {DOODLES[idx % DOODLES.length]}
+    </svg>
   </div>
 );
 
@@ -166,16 +206,11 @@ export const Problem: React.FC = () => {
   const camBlur = Math.min(24, Math.hypot(cam.x - camPrev.x, cam.y - camPrev.y) * cam.s * 0.25 + Math.abs(cam.s - camPrev.s) * 120);
 
   // ---------------------------------------------------------------- the orb pulls everything in, charges and bursts
-  const pull = clamp01((frame - (END - 2)) / (DROP - END));
   const charge = ease.inCubic(clamp01((frame - FLY) / (DROP - FLY)));
   const OS = V ? 150 : 140;
   const core = pop(frame, FLY, 12, 140) * (1 + 0.45 * charge + 0.07 * Math.sin(frame / 1.8) * charge) * (1 - 0.35 * ease.inCubic(clamp01((frame - (DROP - 6)) / 6)));
-  const gone = clamp01((frame - (DROP + 1)) / 6);
-
   return (
-    <AbsoluteFill style={gone > 0 ? { opacity: 1 - gone } : undefined}>
-      <WhiteSet frame={frame} />
-      <Particles frame={frame} pull={pull} opacity={0.35 + 0.5 * pull} />
+    <AbsoluteFill>
 
       {/* intro phrases */}
       <AbsoluteFill style={{ transform: `scale(${push})` }}>
@@ -242,7 +277,7 @@ export const Problem: React.FC = () => {
               ))}
               {/* left page */}
               <div style={{ position: "absolute", left: -PGW, top: -PGH / 2, width: PGW, height: PGH }}>
-                <LeftFace w={PGW} h={PGH} />
+                <LeftFace w={PGW} h={PGH} idx={flipsDone} />
               </div>
               {/* right page underneath = the page being flipped to */}
               <div style={{ position: "absolute", left: 0, top: -PGH / 2, width: PGW, height: PGH }}>
@@ -264,7 +299,7 @@ export const Problem: React.FC = () => {
                       <div style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg, rgba(10,40,25,${0.18 * p}) 0%, rgba(255,255,255,0) 100%)` }} />
                     </div>
                     <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-                      <LeftFace w={PGW} h={PGH} />
+                      <LeftFace w={PGW} h={PGH} idx={j + 1} />
                       <div style={{ position: "absolute", inset: 0, background: `linear-gradient(270deg, rgba(10,40,25,${0.18 * (1 - p)}) 0%, rgba(255,255,255,0) 100%)` }} />
                     </div>
                   </div>
@@ -277,10 +312,25 @@ export const Problem: React.FC = () => {
         </DirBlur>
       )}
 
-      {/* the orb */}
+      {/* the orb: flat vector disc that pings radar rings while it charges */}
       {frame >= FLY && (
-        <div style={{ position: "absolute", left: L.cx - OS / 2, top: L.cy - OS / 2, transform: `scale(${core})` }}>
-          <HeroOrb size={OS} frame={frame} glow={1 + 1.2 * charge} />
+        <div style={{ position: "absolute", left: L.cx, top: L.cy }}>
+          <svg width={L.W} height={L.H} viewBox={`${-L.cx} ${-L.cy} ${L.W} ${L.H}`} style={{ position: "absolute", left: -L.cx, top: -L.cy, overflow: "visible" }}>
+            {[0, 7, 14, 21].map((d) => {
+              const p = clamp01((frame - (FLY + 4 + d)) / 20);
+              if (p <= 0 || p >= 1) return null;
+              const R = OS * 0.5 + OS * 3.2 * ease.outCubic(p);
+              return (
+                <g key={d}>
+                  <circle r={R} fill="rgba(0,196,106,0.06)" opacity={1 - p} />
+                  <circle r={R} fill="none" stroke="#00c46a" strokeWidth={3} opacity={(1 - p) * 0.8} />
+                </g>
+              );
+            })}
+          </svg>
+          <div style={{ position: "absolute", transform: `scale(${core})` }}>
+            <VectorOrb r={OS / 2} frame={frame} />
+          </div>
         </div>
       )}
     </AbsoluteFill>

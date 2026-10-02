@@ -100,3 +100,7 @@ export const LOGO_HIT_FRAME = 800;
 export const CTA_FRAME = 864;
 
 export const DURATION_IN_FRAMES = 1000;
+
+/** cold open (radar + glass spheres) before the voiceover's timeline starts */
+export const PRE_ROLL = 45;
+export const TOTAL_FRAMES = DURATION_IN_FRAMES + PRE_ROLL;

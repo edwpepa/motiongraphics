@@ -18,7 +18,7 @@ export const Root: React.FC = () => {
       <Composition
         id="HandlyExplainer"
         component={HandlyExplainer}
-        durationInFrames={EX.DURATION_IN_FRAMES}
+        durationInFrames={EX.TOTAL_FRAMES}
         fps={EX.FPS}
         width={EX.WIDTH}
         height={EX.HEIGHT}
@@ -26,7 +26,7 @@ export const Root: React.FC = () => {
       <Composition
         id="HandlyExplainerReel"
         component={HandlyExplainer}
-        durationInFrames={EX.DURATION_IN_FRAMES}
+        durationInFrames={EX.TOTAL_FRAMES}
         fps={EX.FPS}
         width={1080}
         height={1920}

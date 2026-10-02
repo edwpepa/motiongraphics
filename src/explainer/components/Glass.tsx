@@ -77,6 +77,10 @@ export type GlassProps = {
   sheen?: number;
   /** white body tint (0..1) over the refracted backdrop */
   tint?: number;
+  /** strength of the inner white glow + top highlight (1 = default; low values = clear glass) */
+  glow?: number;
+  /** drop shadow under the glass (off for free-floating spheres) */
+  shadow?: boolean;
   style?: React.CSSProperties;
   children?: React.ReactNode;
 };
@@ -91,6 +95,8 @@ export const LiquidGlass: React.FC<GlassProps> = ({
   frost = 3,
   sheen,
   tint,
+  glow = 1,
+  shadow = true,
   style,
   children,
 }) => {
@@ -129,7 +135,7 @@ export const LiquidGlass: React.FC<GlassProps> = ({
           borderRadius: radius,
           overflow: "hidden",
           boxShadow: light
-            ? `inset 0 1.5px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(255,255,255,0.45), inset 1px 0 0 rgba(255,255,255,0.5), inset -1px 0 0 rgba(255,255,255,0.35), inset 0 0 ${Math.min(width, height) * 0.25}px rgba(255,255,255,0.28), 0 ${height * 0.08 + 8}px ${height * 0.25 + 24}px rgba(16,52,36,0.16)`
+            ? `inset 0 1.5px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(255,255,255,0.45), inset 1px 0 0 rgba(255,255,255,0.5), inset -1px 0 0 rgba(255,255,255,0.35), inset 0 0 ${Math.min(width, height) * 0.25 * glow}px rgba(255,255,255,${0.28 * glow})${shadow ? `, 0 ${height * 0.08 + 8}px ${height * 0.25 + 24}px rgba(16,52,36,0.16)` : ""}`
             : `inset 0 1.5px 0 rgba(255,255,255,0.32), inset 0 -1px 0 rgba(255,255,255,0.10), inset 0 0 ${Math.min(width, height) * 0.25}px rgba(255,255,255,0.05), 0 ${height * 0.08 + 10}px ${height * 0.25 + 30}px rgba(0,0,0,0.5)`,
         }}
       >
@@ -138,7 +144,7 @@ export const LiquidGlass: React.FC<GlassProps> = ({
             position: "absolute",
             inset: 0,
             background: light
-              ? "radial-gradient(120% 90% at 18% 0%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 45%)"
+              ? `radial-gradient(120% 90% at 18% 0%, rgba(255,255,255,${0.55 * glow}) 0%, rgba(255,255,255,0) 45%)`
               : "radial-gradient(120% 90% at 18% 0%, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 45%)",
           }}
         />

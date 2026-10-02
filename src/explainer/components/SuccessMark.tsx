@@ -38,6 +38,18 @@ export const SuccessMark: React.FC<{ frame: number; at: number; size: number }> 
   return (
     <div style={{ position: "relative", width: cs, height: cs }}>
       <div style={{ position: "absolute", left: cs / 2 - c, top: cs / 2 - c, width: box, height: box, pointerEvents: "none" }}>
+        {/* slow light rays fanning out behind the badge */}
+        <div
+          style={{
+            position: "absolute",
+            inset: box * 0.12,
+            borderRadius: "50%",
+            background: `repeating-conic-gradient(from ${t * 1.6}deg, rgba(185,255,214,0.32) 0deg 5deg, rgba(185,255,214,0) 5deg 22deg)`,
+            WebkitMaskImage: "radial-gradient(circle, transparent 14%, #000 22%, transparent 62%)",
+            maskImage: "radial-gradient(circle, transparent 14%, #000 22%, transparent 62%)",
+            opacity: ease.outCubic(clamp01((t - 9) / 10)) * 0.9,
+          }}
+        />
         {/* flash bloom */}
         <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "radial-gradient(circle, rgba(185,255,214,0.9) 0%, rgba(0,230,118,0.35) 18%, rgba(0,0,0,0) 45%)", opacity: flash }} />
         {/* shockwaves */}
@@ -46,7 +58,7 @@ export const SuccessMark: React.FC<{ frame: number; at: number; size: number }> 
             const p = ripple(d);
             if (p <= 0 || p >= 1) return null;
             const e = ease.outCubic(p);
-            return <circle key={d} cx={c} cy={c} r={cs * (0.5 + 1.0 * e)} fill="none" stroke="#2bff95" strokeWidth={(1 - e) * cs * 0.06 + 1} opacity={(1 - p) * 0.8} />;
+            return <circle key={d} cx={c} cy={c} r={cs * (0.5 + 1.0 * e)} fill="none" stroke="#2be38a" strokeWidth={(1 - e) * cs * 0.06 + 1} opacity={(1 - p) * 0.8} />;
           })}
           {/* sparks */}
           {Array.from({ length: 12 }, (_, i) => {
@@ -88,8 +100,8 @@ export const SuccessMark: React.FC<{ frame: number; at: number; size: number }> 
             position: "absolute",
             inset: 0,
             borderRadius: radius,
-            background: "radial-gradient(circle at 35% 28%, #b9ffd6 0%, #00d26a 42%, #007a3d 100%)",
-            boxShadow: `0 0 ${cs * 0.6}px rgba(0,230,118,0.55)`,
+            background: "radial-gradient(circle at 35% 28%, #b9ffd6 0%, #2be38a 45%, #00a352 100%)",
+            boxShadow: `0 0 ${cs * 0.6}px rgba(43,227,138,0.55)`,
             transform: `scale(${core})`,
           }}
         />
@@ -98,6 +110,22 @@ export const SuccessMark: React.FC<{ frame: number; at: number; size: number }> 
       {lens > 0 && (
         <div style={{ position: "absolute", left: -cs * 0.08, top: -cs * 0.08, transform: `scale(${0.7 + 0.3 * lens})`, opacity: lens }}>
           <LiquidGlass width={Math.round(cs * 1.16)} height={Math.round(cs * 1.16)} radius={Math.round(cs * 0.58)} tone="dark" strength={cs * 0.45} frost={1} tint={0.06} sheen={lerp(-0.4, 1.3, clamp01((t - 14) / 14))} />
+        </div>
+      )}
+      {/* a light streak sweeps across the badge */}
+      {merged && (
+        <div style={{ position: "absolute", inset: 0, borderRadius: "50%", overflow: "hidden", transform: `scale(${core})` }}>
+          <div
+            style={{
+              position: "absolute",
+              top: -cs * 0.5,
+              bottom: -cs * 0.5,
+              width: cs * 0.28,
+              left: `${lerp(-60, 160, clamp01((t - 16) / 12))}%`,
+              transform: "rotate(24deg)",
+              background: "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.75) 50%, rgba(255,255,255,0) 100%)",
+            }}
+          />
         </div>
       )}
       {/* the check draws itself */}

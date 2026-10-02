@@ -28,6 +28,7 @@ FPS = 30
 DUR = 1000 / FPS
 N = int(DUR * SR)
 VO_OFFSET = 0.4
+PRE = 45 / 30  # cold open prepended to the final mix (matches the video's PRE_ROLL)
 
 rng = np.random.default_rng(7)
 
@@ -311,6 +312,17 @@ def flip():
     return y + thump
 
 
+def page_flip():
+    """A paper leaf turning: a short airy swish whose band sweeps up, with a soft papery tick at the end."""
+    n = int(0.22 * SR)
+    t = np.arange(n) / SR
+    noise = rng.standard_normal(n)
+    body = filt(noise, "bandpass", (1200, 6000), 2)
+    env = np.sin(np.pi * np.clip(t / 0.2, 0, 1)) ** 1.5
+    tick_ = filt(rng.standard_normal(n), "highpass", 3500) * np.exp(-np.clip(t - 0.17, 0, None) / 0.006) * (t > 0.17) * 0.8
+    return body * env * 0.8 + tick_
+
+
 def tick(fq=2300):
     n = int(0.05 * SR)
     t = np.arange(n) / SR
@@ -552,6 +564,11 @@ def build_sfx():
     for at in (f(20.47) - 3, f(21.75) - 3, f(23.39) - 3, f(24.12) - 3, f(24.88) - 3):
         sw(at, 0.16)
     place(sfx, stereo(pop_sfx(900, 600), 0.0), fr(f(24.88)), 0.18)
+    # planner pages turning (postponed day by day, then a page per chore)
+    for s_ in (3.69, 3.8, 4.0, 4.2, 4.37, 4.55):
+        place(sfx, stereo(page_flip(), 0.2), fr(f(s_) - 1), 0.32)
+    for s_ in (5.41, 7.01, 8.52):
+        place(sfx, stereo(page_flip(), 0.2), fr(f(s_) - 10), 0.42)
     # drops gather into the logo
     place(sfx, whoosh(0.5, 5500, 300, 0.85, (0.0, 0.0), low=0.3), fr(800) - 0.5, 0.35)
     place(sfx, whoosh(0.6, 500, 4000, 0.5, (-0.3, 0.3), air=0.6), fr(822) - 0.1, 0.1)
@@ -652,6 +669,20 @@ def main():
     mix *= 10 ** ((-14.5 - lufs(mix)) / 20)
     mix = soft_limit(mix, 0.89)
     print(f"stems: vo {lufs(vo_st):.1f} LUFS | music(ducked) {lufs(music):.1f} | sfx {lufs(sfx):.1f} | mix {lufs(mix):.1f} | peak {20 * math.log10(np.max(np.abs(mix))):.2f} dBFS")
+
+    # 1.5 s cold open in front of everything: a soft pad and three radar pings (the video adds the same 45 frames)
+    pre_n = int(PRE * SR)
+    pre = np.zeros((2, pre_n + int(1.2 * SR)))
+    place(pre, pad_chord([57, 64, 69, 71, 76], PRE + 1.0, attack=0.5, release=0.9) * 0.6, 0.0, 1.0)
+    for k, at in enumerate((0.25, 0.65, 1.05)):
+        ping = sonar(1180 if k < 2 else 1320)
+        place(pre, reverb(ping) * 0.6 + stereo(ping), at, 0.22 if k == 0 else 0.15)
+    place(pre, whoosh(0.7, 300, 4200, 0.6, (-0.3, 0.3), air=0.7), PRE - 0.45, 0.25)
+    pre *= 10 ** ((-26.0 - lufs(pre)) / 20)
+    full = np.zeros((2, pre_n + mix.shape[1]))
+    full[:, pre_n:] += mix
+    full[:, : pre.shape[1]] += pre
+    mix = soft_limit(full, 0.89)
 
     out_dir = os.path.join(ROOT, "public/audio")
     with tempfile.TemporaryDirectory() as td:

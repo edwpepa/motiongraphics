@@ -2,6 +2,7 @@ import React from "react";
 import { AbsoluteFill, Img, staticFile, useCurrentFrame } from "remotion";
 import { HeroText } from "../components/HeroText";
 import { Confetti } from "../components/Confetti";
+import { DarkBackground } from "../components/Background";
 import { COLORS, T } from "../constants";
 import { premiumMove, idleDrift } from "../utils/easing";
 import { interFontFamily as fontFamily } from "../font";
@@ -19,8 +20,8 @@ export const Scene6: React.FC = () => {
   const wordmarkOpacity = Math.max(0, Math.min(1, premiumMove(frame, { from: 0, to: 1, startFrame: logoStart + 4, endFrame: logoStart + 18, settleAmount: 0 })));
   const wordmarkY = premiumMove(frame, { from: 24, to: 0, startFrame: logoStart + 4, endFrame: logoStart + 20 });
 
-  const confettiStart = T.s6Beats[2] - 8;
-  const mascotStart = T.s6Beats[2] + 4;
+  const confettiStart = T.musicHit - 3;
+  const mascotStart = T.musicHit + 10;
   const mascotLand = mascotStart + 16;
   const mascotOpacity = Math.max(0, Math.min(1, premiumMove(frame, { from: 0, to: 1, startFrame: mascotStart, endFrame: mascotLand, settleAmount: 0 })));
   const mascotScale = premiumMove(frame, { from: 0.7, to: 1, startFrame: mascotStart, endFrame: mascotLand, settleAmount: 0.03 });
@@ -28,6 +29,7 @@ export const Scene6: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ justifyContent: "center", alignItems: "center" }}>
+      <DarkBackground />
       {frame >= confettiStart && <Confetti startFrame={confettiStart} count={90} originY={0.38} />}
 
       <Img

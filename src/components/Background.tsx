@@ -27,7 +27,6 @@ const Blob: React.FC<{
         width: size,
         height: size,
         borderRadius: "50%",
-        // soft glow via radial-gradient instead of filter:blur() — far cheaper to paint per frame
         background: `radial-gradient(circle, ${color} 0%, ${color} 18%, transparent 70%)`,
         opacity,
         transform: `translate(${dx}px, ${dy}px) scale(${scale})`,
@@ -36,50 +35,83 @@ const Blob: React.FC<{
   );
 };
 
-export const Background: React.FC = () => {
+const DotGrid: React.FC<{ opacity: number; dotColor: string }> = ({ opacity, dotColor }) => {
   const frame = useCurrentFrame();
-
-  // Slow continuous rotation of the gradient angle — nothing ever sits fully still
-  const angle = 135 + idleDrift(frame, 18, 480, 0);
-  const posShift = idleDrift(frame, 8, 620, 0.6);
-
+  const shift = idleDrift(frame, 4, 500, 0);
   return (
     <div
       style={{
         position: "absolute",
-        inset: 0,
-        overflow: "hidden",
-        background: COLORS.black,
+        inset: -20,
+        opacity,
+        backgroundImage: `radial-gradient(${dotColor} 2.4px, transparent 2.4px)`,
+        backgroundSize: "38px 38px",
+        transform: `translate(${shift}px, ${shift * 0.6}px)`,
       }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          inset: -40,
-          background: `linear-gradient(${angle}deg, ${COLORS.greenDark} 0%, ${COLORS.black} ${55 + posShift}%, ${COLORS.black} 100%)`,
-        }}
-      />
-      <Blob size={1100} top="-18%" left="-30%" color={COLORS.green} opacity={0.28} driftAmp={30} period={360} phase={0} />
-      <Blob size={900} top="50%" left="50%" color={COLORS.green} opacity={0.18} driftAmp={26} period={300} phase={2} />
-      <Blob size={700} top="70%" left="-25%" color={COLORS.greenDark} opacity={0.32} driftAmp={20} period={420} phase={1.2} />
+    />
+  );
+};
 
-      {/* subtle vignette for premium depth */}
+/** Light theme — matches the app's white sign-up panel: off-white + soft dot-grid + faint green glow. */
+export const LightBackground: React.FC = () => {
+  const frame = useCurrentFrame();
+  const glowShift = idleDrift(frame, 6, 540, 0.4);
+
+  return (
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden", background: "#fafbfa" }}>
       <div
         style={{
           position: "absolute",
           inset: 0,
-          background: "radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 100%)",
+          background: `radial-gradient(ellipse 120% 60% at 50% ${18 + glowShift}%, #eafbf2 0%, #fafbfa 55%, #fafbfa 100%)`,
         }}
       />
+      <DotGrid opacity={0.55} dotColor="#dbe3de" />
+      <Blob size={760} top="-14%" left="55%" color={COLORS.green} opacity={0.1} driftAmp={22} period={380} phase={0} />
+      <Blob size={560} top="68%" left="-18%" color={COLORS.green} opacity={0.08} driftAmp={18} period={420} phase={1.4} />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "radial-gradient(ellipse at 50% 45%, rgba(255,255,255,0) 50%, rgba(235,240,237,0.65) 100%)",
+        }}
+      />
+    </div>
+  );
+};
 
-      {/* static film grain texture (tiled) — cheap, no per-frame filter computation */}
+/** Dark theme — matches the app's green hero panel (the "Bine ai venit pe handly.ro!" side). */
+export const DarkBackground: React.FC = () => {
+  const frame = useCurrentFrame();
+  const angle = 150 + idleDrift(frame, 14, 480, 0);
+  const posShift = idleDrift(frame, 7, 600, 0.6);
+
+  return (
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden", background: COLORS.greenPanelDeep }}>
+      <div
+        style={{
+          position: "absolute",
+          inset: -40,
+          background: `linear-gradient(${angle}deg, ${COLORS.greenPanel} 0%, ${COLORS.greenPanelDeep} ${58 + posShift}%, ${COLORS.greenPanelDeep} 100%)`,
+        }}
+      />
+      <DotGrid opacity={0.14} dotColor="#1d6b43" />
+      <Blob size={1000} top="-16%" left="-25%" color={COLORS.green} opacity={0.22} driftAmp={28} period={360} phase={0} />
+      <Blob size={760} top="60%" left="55%" color={COLORS.green} opacity={0.16} driftAmp={24} period={320} phase={2} />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.5) 100%)",
+        }}
+      />
       <div
         style={{
           position: "absolute",
           inset: 0,
           backgroundImage: `url(${staticFile("images/grain.png")})`,
           backgroundSize: "512px 512px",
-          opacity: 0.045,
+          opacity: 0.04,
           mixBlendMode: "overlay",
         }}
       />

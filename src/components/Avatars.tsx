@@ -57,8 +57,9 @@ export const Avatar: React.FC<AvatarProps> = ({ startFrame, landFrame, x, y, siz
           width: "100%",
           height: "100%",
           borderRadius: "50%",
-          background: selected ? COLORS.green : "rgba(255,255,255,0.14)",
-          border: `2px solid ${selected ? COLORS.green : "rgba(255,255,255,0.3)"}`,
+          background: selected ? COLORS.green : COLORS.greenTint,
+          border: `2px solid ${selected ? COLORS.green : "rgba(0,191,99,0.25)"}`,
+          boxShadow: selected ? "0 12px 28px rgba(0,191,99,0.35)" : "0 8px 18px rgba(16,21,26,0.08)",
         }}
       />
     </div>

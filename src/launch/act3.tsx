@@ -1,4 +1,5 @@
 import React from "react";
+import { C1_END, C2_END, C3_END, C4_END, C5_END, C8_END, C9_END } from "./scenes";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { textWidth } from "../explainer/components/AppleText";
 import { Avatar } from "../explainer/components/Avatar";
@@ -9,6 +10,8 @@ import { clamp01, ease, lerp, seeded } from "../explainer/lib/anim";
 import { BOLD, FONT } from "../explainer/theme";
 import { Bg, BgKind, GREEN_INK, Label, Logo, MINT_INK, P, Shape, Txt, Win, Wordmark, punch } from "./kit";
 import { morphNamed, shape, ShapeName } from "./morph";
+import { Slam } from "./slam";
+import { SPLIT } from "./scenes";
 import { BEATS, BREAK, BRIDGE, DROP, END, END_HIT, F, FINAL, kw, pEnd, pStart, w } from "./timeline";
 
 const CX = 960;
@@ -18,7 +21,6 @@ const bt = (k: number) => Math.round(D0 + k * BEATS);
 const beatAt = (frame: number) => Math.floor((frame - D0 + 0.5) / BEATS);
 
 // ------------------------------------------------------------------ C1: not only for those who need help
-const C1_END = pStart("daca") - 4;
 
 const C1: React.FC = () => {
   const frame = useCurrentFrame();
@@ -38,7 +40,6 @@ const C1: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ C2: if you know how to do something
-const C2_END = pStart("skills") - 3;
 
 const C2: React.FC = () => {
   const frame = useCurrentFrame();
@@ -53,7 +54,6 @@ const C2: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ C3: the skills — colour cuts with morphing badges
-const C3_END = pStart("cont") - 4;
 const ICONS: Record<string, string> = {
   box: `<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/>`,
   sparkles: `<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>`,
@@ -100,7 +100,6 @@ const C3: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ C4: sign up as a tasker, start earning
-const C4_END = pStart("program") - 4;
 
 const C4: React.FC = () => {
   const frame = useCurrentFrame();
@@ -196,7 +195,6 @@ const C4: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ C5: you choose — the slot word rolls
-const C5_END = pEnd("muncesti") + 10;
 const DAYS = ["L", "M", "M", "J", "V", "S", "D"];
 
 const C5: React.FC = () => {
@@ -322,6 +320,19 @@ const C6: React.FC = () => {
         return <Shape key={i} pts={shape(s)} x={x} y={y} size={size} rot={th * 57 + frame * 4} fill={fill} opacity={enter} />;
       })}
       <Shape pts={shape("circle")} x={CX} y={CY} size={(40 + 60 * p) * beatPunch * (1 - collapse * 0.9)} fill={P.green} />
+      {/* charging */}
+      <svg width={600} height={600} viewBox="-150 -150 300 300" style={{ position: "absolute", left: CX - 300, top: CY - 300, opacity: enter * (1 - collapse) }}>
+        <circle r={110} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={5} />
+        <circle r={110} fill="none" stroke={P.green} strokeWidth={6} strokeLinecap="round" pathLength={1} strokeDasharray={`${ease.inOutCubic(p)} 1`} transform="rotate(-90)" style={{ filter: "drop-shadow(0 0 10px rgba(0,191,99,0.8))" }} />
+        {Array.from({ length: 48 }, (_, j) => {
+          const on = j / 48 < p;
+          const a = (j / 48) * Math.PI * 2 - Math.PI / 2;
+          return <line key={j} x1={Math.cos(a) * 124} y1={Math.sin(a) * 124} x2={Math.cos(a) * 134} y2={Math.sin(a) * 134} stroke={on ? P.mint : "rgba(255,255,255,0.12)"} strokeWidth={3} strokeLinecap="round" />;
+        })}
+      </svg>
+      <div style={{ position: "absolute", left: CX, top: CY + 190, transform: "translate(-50%, 0)", opacity: enter * (1 - collapse) }}>
+        <Label size={34} color={P.mint}>{`${Math.round(ease.inOutCubic(p) * 100)}%`}</Label>
+      </div>
     </AbsoluteFill>
   );
 };
@@ -346,11 +357,10 @@ const C7: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ C8: final chorus — help when you need it / money when you have time
-const C8_END = pStart("cta") - 6;
 
 const C8: React.FC = () => {
   const frame = useCurrentFrame();
-  const t = frame - FINAL;
+  const t = frame - SPLIT;
   const inL = ease.outExpo(clamp01(t / 14));
   const inR = ease.outExpo(clamp01((frame - (w("bani", 0) - 8)) / 14));
   const badge = ease.outBack(clamp01((t - 2) / 14));
@@ -379,7 +389,6 @@ const C8: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ C9: download the app
-const C9_END = pEnd("cta") + 12;
 
 const Splash: React.FC<{ frame: number; at: number }> = ({ frame, at }) => {
   const p = ease.outBack(clamp01((frame - at) / 14));
@@ -426,26 +435,25 @@ const C9: React.FC = () => {
 const C10: React.FC = () => {
   const frame = useCurrentFrame();
   const a = C9_END;
-  const enter = ease.outExpo(clamp01((frame - a) / 20));
   const hit = frame - END_HIT;
-  const flood = ease.inOutCubic(clamp01((hit + 4) / 12));
-  const green = hit >= 6;
   const fadeOut = ease.inOutCubic(clamp01((frame - (F(END) - 22)) / 20));
-  const pb = punch(frame, END_HIT + 6, 0.06, 12);
+  if (hit < 0) return <Slam from={a} ro badges />;
+  const flood = ease.outExpo(clamp01(hit / 10));
+  const pb = punch(frame, END_HIT, 0.08, 14);
   return (
     <AbsoluteFill>
-      <Bg kind={green ? "green" : "black"} />
-      {!green && flood > 0 && <Shape pts={shape("logo")} x={CX - 270} y={CY - 70} size={160 + 4600 * flood} fill={P.green} />}
-      <AbsoluteFill style={{ transform: `scale(${(0.94 + 0.06 * enter) * pb})`, opacity: enter }}>
-        <div style={{ position: "absolute", left: CX, top: CY - 70, transform: "translate(-50%, -50%)", display: "flex", alignItems: "center", gap: 36 }}>
-          <Logo size={190} tone={green ? "white" : "green"} />
-          <div style={{ transform: "translateY(-10px)" }}>
+      <Bg kind="green" />
+      <Shape pts={shape("circle")} x={CX} y={CY} size={2600 * flood} fill="rgba(255,255,255,0.18)" opacity={1 - flood} />
+      <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", flexDirection: "column", gap: 70, transform: `scale(${pb * (1 + 0.03 * clamp01(hit / 90))})` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 36 }}>
+          <Logo size={190} tone="white" />
+          <div style={{ transform: "translateY(-12px)" }}>
             <Wordmark size={190} color="#fff" ro />
           </div>
         </div>
-        <div style={{ position: "absolute", left: CX, top: CY + 160, transform: "translate(-50%, -50%)", display: "flex", gap: 26 }}>
-          <StoreBadge store="apple" h={92} shine={clamp01((frame - a - 10) / 20)} />
-          <StoreBadge store="google" h={92} shine={clamp01((frame - a - 16) / 20)} />
+        <div style={{ display: "flex", gap: 26 }}>
+          <StoreBadge store="apple" h={92} shine={clamp01((hit - 4) / 20)} />
+          <StoreBadge store="google" h={92} shine={clamp01((hit - 10) / 20)} />
         </div>
       </AbsoluteFill>
       <AbsoluteFill style={{ background: "#000", opacity: fadeOut }} />
@@ -476,7 +484,10 @@ export const ACT3: React.FC = () => (
     <Win from={BREAK} to={FINAL}>
       <C7 />
     </Win>
-    <Win from={FINAL} to={C8_END}>
+    <Win from={FINAL} to={SPLIT}>
+      <Slam from={FINAL} />
+    </Win>
+    <Win from={SPLIT} to={C8_END}>
       <C8 />
     </Win>
     <Win from={C8_END} to={C9_END}>

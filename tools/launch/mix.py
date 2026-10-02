@@ -1,6 +1,7 @@
 """Launch film mix: re-paced voiceover + edited, ducked song + a few synced hits.
 Reads src/launch/timeline.json and src/launch/vo-words.json; writes public/audio/launch-mix.mp3."""
 import json, math, os, subprocess, sys, tempfile
+sys.path.insert(0, os.path.dirname(__file__))
 import numpy as np
 import scipy.io.wavfile as wavfile
 from scipy import signal
@@ -74,23 +75,38 @@ def main():
     # tail of the song fades out by END
     t = np.arange(N) / SR
     mus *= np.interp(t, [END - 2.5, END - 0.05], [1, 0])[None, :]
+    M0 = json.load(open(os.path.join(ROOT, "tools/launch/cues.json")))["marks"]
+    # the muffled bed melts away before the bell; quieter under the tasker sign-up;
+    # silent through the "we can't" section (only the charging), back on the final drop
+    pf = np.clip((t - M0["preFadeFrom"]) / (M0["preFadeTo"] - M0["preFadeFrom"]), 0, 1)
+    env = np.where(t < D, (1 - pf) ** 2, 1.0)
+    env *= np.interp(t, [M0["contFrom"], M0["contFrom"] + 0.6, M0["contTo"] - 0.4, M0["contTo"]], [1, 0.5, 0.5, 1])
+    env *= np.interp(t, [M0["quiet"] - 0.6, M0["quiet"] + 0.2, M0["final"] - 0.03, M0["final"]], [1, 0, 0, 1])
+    mus *= env[None, :]
 
-    # ---- sfx
+    # ---- sfx (cue sheet exported from the picture: node tools/launch/cues.mjs)
+    import sfx as X
+    CUES = json.load(open(os.path.join(ROOT, "tools/launch/cues.json")))
+    M = CUES["marks"]
     sfx = np.zeros((2, N))
-    C.place(sfx, C.reverse_swell(2.2), D - 2.2, 0.55)
-    C.place(sfx, C.riser(2.4, 300, 7000), D - 2.4, 0.22)
-    for at, g in ((D, 1.0), (D + TL["finalR"], 0.9)):
-        C.place(sfx, C.sub_drop(2.0), at, 0.9 * g)
-        C.place(sfx, C.reverb(C.crash(2.8)), at, 0.35 * g)
-    C.place(sfx, C.sub_drop(2.4), D + TL["endHitR"], 0.8)
-    C.place(sfx, C.reverse_swell(1.2), D + TL["breakR"] - 1.0, 0.3)
-    # a soft impact under "Handly." in the break
-    C.place(sfx, C.reverb(C.bell(76, 2.4, ratio=2.0, index=1.0, tau=1.2)), D + TL["post"]["handly"], 0.18)
+    C.place(sfx, C.reverse_swell(2.2), D - 2.2, 0.45)
+    C.place(sfx, C.riser(2.4, 300, 7000), D - 2.4, 0.2)
+    cache = {}
+    for cue in CUES["cues"]:
+        k = cue["k"]
+        if k == "charge":
+            clip, off = X.charge(M["brk"] - cue["t"]), 0.0
+        else:
+            if k not in cache or k in ("fall", "bubble", "coin", "drip", "key"):
+                r = X.KINDS[k]()
+                cache[k] = r if isinstance(r, tuple) else (r, 0.0)
+            clip, off = cache[k]
+        C.place(sfx, clip, cue["t"] + off, X.GAIN.get(k, 0.5) * cue["g"])
 
     # ---- level + duck
     vo *= 10 ** ((-15.5 - C.lufs(vo)) / 20)
     mus *= 10 ** ((-15.0 - C.lufs(mus)) / 20)
-    sfx *= 10 ** ((-24.0 - C.lufs(sfx)) / 20)
+    sfx *= 10 ** ((-21.5 - C.lufs(sfx)) / 20)
     env = C.follower(vo[0], 0.03, 0.45)
     env /= np.max(env) + 1e-9
     depth = np.where(t < D, -7.0, -10.0)

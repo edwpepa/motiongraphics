@@ -1,4 +1,5 @@
 import React from "react";
+import { A10_END, A12_END, A1_END, A2_END, A3_END, A5_END, A6_END, A7_END, A8_END, A9_END } from "./scenes";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { textWidth } from "../explainer/components/AppleText";
 import { Avatar } from "../explainer/components/Avatar";
@@ -13,83 +14,102 @@ const CX = 960;
 const CY = 540;
 const BEAT_PRE = 0.4812 * 30; // the muffled verse's beat, in frames
 
-// ------------------------------------------------------------------ A1: the weight of it all
-export const A1_END = pStart("robinet") - 4;
+// ------------------------------------------------------------------ A1: the weight of it all — a sheet full of postponed chores
+const SHEET = [
+  "Robinet care curge", "Perete de zugrăvit", "Dulap de montat", "Priză defectă", "Bec ars în hol", "Ușă care scârțâie",
+  "Gresie crăpată", "Chiuvetă înfundată", "Calorifer rece", "Jaluzele rupte", "Mașina de spălat", "Raft de pus",
+  "Silicon la cadă", "Fereastră blocată", "Tablou de agățat", "Balcon de curățat", "Yală care se blochează", "Lustră de montat",
+  "Parchet zgâriat", "Hotă de schimbat", "Mutat mobila", "Curățenie generală", "Faianță desprinsă", "TV pe perete",
+  "Sertar stricat", "Gard de vopsit", "Iarba de tuns", "Boiler care curge", "Pervaz umflat", "Ușă de reglat",
+  "Cablu de ascuns", "Rafturi în cămară", "Gaură în perete", "Becuri în baie", "Robinet în curte", "Plintă desprinsă",
+];
+const COLS_S = 6;
+const TW = 420;
+const TH = 156;
+const GAP = 30;
 
-const CHORES = ["Robinet", "Perete", "Dulap", "Priză"];
+const Tile: React.FC<{ text: string; i: number; a: number }> = ({ text, i, a }) => {
+  const days = 3 + Math.floor(seeded(i, 9) * 88);
+  return (
+    <div
+      style={{
+        width: TW,
+        height: TH,
+        borderRadius: 30,
+        background: "linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04))",
+        border: "1.5px solid rgba(255,255,255,0.12)",
+        display: "flex",
+        alignItems: "center",
+        gap: 22,
+        padding: "0 28px",
+        opacity: a,
+        transform: `translateY(${(1 - a) * 40}px)`,
+        fontFamily: FONT,
+        fontWeight: BOLD,
+      }}
+    >
+      <div style={{ width: 40, height: 40, borderRadius: 20, border: "3px solid rgba(255,255,255,0.35)", flexShrink: 0 }} />
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 31, color: "#fff", letterSpacing: "-0.03em", whiteSpace: "nowrap" }}>{text}</div>
+        <div style={{ fontSize: 22, color: "rgba(255,255,255,0.45)", fontWeight: 500, marginTop: 6 }}>{`Amânat de ${days} zile`}</div>
+      </div>
+    </div>
+  );
+};
 
 export const A1: React.FC = () => {
   const frame = useCurrentFrame();
-  const appear = ease.outBack(clamp01((frame - 8) / 16));
-  // the sigh: a breath in, then the shape sags
-  const sigh0 = F(1.28);
-  const inhale = Math.sin(Math.PI * clamp01((frame - sigh0) / 16)) * 0.1;
-  const sag = ease.inOutCubic(clamp01((frame - (sigh0 + 10)) / 18));
-  const lands = CHORES.map((_, i) => w("cap", 0) + 2 + Math.round(i * BEAT_PRE * 0.75));
-  const weight = lands.reduce((s, at) => s + (frame >= at ? 1 : 0), 0);
-  const squash = lands.reduce((s, at) => s + (frame >= at ? Math.exp(-(frame - at) / 5) * Math.cos((frame - at) * 0.7) * 0.06 : 0), 0);
-  const sy = (1 + inhale) * (1 - 0.1 * sag) * (1 - 0.045 * weight - squash);
-  const sx = (1 + inhale * 0.6) * (1 + 0.06 * sag) * (1 + 0.035 * weight + squash * 0.8);
-  // turn into a drop as the next line comes in, and move right
-  const toDrop = ease.inOutCubic(clamp01((frame - (A1_END - 16)) / 16));
-  const R0 = 165;
-  const bx = lerp(CX, CX + 430, toDrop);
-  const groundY = CY + 300;
-  const by = lerp(groundY - R0 * sy, CY + 20, toDrop);
-  const pts = toDrop > 0 ? mix(blob(frame / 30, 1 - toDrop), shape("drop"), ease.outBack(toDrop), undefined, 1, frame) : blob(frame / 30);
+  const rows = Math.ceil(SHEET.length / COLS_S);
+  const SW = COLS_S * TW + (COLS_S - 1) * GAP;
+  const SH = rows * TH + (rows - 1) * GAP;
+  // the camera glides low across the sheet, then lifts and races along it on "câte avem pe cap"
+  const t = frame / A1_END;
+  const lift = ease.inOutCubic(clamp01((frame - (w("cap", 0) - 10)) / 40));
+  const camX = lerp(SW * 0.28, -SW * 0.22, ease.inOutCubic(t));
+  const camY = lerp(SH * 0.18, -SH * 0.05, t);
+  const camZ = lerp(420, -260, lift) + 60 * Math.sin(frame / 40);
+  const tiltX = lerp(58, 44, lift);
+  const rotZ = lerp(-16, -9, t);
   const wipe = ease.inOutCubic(clamp01((frame - (A1_END - 14)) / 16));
-  const outT = clamp01((frame - (A1_END - 18)) / 10);
+  const fadeIn = clamp01(frame / 10);
   return (
     <AbsoluteFill>
       <Bg kind="black" />
-      {/* deep green floods out of the shape as it becomes a drop */}
-      {wipe > 0 && <Shape pts={shape("circle")} x={bx} y={by} size={R0 * 2 + 2600 * wipe} fill={P.deep} />}
-      {wipe > 0 && <Bg kind="deep" style={{ opacity: clamp01((wipe - 0.85) / 0.15) }} />}
-      {/* stack of chores landing on it */}
-      {CHORES.map((c, i) => {
-        const at = lands[i];
-        if (frame < at - 12) return null;
-        const fall = clamp01((frame - (at - 12)) / 12);
-        const topOfBlob = groundY - R0 * 2 * sy;
-        const yRest = topOfBlob - 42 - i * 84;
-        const y = lerp(-120, yRest, ease.inCubic(fall)) + (frame >= at ? Math.exp(-(frame - at) / 4) * Math.sin((frame - at) * 0.9) * -10 : 0);
-        const rot = [-6, 5, -3, 7][i] * (1 - 0.4 * fall);
-        const x = CX + [-30, 26, -14, 18][i];
-        return (
-          <div
-            key={c}
-            style={{
-              position: "absolute",
-              left: x,
-              top: y,
-              transform: `translate(-50%, -50%) rotate(${rot}deg)`,
-              padding: "18px 36px",
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.08)",
-              border: "1.5px solid rgba(255,255,255,0.16)",
-              backdropFilter: "blur(12px)",
-              opacity: (1 - outT) * clamp01((frame - (at - 12)) / 4),
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-            }}
-          >
-            <div style={{ width: 12, height: 12, borderRadius: 6, background: P.green }} />
-            <Label size={44} color="#fff" weight={500}>
-              {c}
-            </Label>
-          </div>
-        );
-      })}
-      <Shape pts={pts} x={bx} y={by} size={R0 * 2 * appear} sx={lerp(sx, 1, toDrop)} sy={lerp(sy, 1, toDrop)} fill={P.green} gradient={GREEN_GRAD} id="a1" shadow="drop-shadow(0 30px 60px rgba(0,191,99,0.25))" />
-      <Txt words={kw("of")} size={84} on="black" y={CY - 330} out={w("cap", 0) - 8} />
-      <Txt words={kw("cap", { color: { 3: MINT_INK } })} size={84} on="black" y={CY - 330} out={A1_END - 10} />
+      <AbsoluteFill style={{ perspective: 1500, opacity: fadeIn }}>
+        <div
+          style={{
+            position: "absolute",
+            left: CX - SW / 2,
+            top: CY - SH / 2,
+            width: SW,
+            height: SH,
+            transformStyle: "preserve-3d",
+            transform: `translateY(120px) rotateX(${tiltX}deg) rotateZ(${rotZ}deg) translate3d(${camX}px, ${camY}px, ${camZ}px)`,
+            display: "grid",
+            gridTemplateColumns: `repeat(${COLS_S}, ${TW}px)`,
+            gap: GAP,
+          }}
+        >
+          {SHEET.map((c, i) => {
+            const r = Math.floor(i / COLS_S);
+            const col = i % COLS_S;
+            const a = ease.outCubic(clamp01((frame - 2 - (r + col) * 1.6) / 14));
+            return <Tile key={i} text={c} i={i} a={a} />;
+          })}
+        </div>
+      </AbsoluteFill>
+      {/* fog: far tiles melt into the dark, the top stays clean for the words */}
+      <AbsoluteFill style={{ background: "linear-gradient(180deg, #060807 0%, rgba(6,8,7,0.92) 22%, rgba(6,8,7,0) 52%)" }} />
+      <AbsoluteFill style={{ background: "radial-gradient(ellipse 70% 70% at 50% 65%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.75) 100%)" }} />
+      <Txt words={kw("of")} size={84} on="black" y={150} out={w("cap", 0) - 8} />
+      <Txt words={kw("cap", { color: { 3: MINT_INK } })} size={96} on="black" y={150} out={A1_END - 10} />
+      {/* deep green opens up from the centre into the next scene */}
+      {wipe > 0 && <Shape pts={shape("circle")} x={CX + 430} y={CY + 20} size={60 + 2800 * wipe} fill={P.deep} />}
     </AbsoluteFill>
   );
 };
 
 // ------------------------------------------------------------------ A2: the dripping tap
-export const A2_END = pStart("perete") - 3;
 
 export const A2: React.FC = () => {
   const frame = useCurrentFrame();
@@ -98,6 +118,7 @@ export const A2: React.FC = () => {
   const R = 300;
   const t0 = A1_END;
   const breathe = 1 + 0.025 * Math.sin(frame / 7);
+  const popIn = ease.outBack(clamp01((frame - t0) / 14));
   const drips = Array.from({ length: 6 }, (_, i) => t0 + 6 + Math.round(i * BEAT_PRE * 1.5));
   const days = Math.round(lerp(1, 14, ease.inOutCubic(clamp01((frame - (w("robinet", 4) - 10)) / 30))));
   const outT = clamp01((frame - (A2_END - 8)) / 8);
@@ -128,7 +149,7 @@ export const A2: React.FC = () => {
         pts={mix(shape("drop"), blob(frame / 18, 0.3), 0.08)}
         x={DX}
         y={DY}
-        size={R}
+        size={R * popIn}
         sx={breathe}
         sy={2 - breathe}
         fill={P.green}
@@ -154,14 +175,55 @@ export const A2: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ A3: a coat of paint
-export const A3_END = w("situ", 0) - 2;
+/** wet brush stroke: rough edges (turbulence), bristle streaks, and drips running down once it's laid */
+const PaintStroke: React.FC<{ p: number; y: number; frame: number }> = ({ p, y, frame }) => {
+  if (p <= 0) return null;
+  const d = `M -80 ${y + 18} C 400 ${y - 30}, 900 ${y + 26}, 1300 ${y - 6} S 1800 ${y - 22}, 2020 ${y + 4}`;
+  const bristles = Array.from({ length: 14 }, (_, i) => ({ off: -64 + i * 9.8 + seeded(i, 1) * 4, wdt: 3 + seeded(i, 2) * 6, a: 0.12 + seeded(i, 3) * 0.3, lag: seeded(i, 4) * 0.08, light: i % 3 === 0 }));
+  const drips = [380, 690, 1120, 1460, 1720].map((x, i) => ({ x, len: 50 + seeded(i, 7) * 110, wdt: 9 + seeded(i, 8) * 9, at: 0.35 + (x / 1920) * 0.55 }));
+  return (
+    <svg width={1920} height={1080} style={{ position: "absolute", inset: 0, overflow: "visible" }}>
+      <defs>
+        <filter id="rough" x="-10%" y="-50%" width="120%" height="200%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.012 0.09" numOctaves={3} seed={4} result="n" />
+          <feDisplacementMap in="SourceGraphic" in2="n" scale={26} xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <linearGradient id="paint" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#2ee08a" />
+          <stop offset="55%" stopColor="#00bf63" />
+          <stop offset="100%" stopColor="#00a454" />
+        </linearGradient>
+      </defs>
+      <g filter="url(#rough)">
+        <path d={d} stroke="url(#paint)" strokeWidth={150} fill="none" strokeLinecap="round" pathLength={1} strokeDasharray={`${p} 1`} />
+        {bristles.map((b, i) => (
+          <path key={i} d={d} transform={`translate(0 ${b.off})`} stroke={b.light ? "#b9ffd6" : "#008a45"} strokeOpacity={b.a} strokeWidth={b.wdt} fill="none" strokeLinecap="round" pathLength={1} strokeDasharray={`${clamp01(p - b.lag)} 1`} />
+        ))}
+        {drips.map((dr, i) => {
+          const g = ease.outCubic(clamp01((p - dr.at) / 0.25)) * (0.6 + 0.4 * clamp01((frame % 600) / 600));
+          if (g <= 0) return null;
+          const top = y + 50;
+          return (
+            <g key={i}>
+              <rect x={dr.x - dr.wdt / 2} y={top} width={dr.wdt} height={dr.len * g} rx={dr.wdt / 2} fill="#00a454" />
+              <circle cx={dr.x} cy={top + dr.len * g} r={dr.wdt * 0.75} fill="#00a454" />
+            </g>
+          );
+        })}
+      </g>
+      {/* wet sheen */}
+      <path d={d} transform="translate(0 -40)" stroke="rgba(255,255,255,0.35)" strokeWidth={8} fill="none" strokeLinecap="round" pathLength={1} strokeDasharray={`${clamp01(p - 0.1) * 0.9} 1`} style={{ filter: "blur(3px)" }} />
+    </svg>
+  );
+};
+
 
 export const A3: React.FC = () => {
   const frame = useCurrentFrame();
   const t0 = A2_END - 2;
   // three roller passes paint the wall white
   const passes = [0, 1, 2].map((i) => ease.inOutCubic(clamp01((frame - (t0 + i * 3)) / 11)));
-  const under = ease.inOutCubic(clamp01((frame - (w("perete", 5) - 4)) / 12));
+  const under = ease.inOutCubic(clamp01((frame - (w("perete", 4) - 6)) / 22));
   return (
     <AbsoluteFill>
       <Bg kind="deep" />
@@ -171,8 +233,8 @@ export const A3: React.FC = () => {
         return <div key={i} style={{ position: "absolute", left: -260, top: y, height: h, width: (1920 + 520) * p, borderRadius: h / 2, background: "#f4f6f3", boxShadow: "0 0 0 2px rgba(255,255,255,0.4)" }} />;
       })}
       {passes[2] >= 1 && <Bg kind="white" />}
-      {/* the paint stroke under "o mână de vopsea" */}
-      <div style={{ position: "absolute", left: CX - (textWidth("de o mână de vopsea", 104, -0.045) + 2 * 0.27 * 104 + 110) / 2, top: CY + 58, width: (textWidth("de o mână de vopsea", 104, -0.045) + 4 * 0.27 * 104 + 110) * under, height: 128, borderRadius: 60, background: "linear-gradient(90deg, #1fd17c, #00bf63)", opacity: 0.95, transform: "rotate(-1.5deg)" }} />
+      {/* a real brush mark of green paint across the wall, under "o mână de vopsea" */}
+      <PaintStroke p={under} y={CY + 122} frame={frame} />
       <Txt words={kw("perete", { only: [0, 1, 2, 3] })} size={104} on="white" y={CY - 90} out={A3_END - 4} />
       <Txt words={kw("perete", { only: [4, 5, 6, 7, 8] })} size={104} on="white" y={CY + 120} out={A3_END - 4} ink={["#ffffff", "#f0fff6"]} tint={["#ffffff", "#ffffff"]} />
     </AbsoluteFill>
@@ -180,7 +242,6 @@ export const A3: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ A4: "și tu."
-export const A4_END = w("nici1", 0) - 3;
 
 export const A4: React.FC = () => (
   <AbsoluteFill>
@@ -190,7 +251,6 @@ export const A4: React.FC = () => (
 );
 
 // ------------------------------------------------------------------ A5: no time, no tools, no nerve
-export const A5_END = w("amani", 0) - 2;
 
 export const A5: React.FC = () => {
   const frame = useCurrentFrame();
@@ -248,49 +308,65 @@ export const A5: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ A6: "Și tot amâni." — the task keeps hopping a day
-export const A6_END = w("speri1", 0) - 3;
 const DAYS = ["Lun", "Mar", "Mie", "Joi", "Vin", "Sâm", "Dum", "Lun", "Mar", "Mie", "Joi", "Vin"];
 
 export const A6: React.FC = () => {
   const frame = useCurrentFrame();
   const t0 = A5_END;
-  const scroll = (frame - t0) * 7;
-  const hopEvery = Math.round(BEAT_PRE);
-  const hops = Math.max(0, Math.floor((frame - (t0 + 6)) / hopEvery));
-  const hp = clamp01(((frame - (t0 + 6)) % hopEvery) / (hopEvery * 0.7));
   const cellW = 250;
-  const base = 2;
-  const dayIdx = base + hops + ease.inOutCubic(hp);
-  const chipX = 300 + dayIdx * cellW - scroll + cellW / 2;
-  const chipY = CY + 50 - Math.sin(Math.PI * hp) * 100;
+  const scroll = (frame - t0) * 9;
+  const x0 = 520;
   return (
     <AbsoluteFill>
       <Bg kind="deep" />
-      <div style={{ position: "absolute", left: 300 - scroll, top: CY + 120, display: "flex" }}>
-        {DAYS.map((d, i) => (
-          <div key={i} style={{ width: cellW - 18, marginRight: 18, height: 190, borderRadius: 36, background: "rgba(185,255,214,0.06)", border: "1.5px solid rgba(185,255,214,0.14)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            <Label size={34} color="rgba(185,255,214,0.6)" weight={500}>
-              {d}
-            </Label>
-            <Label size={68} color="#fff">
-              {12 + i}
-            </Label>
-          </div>
-        ))}
-      </div>
-      <div style={{ position: "absolute", left: chipX, top: chipY, transform: "translate(-50%, -50%)", padding: "20px 36px", borderRadius: 999, background: "#fff", boxShadow: "0 20px 40px rgba(0,0,0,0.3)", display: "flex", gap: 14, alignItems: "center" }}>
-        <Glyph name="droplet" size={40} color={P.green} weight={2.6} />
-        <Label size={44} color={P.ink}>
-          Robinet
+      {/* "today" marker */}
+      <div style={{ position: "absolute", left: CX - 2, top: CY + 80, width: 4, height: 270, borderRadius: 2, background: "rgba(255,255,255,0.5)" }} />
+      <div style={{ position: "absolute", left: CX, top: CY + 64, transform: "translate(-50%, -100%)" }}>
+        <Label size={26} color="rgba(255,255,255,0.7)" weight={500}>
+          azi
         </Label>
       </div>
-      <Txt words={kw("amani", { color: { 2: MINT_INK } })} size={120} on="deep" y={CY - 220} out={A6_END - 5} />
+      <div style={{ position: "absolute", left: x0 - scroll, top: CY + 120, display: "flex" }}>
+        {[...DAYS, ...DAYS].map((d, i) => {
+          const cx = x0 - scroll + i * cellW + (cellW - 18) / 2;
+          const late = clamp01((CX - 30 - cx) / 90);
+          const strike = clamp01((CX - 60 - cx) / 60);
+          return (
+            <div
+              key={i}
+              style={{
+                width: cellW - 18,
+                marginRight: 18,
+                height: 190,
+                borderRadius: 36,
+                background: late > 0 ? `rgba(255,59,48,${0.08 + 0.14 * late})` : "rgba(185,255,214,0.06)",
+                border: `1.5px solid ${late > 0 ? `rgba(255,90,80,${0.2 + 0.5 * late})` : "rgba(185,255,214,0.14)"}`,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                position: "relative",
+                transform: `scale(${1 - 0.04 * late})`,
+              }}
+            >
+              <Label size={34} color={late > 0.5 ? "rgba(255,140,130,0.85)" : "rgba(185,255,214,0.6)"} weight={500}>
+                {d}
+              </Label>
+              <Label size={68} color={late > 0.5 ? "#ff6b61" : "#fff"}>
+                {12 + (i % 31)}
+              </Label>
+              <div style={{ position: "absolute", left: "22%", right: "22%", top: "62%", height: 5, borderRadius: 3, background: "#ff5a50", transformOrigin: "0 50%", transform: `scaleX(${strike}) rotate(-8deg)` }} />
+            </div>
+          );
+        })}
+      </div>
+      <Txt words={kw("amani", { color: { 2: ["#ff8a80", "#ff4d42"] } })} size={120} on="deep" y={CY - 220} out={A6_END - 5} />
     </AbsoluteFill>
   );
 };
 
 // ------------------------------------------------------------------ A7: hoping it fixes itself
-export const A7_END = pStart("lumea") - 8;
 
 export const A7: React.FC = () => {
   const frame = useCurrentFrame();
@@ -315,7 +391,6 @@ export const A7: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ A8: nobody to call
-export const A8_END = pStart("obositor") - 2;
 const CONTACTS = ["Mama", "Andrei", "Vecinul Dan", "Ioana"];
 
 export const A8: React.FC = () => {
@@ -379,7 +454,6 @@ export const A8: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ A9: search, call, haggle — colour cuts
-export const A9_END = w("rogi", 0) - 3;
 
 export const A9: React.FC = () => {
   const frame = useCurrentFrame();
@@ -436,7 +510,6 @@ export const A9: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ A10: hoping you don't get scammed
-export const A10_END = pEnd("rogi") + 14;
 
 export const A10: React.FC = () => {
   const frame = useCurrentFrame();
@@ -494,7 +567,6 @@ export const A10: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ A11/12: silence, then "Aici intervine Handly."
-export const A12_END = F(DROP);
 
 export const A12: React.FC = () => {
   const frame = useCurrentFrame();

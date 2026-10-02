@@ -1,4 +1,5 @@
 import React from "react";
+import { B1_END, B2_END, B3_END, B4_END, B5_END, B6_END, B7_END } from "./scenes";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { AppScreen, TASK_TEXT } from "../explainer/components/AppScreen";
 import { Avatar, Person } from "../explainer/components/Avatar";
@@ -8,6 +9,7 @@ import { clamp01, ease, lerp, seeded } from "../explainer/lib/anim";
 import { BOLD, FONT } from "../explainer/theme";
 import { Bg, BgKind, GREEN_GRAD, GREEN_INK, Label, Logo, MINT_INK, P, Shape, Txt, Win, Wordmark, io, punch } from "./kit";
 import { morphNamed, shape, ShapeName } from "./morph";
+import { Slam } from "./slam";
 import { BEATS, BRIDGE, DROP, F, kw, pEnd, pStart, w } from "./timeline";
 
 const CX = 960;
@@ -19,7 +21,6 @@ const bt = (k: number) => Math.round(D0 + k * BEATS);
 const beatAt = (frame: number) => Math.floor((frame - D0 + 0.5) / BEATS);
 
 // ------------------------------------------------------------------ B1: the drop — brand on the beat
-const B1_END = pStart("postezi") - 6;
 const SLAM: Array<{ bg: BgKind; logo: "white" | "green"; word: string }> = [
   { bg: "green", logo: "white", word: "#ffffff" },
   { bg: "black", logo: "green", word: "#ffffff" },
@@ -30,11 +31,7 @@ const SLAM: Array<{ bg: BgKind; logo: "white" | "green"; word: string }> = [
 const B1: React.FC = () => {
   const frame = useCurrentFrame();
   const t = frame - D0;
-  const k = Math.max(0, Math.min(SLAM.length - 1, beatAt(frame)));
-  const s = SLAM[k];
   const flood = ease.inCubic(clamp01(t / 7));
-  const zoomOut = ease.inExpo(clamp01((frame - (B1_END - 8)) / 8));
-  const sc = punch(frame, bt(k), 0.1, 9) * (1 + 0.05 * clamp01(t / 60)) * (1 + 3 * zoomOut);
   if (t < 7) {
     return (
       <AbsoluteFill>
@@ -43,23 +40,10 @@ const B1: React.FC = () => {
       </AbsoluteFill>
     );
   }
-  return (
-    <AbsoluteFill>
-      <Bg kind={s.bg} />
-      <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", transform: `scale(${sc})`, opacity: 1 - zoomOut, filter: zoomOut > 0 ? `blur(${zoomOut * 20}px)` : undefined }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 44 }}>
-          <Logo size={230} tone={s.logo} />
-          <div style={{ transform: "translateY(-14px)" }}>
-            <Wordmark size={250} color={s.word} />
-          </div>
-        </div>
-      </AbsoluteFill>
-    </AbsoluteFill>
-  );
+  return <Slam from={D0} zoomOutAt={B1_END - 8} />;
 };
 
 // ------------------------------------------------------------------ B2: post it in under a minute
-const B2_END = pStart("taskeri") - 4;
 
 const B2: React.FC = () => {
   const frame = useCurrentFrame();
@@ -127,7 +111,6 @@ const B2: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ B3: verified taskers nearby send offers
-const B3_END = pStart("alegi") - 4;
 const OFFERS: Array<{ p: Person; name: string; price: string; x: number; y: number }> = [
   { p: "mihai", name: "Mihai D.", price: "150 lei", x: 760, y: 700 },
   { p: "andrei", name: "Andrei P.", price: "140 lei", x: 1080, y: 610 },
@@ -228,7 +211,6 @@ const B3: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ B4: choose → chat → pay safely
-const B4_END = pStart("cash") - 4;
 const PICKS: Array<{ p: Person; name: string; r: string }> = [
   { p: "radu", name: "Radu", r: "4.8" },
   { p: "andrei", name: "Andrei", r: "5.0" },
@@ -354,7 +336,6 @@ const B4: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ B5: no cash that vanishes
-const B5_END = pStart("urmaresti") - 4;
 const NW = 640;
 const NH = 320;
 const COLS = 16;
@@ -423,7 +404,6 @@ const B5: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ B6: live tracking until done
-const B6_END = pStart("fara1") - 4;
 const STEPS = [
   ["Task postat", "10:02"],
   ["Andrei e pe drum", "10:15"],
@@ -507,7 +487,6 @@ const B6: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ B7: no hassle. no stress.
-const B7_END = pEnd("fara2") + 8;
 
 const B7: React.FC = () => {
   const frame = useCurrentFrame();
@@ -532,12 +511,13 @@ const B7: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ B8: the beat montage — shapes and colour, landing on the mark
-const MONTAGE: ShapeName[] = ["circle", "drop", "square", "star", "bubble", "heart", "flower", "logo", "logo"];
-const MBG: BgKind[] = ["white", "black", "green", "deep", "white", "black", "deep", "green", "green"];
+const MONTAGE: ShapeName[] = ["circle", "drop", "square", "star", "heart"];
+const MBG: BgKind[] = ["white", "black", "green", "deep", "white"];
 
 const B8: React.FC = () => {
   const frame = useCurrentFrame();
   const k0 = Math.ceil((B7_END - D0) / BEATS);
+  if (frame >= bt(k0 + MONTAGE.length)) return <Slam from={bt(k0 + MONTAGE.length)} />;
   const k = beatAt(frame) - k0;
   const i = Math.max(0, Math.min(MONTAGE.length - 1, k));
   const at = bt(k0 + i);
@@ -549,8 +529,8 @@ const B8: React.FC = () => {
   const fill = bg === "green" ? "#ffffff" : bg === "deep" ? P.mint : P.green;
   const sc = punch(frame, at, 0.14, 10);
   const rot = (frame - B7_END) * 1.2 + (i % 2 ? -1 : 1) * 10 * (1 - t);
-  const last = i >= MONTAGE.length - 2;
-  const wordA = ease.outExpo(clamp01((frame - bt(k0 + MONTAGE.length - 1)) / 10));
+  const last = false;
+  const wordA = 0;
   return (
     <AbsoluteFill>
       <Bg kind={bg} />

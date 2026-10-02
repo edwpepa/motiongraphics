@@ -6,3 +6,4 @@ public/audio/launch-song.mp3
 public/audio/launch-mix.mp3
 __pycache__/
 .lstills.mjs
+tools/launch/cues.json

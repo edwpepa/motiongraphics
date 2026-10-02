@@ -1,7 +1,8 @@
 import React from "react";
 import { AbsoluteFill, Audio, staticFile } from "remotion";
 import { useExplainerFonts } from "../explainer/fonts";
-import { A1, A1_END, A10, A10_END, A12, A12_END, A2, A2_END, A3, A3_END, A4, A4_END, A5, A5_END, A6, A6_END, A7, A7_END, A8, A8_END, A9, A9_END } from "./act1";
+import { A1, A10, A12, A2, A3, A4, A5, A6, A7, A8, A9 } from "./act1";
+import { A1_END, A10_END, A12_END, A2_END, A3_END, A4_END, A5_END, A6_END, A7_END, A8_END, A9_END } from "./scenes";
 import { Win } from "./kit";
 import { ACT2 } from "./act2";
 import { ACT3 } from "./act3";

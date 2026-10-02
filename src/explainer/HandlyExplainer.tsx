@@ -1,6 +1,5 @@
 import React from "react";
 import { AbsoluteFill, Audio, staticFile, useCurrentFrame } from "remotion";
-import { Grid } from "./components/Grid";
 import { Stage } from "./components/Stage";
 import { useExplainerFonts } from "./fonts";
 import { clamp01 } from "./lib/anim";
@@ -15,38 +14,23 @@ import { DURATION_IN_FRAMES, MUSIC_LIFT_FRAME } from "./timing";
 import { useLayout } from "./layout";
 import { ease } from "./lib/anim";
 
-/** White set for the problem half; a black iris opens from the charging orb and lands on the drop. */
-const irisR = (frame: number, W: number, H: number) =>
-  (Math.hypot(W, H) / 2 + 40) * ease.inCubic(clamp01((frame - (MUSIC_LIFT_FRAME - 16)) / 16));
-
-const WhiteSet: React.FC = () => {
+/** The orb's burst on the drop: a lime-white bloom that floods the frame and clears to the dark set. */
+const DropFlash: React.FC = () => {
   const frame = useCurrentFrame();
   const L = useLayout();
-  if (frame > MUSIC_LIFT_FRAME) return null;
-  const R = irisR(frame, L.W, L.H);
-  const mask = R > 0 ? `radial-gradient(circle at 50% 50%, transparent ${R}px, #000 ${R + 3}px)` : undefined;
-  // clean daylight set: near-flat pale grey-white with a fine, quiet grid (the liquid glass bends it)
+  const t = frame - (MUSIC_LIFT_FRAME - 4);
+  if (t < 0 || t > 14) return null;
+  const grow = ease.outCubic(clamp01(t / 6));
+  const fade = 1 - ease.outCubic(clamp01((t - 4) / 9));
+  const R = Math.hypot(L.W, L.H) * (0.15 + 0.75 * grow);
   return (
     <AbsoluteFill
       style={{
-        WebkitMaskImage: mask,
-        maskImage: mask,
-        background: `radial-gradient(ellipse ${L.vertical ? "120% 70%" : "75% 90%"} at 50% 45%, #fbfcfb 0%, #f3f5f4 55%, #eceeed 100%)`,
+        background: `radial-gradient(circle at 50% 50%, rgba(255,255,255,1) 0%, rgba(230,255,190,0.95) ${R * 0.25}px, rgba(120,255,190,0.45) ${R * 0.55}px, rgba(0,60,40,0) ${R}px)`,
+        opacity: fade,
       }}
-    >
-      <Grid color="rgba(16,40,28,0.075)" />
-    </AbsoluteFill>
+    />
   );
-};
-
-/** Keeps the dark world (the phone flying in) inside the iris until it has fully opened. */
-const InsideIris: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const frame = useCurrentFrame();
-  const L = useLayout();
-  if (frame >= MUSIC_LIFT_FRAME) return <>{children}</>;
-  const R = irisR(frame, L.W, L.H);
-  const mask = `radial-gradient(circle at 50% 50%, #000 ${R}px, transparent ${R + 3}px)`;
-  return <AbsoluteFill style={{ WebkitMaskImage: mask, maskImage: mask }}>{children}</AbsoluteFill>;
 };
 
 /** Mounts a scene only inside its window. Scenes read the absolute frame, so every beat is authored in VO frames. */
@@ -66,14 +50,11 @@ export const HandlyExplainer: React.FC = () => {
   return (
     <AbsoluteFill style={{ background: "#000" }}>
       <Stage light={light} />
-      <WhiteSet />
-      <Window from={0} to={352}>
+      <Window from={0} to={346}>
         <Problem />
       </Window>
-      <Window from={328} to={452}>
-        <InsideIris>
-          <S4Post />
-        </InsideIris>
+      <Window from={334} to={452}>
+        <S4Post />
       </Window>
       <Window from={436} to={526}>
         <S5Radar />
@@ -90,6 +71,8 @@ export const HandlyExplainer: React.FC = () => {
       <Window from={784} to={DURATION_IN_FRAMES}>
         <S9Logo />
       </Window>
+
+      <DropFlash />
 
       {/* voiceover + score + synced sfx, mixed by tools/audio/compose.py */}
       <Audio src={staticFile("audio/explainer-mix.mp3")} />

@@ -9,6 +9,8 @@ export type AWord = {
   at: number;
   /** settled colour override [top, bottom] */
   color?: [string, string];
+  /** an empty slot of this width (px) instead of text — something else (the orb) sits there */
+  slot?: number;
 };
 
 export const INK_L: [string, string] = ["#2a3530", "#060908"];
@@ -60,7 +62,7 @@ export const AppleLine: React.FC<{
 
   const lines: { w: AWord; width: number }[][] = [[]];
   words.forEach((w, i) => {
-    lines[lines.length - 1].push({ w, width: textWidth(w.text, fs, tracking) });
+    lines[lines.length - 1].push({ w, width: w.slot ?? textWidth(w.text, fs, tracking) });
     if (breaks.includes(i)) lines.push([]);
   });
   const shown = lines.filter((l) => l.some(({ w }) => frame >= w.at - 1));
@@ -80,7 +82,7 @@ export const AppleLine: React.FC<{
           const left = x;
           x += width * grow[i];
           const local = frame - w.at;
-          if (local < -1) return null;
+          if (local < -1 || w.slot !== undefined) return null;
           // letters rise in on a soft wave from below, left to right, blurred and tinted, then settle to ink
           const settled = w.color ?? ink;
           const letters = Array.from(w.text);
@@ -135,5 +137,14 @@ export const wordGrow = (frame: number, at: number) => ease.inOutCubic(clamp01((
 /** current width of an AppleLine (single line) at `frame` */
 export const lineWidth = (words: AWord[], fs: number, frame: number, tracking = -0.03) => {
   const space = textWidth(" ", fs, tracking);
-  return words.reduce((s, w, i) => s + (textWidth(w.text, fs, tracking) + (i ? space : 0)) * wordGrow(frame, w.at), 0);
+  return words.reduce((s, w, i) => s + ((w.slot ?? textWidth(w.text, fs, tracking)) + (i ? space : 0)) * wordGrow(frame, w.at), 0);
+};
+
+/** x of the centre of word `idx` in a centred single-line AppleLine at `frame` (slot fully open) */
+export const wordCenter = (words: AWord[], idx: number, fs: number, frame: number, tracking = -0.03) => {
+  const space = textWidth(" ", fs, tracking);
+  let x = -lineWidth(words, fs, frame, tracking) / 2;
+  for (let i = 0; i < idx; i++) x += ((words[i].slot ?? textWidth(words[i].text, fs, tracking)) + (i ? space : 0)) * wordGrow(frame, words[i].at);
+  const own = words[idx].slot ?? textWidth(words[idx].text, fs, tracking);
+  return x + (idx ? space : 0) + own / 2;
 };

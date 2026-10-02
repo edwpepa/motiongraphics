@@ -43,7 +43,7 @@ export const GlassPill: React.FC<{ icon?: React.ReactNode; label: string; size?:
   iconSize,
 }) => {
   const h = size * 2.2;
-  const w = label.length * size * 0.6 + (icon ? (iconSize ?? size * 1.45) + size * 0.45 : 0) + size * 1.5;
+  const w = label.length * size * 0.56 + (icon ? (iconSize ?? size * 1.45) + size * 0.45 : 0) + size * 1.5;
   return (
     <LiquidGlass width={w} height={h} radius={h / 2} tone={tone} strength={36} frost={10}>
       <div
@@ -55,9 +55,9 @@ export const GlassPill: React.FC<{ icon?: React.ReactNode; label: string; size?:
           justifyContent: "center",
           gap: size * 0.45,
           fontFamily: FONT,
-          fontWeight: BOLD,
+          fontWeight: 500,
           fontSize: size,
-          letterSpacing: "-0.01em",
+          letterSpacing: "0em",
           whiteSpace: "nowrap",
           color: tone === "light" ? C.ink : C.nightInk,
           paddingRight: icon ? size * 0.15 : 0,

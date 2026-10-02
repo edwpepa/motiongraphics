@@ -4,6 +4,7 @@ import { AppScreen, TASK_TEXT } from "../components/AppScreen";
 import { Phone, PHONE_H, PHONE_W } from "../components/Phone";
 import { GlyphName, IconTile, TileColor } from "../components/Icons";
 import { GlassPill } from "../components/Pill";
+import { ACCENT, PhraseSeq } from "../components/Phrase";
 import { useLayout } from "../layout";
 import { DirBlur } from "../lib/Blur";
 import { clamp01, drift, ease, keys, pop } from "../lib/anim";
@@ -78,17 +79,29 @@ export const S4Post: React.FC = () => {
   const blurY = Math.min(28, Math.abs(m.y - mp.y) * 0.35);
 
   const V = L.vertical;
-  const OX = 0;
+  // on the wide cut the phone sits right and the line sits beside it
+  const OX = V ? 0 : 430;
   const OY = 0;
   const phoneShrink = keys(frame, [[SUCCESS + 6, 1], [SUCCESS + 24, 0.85]], ease.inOutCubic);
   const halo = clamp01((frame - ENTER) / 10) * (1 - clamp01((frame - EXIT) / 10)) * (1 + 0.6 * Math.max(0, 1 - (frame - ENTER - 6) / 14));
   return (
     <AbsoluteFill>
+      {!V && (
+        <AbsoluteFill style={{ transform: "translateX(-480px)" }}>
+          <PhraseSeq
+            fontSize={96}
+            phrases={[
+              { words: [{ text: "Postezi", at: f(VO.postezi) - 3 }, { text: "task-ul", at: f(VO.taskul) - 3 }, { text: "pe", at: f(VO.peHandly) - 3 }, { text: "handly.ro", at: f(VO.handlyWord) - 3, color: ACCENT }], out: f(VO.dureaza) - 6, breaks: [1] },
+              { words: [{ text: "Durează", at: f(VO.dureaza) - 3 }, { text: "câteva", at: f(VO.cateva) - 3 }, { text: "secunde.", at: f(VO.secunde) - 3, color: ACCENT }], out: EXIT - 2, breaks: [0] },
+            ]}
+          />
+        </AbsoluteFill>
+      )}
       {/* one soft pool of green light under the phone (Google reference) */}
       <div
         style={{
           position: "absolute",
-          left: L.cx - 760,
+          left: L.cx + OX - 760,
           top: L.cy - 760 + (m.y - drift(frame, 7, 120)) * 0.6,
           width: 1520,
           height: 1520,

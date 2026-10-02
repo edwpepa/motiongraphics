@@ -175,7 +175,7 @@ export const S5Radar: React.FC = () => {
           { words: [{ text: "Taskerii", at: f(VO.taskerii) - 3 }, { text: "din", at: f(VO.dinZona) - 3 }, { text: "zona", at: f(VO.dinZona) }, { text: "ta", at: f(VO.dinZona) + 3 }], out: f(VO.vad) - 4 },
           { words: [{ text: "văd", at: f(VO.vad) - 3 }, { text: "task-ul", at: f(VO.vadTaskul) - 3 }], out: exitStart },
         ]}
-        fontSize={L.vertical ? 70 : 60}
+        fontSize={L.vertical ? 84 : 72}
         y={L.vertical ? -700 : -420}
       />
     </AbsoluteFill>

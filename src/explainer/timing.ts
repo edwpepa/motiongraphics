@@ -96,4 +96,7 @@ export const BPM = 124;
 export const MUSIC_LIFT_FRAME = 336;
 export const LOGO_HIT_FRAME = 800;
 
-export const DURATION_IN_FRAMES = 895;
+/** end card: the logo steps up and the store badges land */
+export const CTA_FRAME = 864;
+
+export const DURATION_IN_FRAMES = 1000;

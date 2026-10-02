@@ -12,7 +12,7 @@ import { S6Choose } from "./scenes/S6Choose";
 import { S7NoFees } from "./scenes/S7NoFees";
 import { S8Words } from "./scenes/S8Words";
 import { S9Logo } from "./scenes/S9Logo";
-import { MUSIC_LIFT_FRAME } from "./timing";
+import { DURATION_IN_FRAMES, MUSIC_LIFT_FRAME } from "./timing";
 import { useLayout } from "./layout";
 import { ease } from "./lib/anim";
 
@@ -26,14 +26,52 @@ const WhiteSet: React.FC = () => {
   if (frame > MUSIC_LIFT_FRAME) return null;
   const R = irisR(frame, L.W, L.H);
   const mask = R > 0 ? `radial-gradient(circle at 50% 50%, transparent ${R}px, #000 ${R + 3}px)` : undefined;
+  // daylight mirror of the dark Stage: soft mint light from above, two slow caustic glows, a faint dot field, paper grain
+  const t = frame / 30;
   return (
-    <AbsoluteFill
-      style={{
-        background: "radial-gradient(ellipse 80% 70% at 50% 30%, #ffffff 0%, #f4f5f7 60%, #eceef1 100%)",
-        WebkitMaskImage: mask,
-        maskImage: mask,
-      }}
-    />
+    <AbsoluteFill style={{ WebkitMaskImage: mask, maskImage: mask, overflow: "hidden", background: "#f6f7f6" }}>
+      <AbsoluteFill
+        style={{
+          background: `radial-gradient(ellipse ${L.vertical ? "95% 50%" : "60% 75%"} at 50% -10%, #ffffff 0%, rgba(255,255,255,0.7) 45%, rgba(255,255,255,0) 80%)`,
+        }}
+      />
+      {[
+        { x: 0.28 + 0.06 * Math.sin(t / 2.1), y: 0.35 + 0.05 * Math.cos(t / 2.7), c: "rgba(0,200,106,0.10)" },
+        { x: 0.74 + 0.05 * Math.cos(t / 2.4), y: 0.68 + 0.06 * Math.sin(t / 1.9), c: "rgba(120,230,180,0.14)" },
+      ].map((g, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            left: g.x * L.W - 600,
+            top: g.y * L.H - 600,
+            width: 1200,
+            height: 1200,
+            borderRadius: "50%",
+            background: `radial-gradient(circle, ${g.c} 0%, rgba(255,255,255,0) 65%)`,
+          }}
+        />
+      ))}
+      <AbsoluteFill
+        style={{
+          backgroundImage: "radial-gradient(rgba(16,40,28,0.10) 1.4px, transparent 1.6px)",
+          backgroundSize: "34px 34px",
+          backgroundPosition: `${(frame * 0.15) % 34}px ${(frame * 0.25) % 34}px`,
+          WebkitMaskImage: "radial-gradient(ellipse 55% 55% at 50% 50%, rgba(0,0,0,0) 30%, #000 100%)",
+          maskImage: "radial-gradient(ellipse 55% 55% at 50% 50%, rgba(0,0,0,0) 30%, #000 100%)",
+          opacity: 0.8,
+        }}
+      />
+      <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 55%, rgba(20,40,30,0.05) 100%)" }} />
+      <AbsoluteFill
+        style={{
+          backgroundImage: `url(${staticFile("images/grain.png")})`,
+          backgroundSize: "512px 512px",
+          opacity: 0.08,
+          mixBlendMode: "multiply",
+        }}
+      />
+    </AbsoluteFill>
   );
 };
 
@@ -89,7 +127,7 @@ export const HandlyExplainer: React.FC = () => {
       <Window from={706} to={800}>
         <S8Words />
       </Window>
-      <Window from={784} to={895}>
+      <Window from={784} to={DURATION_IN_FRAMES}>
         <S9Logo />
       </Window>
 

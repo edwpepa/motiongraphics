@@ -1,42 +1,47 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { ACCENT_LIGHT, PhraseSeq } from "../components/Phrase";
-import { clamp01, ease, pop } from "../lib/anim";
+import { clamp01, ease } from "../lib/anim";
 import { useLayout } from "../layout";
 import { f, VO } from "../timing";
 
 const LEAD = 3;
 const at = (i: number) => f(VO.hook[i][1]) - LEAD;
 
-/** iMessage-style "thinking" bubble: three dots breathing in a soft grey pill. */
-const Thinking: React.FC<{ frame: number; scale: number }> = ({ frame, scale }) => (
-  <div
-    style={{
-      display: "flex",
-      gap: 18 * scale,
-      padding: `${28 * scale}px ${38 * scale}px`,
-      borderRadius: 999,
-      background: "linear-gradient(180deg, #f1f2f4 0%, #e4e6e9 100%)",
-      boxShadow: `0 ${20 * scale}px ${50 * scale}px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9)`,
-    }}
-  >
-    {[0, 1, 2].map((i) => {
-      const k = (Math.sin(frame / 4.2 - i * 0.9) + 1) / 2;
-      return (
-        <div
-          key={i}
-          style={{
-            width: 26 * scale,
-            height: 26 * scale,
-            borderRadius: "50%",
-            background: `rgba(90,96,104,${0.35 + 0.5 * k})`,
-            transform: `translateY(${-8 * k * scale}px)`,
-          }}
-        />
-      );
-    })}
-  </div>
-);
+/**
+ * Apple-Watch-"Breathe"-style flower: six translucent mint petals that slowly open, turn and close
+ * again (a long, held thought), with a hairline orbit and a single dot circling it like a pending wait.
+ */
+const Breathe: React.FC<{ frame: number; open: number; R: number }> = ({ frame, open, R }) => {
+  const b = open * (0.82 + 0.18 * Math.sin(frame / 14));
+  const r = R * (0.32 + 0.38 * b);
+  const d = R * 0.42 * b;
+  const rot = 40 * b + frame * 0.35;
+  const orbitR = R * 1.18;
+  const dotA = frame / 9;
+  return (
+    <div style={{ position: "relative", width: 0, height: 0 }}>
+      <svg width={R * 3} height={R * 3} viewBox={`${-R * 1.5} ${-R * 1.5} ${R * 3} ${R * 3}`} style={{ position: "absolute", left: -R * 1.5, top: -R * 1.5, overflow: "visible" }}>
+        <defs>
+          <radialGradient id="petal" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#e2fbec" stopOpacity={0.5} />
+            <stop offset="70%" stopColor="#6ee3a6" stopOpacity={0.38} />
+            <stop offset="100%" stopColor="#19c477" stopOpacity={0.45} />
+          </radialGradient>
+        </defs>
+        <circle r={orbitR} fill="none" stroke="rgba(16,40,28,0.10)" strokeWidth={1.5} opacity={open} />
+        <circle r={orbitR} fill="none" stroke="#00c46a" strokeWidth={2.5} strokeLinecap="round" strokeDasharray={`${orbitR * 0.5} ${orbitR * 7}`} transform={`rotate(${(dotA * 180) / Math.PI - 30})`} opacity={open * 0.7} />
+        <circle cx={Math.cos(dotA) * orbitR} cy={Math.sin(dotA) * orbitR} r={6} fill="#00c46a" opacity={open} />
+        <g transform={`rotate(${rot})`} style={{ mixBlendMode: "multiply" }}>
+          {Array.from({ length: 6 }, (_, i) => {
+            const a = (i * Math.PI) / 3;
+            return <circle key={i} cx={Math.cos(a) * d} cy={Math.sin(a) * d} r={r} fill="url(#petal)" style={{ mixBlendMode: "multiply" }} />;
+          })}
+        </g>
+      </svg>
+    </div>
+  );
+};
 
 // White opening: the "thinking…" bubble (you keep thinking about it) sits under big, calm words.
 export const S1Hook: React.FC = () => {
@@ -44,10 +49,10 @@ export const S1Hook: React.FC = () => {
   const L = useLayout();
   const V = L.vertical;
 
-  const appear = pop(frame, 0, 14, 120);
-  const settle = ease.inOutCubic(clamp01((frame - 6) / 16));
-  const leave = ease.inCubic(clamp01((frame - (f(VO.hookEnd) - 6)) / 8));
-  const bubbleY = (V ? 300 : 220) * settle;
+  // inhale over the hook, exhale into nothing as the question lands
+  const inhale = ease.inOutCubic(clamp01(frame / 40));
+  const exhale = ease.inOutCubic(clamp01((frame - (f(VO.hookEnd) - 14)) / 16));
+  const open = inhale * (1 - exhale);
 
   const fs = V ? 124 : 150;
   const phrases = [
@@ -59,18 +64,10 @@ export const S1Hook: React.FC = () => {
 
   return (
     <AbsoluteFill>
-      <AbsoluteFill
-        style={{
-          justifyContent: "center",
-          alignItems: "center",
-          transform: `translateY(${bubbleY}px) scale(${appear * (1.25 - 0.45 * settle) * (1 - 0.3 * leave)})`,
-          opacity: 1 - leave,
-          filter: leave > 0 ? `blur(${leave * 16}px)` : undefined,
-        }}
-      >
-        <Thinking frame={frame} scale={V ? 1.1 : 1} />
+      <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", transform: `translateY(${V ? -330 : -170}px)`, opacity: clamp01(open * 1.5), filter: exhale > 0 ? `blur(${exhale * 14}px)` : undefined }}>
+        <Breathe frame={frame} open={open} R={V ? 210 : 165} />
       </AbsoluteFill>
-      <PhraseSeq phrases={phrases} fontSize={fs} y={V ? -40 : -30} light />
+      <PhraseSeq phrases={phrases} fontSize={fs} y={V ? 170 : 190} light />
     </AbsoluteFill>
   );
 };

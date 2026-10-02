@@ -25,7 +25,7 @@ from scipy import signal
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SR = 44100
 FPS = 30
-DUR = 895 / FPS
+DUR = 1000 / FPS
 N = int(DUR * SR)
 VO_OFFSET = 0.4
 
@@ -555,6 +555,11 @@ def build_sfx():
     # drops gather into the logo
     place(sfx, whoosh(0.5, 5500, 300, 0.85, (0.0, 0.0), low=0.3), fr(800) - 0.5, 0.35)
     place(sfx, whoosh(0.6, 500, 4000, 0.5, (-0.3, 0.3), air=0.6), fr(822) - 0.1, 0.1)
+    # end card: logo steps up, "Descarcă acum", the two store badges land
+    place(sfx, whoosh(0.55, 400, 3800, 0.5, (0.0, 0.0), air=0.7), fr(864) - 0.05, 0.16)
+    for at, pan in ((880, -0.3), (885, 0.3)):
+        place(sfx, stereo(pop_sfx(1150, 700), pan), fr(at), 0.2)
+    place(sfx, chime([84, 91], gap=0.09, tau=0.8), fr(887), 0.12)
     return sfx
 
 

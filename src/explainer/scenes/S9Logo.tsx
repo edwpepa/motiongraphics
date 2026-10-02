@@ -48,7 +48,7 @@ export const S9Logo: React.FC = () => {
   const wordY = (V ? -200 : -215) * cta;
   const wordS = 1 - 0.3 * cta;
   const ctaAt = CTA_FRAME + 10;
-  const badgeAt = [CTA_FRAME + 16, CTA_FRAME + 21];
+  const badgeAt = [CTA_FRAME + 16, CTA_FRAME + 29];
   const BH = V ? 136 : 104;
   const outro = 1 - ease.inCubic(clamp01((frame - (DURATION_IN_FRAMES - 16)) / 16));
 
@@ -112,10 +112,10 @@ export const S9Logo: React.FC = () => {
           <KineticText words={[{ text: "Descarcă", at: ctaAt }, { text: "acum", at: ctaAt + 3 }]} fontSize={V ? 84 : 68} ink={INK_DARK} tint={INK_DARK} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.04em" }} />
           <div style={{ display: "flex", gap: V ? 26 : 30 }}>
             {(["apple", "google"] as const).map((st, i) => {
-              const p = pop(frame, badgeAt[i], 13, 170);
-              if (p <= 0.001) return null;
+              // each badge glides up out of a soft blur on its own beat
+              const p = ease.outExpo(clamp01((frame - badgeAt[i]) / 22));
               return (
-                <div key={st} style={{ opacity: clamp01(p * 2), transform: `translateY(${(1 - p) * 60}px) scale(${0.85 + 0.15 * p})`, filter: p < 0.9 ? `blur(${(1 - Math.min(1, p)) * 10}px)` : undefined }}>
+                <div key={st} style={{ opacity: ease.outCubic(clamp01((frame - badgeAt[i]) / 12)), transform: `translateY(${(1 - p) * 70}px) scale(${0.9 + 0.1 * p})`, filter: p < 0.98 ? `blur(${(1 - p) * 14}px)` : undefined }}>
                   <StoreBadge store={st} h={BH} shine={clamp01((frame - badgeAt[i] - 14) / 20)} />
                 </div>
               );

@@ -1,8 +1,9 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { GlyphName, IconTile, TileColor } from "../components/Icons";
+import { Chores3D, propScreenX } from "../components/Chores3D";
 import { Orb } from "../components/Orb";
-import { PhraseSeq } from "../components/Phrase";
+import { TrackPhrases } from "../components/Phrase";
 import { clamp01, drift, ease, lerp, pop } from "../lib/anim";
 import { useLayout } from "../layout";
 import { BOLD, FONT } from "../theme";
@@ -55,6 +56,11 @@ export const S3Chores: React.FC = () => {
   const h = V ? 250 : 240;
   const widgetY = V ? 160 : 120;
 
+  const timings = ITEMS.map((_, i) => ({ in: arrive(i) - 4, out: i < 2 ? arrive(i + 1) - 12 : END + 2 }));
+  const ppu = V ? 1920 / (2 * 13 * 0.2679) : 1080 / (2 * 9 * 0.2679);
+  const shadowY = (V ? 2.06 : 2.0) * ppu;
+  const shadowW = (V ? 2.4 : 2.2) * ppu;
+
   const phrases = ITEMS.map((it, i) => ({
     words: it.words.map(([text, sec]) => ({ text, at: f(sec) - LEAD })),
     out: i < 2 ? arrive(i + 1) - 4 : END + 2,
@@ -81,29 +87,31 @@ export const S3Chores: React.FC = () => {
 
   return (
     <AbsoluteFill>
-      <PhraseSeq phrases={phrases} fontSize={V ? 108 : 104} y={V ? -330 : -200} light />
+      <TrackPhrases phrases={phrases} fontSize={V ? 108 : 104} y={V ? -540 : -290} light width={L.W} height={L.H} spread={[0.7, 0.04]} />
 
-      {ITEMS.map((_, i) => {
-        const a = arrive(i);
-        const next = i < 2 ? arrive(i + 1) : END + 2;
-        if (frame < a - 1 || frame > next + 2) return null;
-        const p = pop(frame, a, 14, 140);
-        const out = i < 2 ? ease.inCubic(clamp01((frame - (next - 7)) / 7)) : fold;
+      {/* contact shadows under the 3D props */}
+      {timings.map((t, i) => {
+        if (frame < t.in - 2 || frame > t.out + 16) return null;
+        const x = propScreenX(t, frame) * ppu;
+        const lift = clamp01((frame - t.out) / 14);
         return (
           <div
             key={i}
             style={{
               position: "absolute",
-              left: L.cx - w / 2,
-              top: L.cy + widgetY - h / 2 + drift(frame, 5, 80, i),
-              transform: `translateY(${(1 - p) * 90 - out * 70}px) scale(${(0.92 + 0.08 * p) * (1 - 0.4 * out)})`,
-              opacity: 1 - out,
+              left: L.cx + x - shadowW / 2,
+              top: L.cy + shadowY - 30,
+              width: shadowW,
+              height: 60,
+              borderRadius: "50%",
+              background: "radial-gradient(ellipse at 50% 50%, rgba(10,60,35,0.28) 0%, rgba(10,60,35,0) 70%)",
+              filter: "blur(8px)",
+              opacity: 1 - lift,
             }}
-          >
-            <Widget i={i} frame={frame} w={w} h={h} />
-          </div>
+          />
         );
       })}
+      <Chores3D width={L.W} height={L.H} timings={timings} vertical={V} />
 
       {frame >= END + 8 && (
         <div

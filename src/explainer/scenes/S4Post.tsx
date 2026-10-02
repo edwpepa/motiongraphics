@@ -3,6 +3,7 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { AppScreen, TASK_TEXT } from "../components/AppScreen";
 import { Phone, PHONE_H, PHONE_W } from "../components/Phone";
 import { GlyphName, IconTile, TileColor } from "../components/Icons";
+import { blobPath } from "../components/MorphShapes";
 import { GlassPill } from "../components/Pill";
 import { useLayout } from "../layout";
 import { DirBlur } from "../lib/Blur";
@@ -26,18 +27,20 @@ const CHIPS: ChipDef[] = [
 ];
 
 const phoneMotion = (frame: number, vertical: boolean) => {
-  const inT = ease.outExpo(clamp01((frame - ENTER) / 16));
+  const inT = ease.outExpo(clamp01((frame - ENTER) / 20));
   const outT = ease.inCubic(clamp01((frame - EXIT) / 13));
   const rotY = keys(frame, [
-    [ENTER, 160],
-    [ENTER + 16, -16],
+    [ENTER, -4],
+    [ENTER + 22, -14],
     [EXIT, 9],
   ], ease.outCubic) - 26 * outT;
+  // rises out of the bottom of the frame, tilted back like a phone lifted in your hand, then squares up
   return {
-    x: (vertical ? 800 : 950) * (1 - inT),
+    x: 0,
     rotY,
-    rotX: 5 + 60 * outT,
-    y: 300 * outT + drift(frame, 7, 120),
+    rotX: 5 + 42 * (1 - inT) + 60 * outT,
+    rotZ: -8 * (1 - inT),
+    y: (vertical ? 1500 : 1150) * (1 - inT) + 300 * outT + drift(frame, 7, 120),
     scale: (vertical ? 1.12 : 0.92) * (1.6 - 0.6 * inT) * (1 - 0.18 * outT) * keys(frame, [[SUCCESS + 6, 1], [SUCCESS + 24, vertical ? 0.78 : 0.74]], ease.inOutCubic),
     opacity: 1 - clamp01((frame - EXIT - 9) / 5),
   };
@@ -78,23 +81,35 @@ export const S4Post: React.FC = () => {
   const V = L.vertical;
   const OX = 0;
   const OY = 0;
+  const phoneShrink = keys(frame, [[SUCCESS + 6, 1], [SUCCESS + 24, 0.85]], ease.inOutCubic);
   const halo = clamp01((frame - ENTER) / 10) * (1 - clamp01((frame - EXIT) / 10)) * (1 + 0.6 * Math.max(0, 1 - (frame - ENTER - 6) / 14));
   return (
     <AbsoluteFill>
-      {/* glow behind the phone */}
-      <div
-        style={{
-          position: "absolute",
-          left: L.cx + OX - 520,
-          top: L.cy + OY - 520,
-          width: 1040,
-          height: 1040,
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(0,230,118,0.55) 0%, rgba(0,191,99,0.25) 35%, rgba(0,0,0,0) 68%)",
-          opacity: halo,
-          transform: `scale(${0.9 + 0.1 * Math.sin(frame / 18)})`,
-        }}
-      />
+      {/* morphing liquid shapes behind the phone */}
+      <svg width={L.W} height={L.H} style={{ position: "absolute", inset: 0, opacity: Math.min(1, halo), filter: "blur(26px)" }}>
+        <defs>
+          <radialGradient id="ph1" cx="35%" cy="30%" r="75%">
+            <stop offset="0%" stopColor="#7dffb4" />
+            <stop offset="55%" stopColor="#00c866" />
+            <stop offset="100%" stopColor="#004d27" />
+          </radialGradient>
+          <radialGradient id="ph2" cx="60%" cy="40%" r="70%">
+            <stop offset="0%" stopColor="#2bff95" stopOpacity={0.9} />
+            <stop offset="100%" stopColor="#00592d" stopOpacity={0.6} />
+          </radialGradient>
+        </defs>
+        {[
+          { dx: -0.16, dy: -0.1, r: 0.3, g: "ph1", sd: 3 },
+          { dx: 0.17, dy: 0.12, r: 0.24, g: "ph2", sd: 7 },
+          { dx: 0.02, dy: 0.24, r: 0.16, g: "ph2", sd: 11 },
+        ].map((b, i) => {
+          const R = Math.min(L.W, L.H) * b.r * (0.7 + 0.3 * clamp01((frame - ENTER) / 18)) * phoneShrink;
+          const t = frame / 30;
+          const ox = (b.dx + 0.05 * Math.sin(t * 0.9 + i * 2)) * Math.min(L.W, L.H) * 1.3 * phoneShrink;
+          const oy = (b.dy + 0.05 * Math.cos(t * 0.7 + i)) * Math.min(L.W, L.H) * 1.3 * phoneShrink;
+          return <path key={i} d={blobPath(L.cx + ox, L.cy + oy, R, t * 1.4, b.sd, 0.24)} fill={`url(#${b.g})`} opacity={0.55} />;
+        })}
+      </svg>
     <AbsoluteFill style={{ opacity: m.opacity, transform: `translate(${OX}px, ${OY}px)` }}>
       <DirBlur x={blurX} y={blurY} style={{ position: "absolute", inset: 0, perspective: 1900 }}>
         <div
@@ -103,7 +118,7 @@ export const S4Post: React.FC = () => {
             left: "50%",
             top: "50%",
             transformStyle: "preserve-3d",
-            transform: `scale(${zoom}) translateY(${camY}px) translate(${m.x}px, ${m.y}px) scale(${m.scale}) rotateX(${m.rotX}deg) rotateY(${m.rotY}deg)`,
+            transform: `scale(${zoom}) translateY(${camY}px) translate(${m.x}px, ${m.y}px) scale(${m.scale}) rotateX(${m.rotX}deg) rotateY(${m.rotY}deg) rotateZ(${m.rotZ}deg)`,
           }}
         >
           <div style={{ position: "absolute", left: -PHONE_W / 2, top: -PHONE_H / 2, transformStyle: "preserve-3d" }}>

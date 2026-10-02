@@ -1,5 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Audio, staticFile, useCurrentFrame } from "remotion";
+import { MorphShapes } from "./components/MorphShapes";
 import { Stage } from "./components/Stage";
 import { useExplainerFonts } from "./fonts";
 import { clamp01 } from "./lib/anim";
@@ -35,23 +36,7 @@ const WhiteSet: React.FC = () => {
           background: `radial-gradient(ellipse ${L.vertical ? "95% 50%" : "60% 75%"} at 50% -10%, #ffffff 0%, rgba(255,255,255,0.7) 45%, rgba(255,255,255,0) 80%)`,
         }}
       />
-      {[
-        { x: 0.28 + 0.06 * Math.sin(t / 2.1), y: 0.35 + 0.05 * Math.cos(t / 2.7), c: "rgba(0,200,106,0.10)" },
-        { x: 0.74 + 0.05 * Math.cos(t / 2.4), y: 0.68 + 0.06 * Math.sin(t / 1.9), c: "rgba(120,230,180,0.14)" },
-      ].map((g, i) => (
-        <div
-          key={i}
-          style={{
-            position: "absolute",
-            left: g.x * L.W - 600,
-            top: g.y * L.H - 600,
-            width: 1200,
-            height: 1200,
-            borderRadius: "50%",
-            background: `radial-gradient(circle, ${g.c} 0%, rgba(255,255,255,0) 65%)`,
-          }}
-        />
-      ))}
+      <MorphShapes tone="light" />
       <AbsoluteFill
         style={{
           backgroundImage: "radial-gradient(rgba(16,40,28,0.10) 1.4px, transparent 1.6px)",

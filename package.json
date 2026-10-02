@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "start": "remotion studio src/index.ts",
-    "render": "remotion render src/index.ts HandlyReel out/handly-reel.mp4"
+    "render": "remotion render src/index.ts HandlyReel out/handly-reel.mp4",
+    "render:explainer": "bash tools/render-explainer.sh",
+    "audio:explainer": "python3 tools/audio/compose.py"
   },
   "dependencies": {
     "@remotion/cli": "4.0.286",

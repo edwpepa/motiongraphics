@@ -1,21 +1,22 @@
 import React from "react";
-import { AbsoluteFill, useCurrentFrame } from "remotion";
+import { AbsoluteFill, staticFile, useCurrentFrame } from "remotion";
 import { textWidth } from "../components/AppleText";
 import { IconTile } from "../components/Icons";
-import { INK, KineticText, SHADOW } from "../components/KineticText";
-import { ACCENT_LIGHT, PhraseSeq } from "../components/Phrase";
+import { INK_DARK, KineticText, SHADOW_DARK } from "../components/KineticText";
+import { ACCENT, PhraseSeq } from "../components/Phrase";
 import { DirBlur } from "../lib/Blur";
-import { clamp01, ease, lerp } from "../lib/anim";
+import { clamp01, ease, lerp, mixColor } from "../lib/anim";
 import { useLayout } from "../layout";
 import { BOLD, FONT } from "../theme";
-import { f, VO } from "../timing";
+import { f, MUSIC_LIFT_FRAME, VO } from "../timing";
 
 /**
- * Problem half, SaaS-explainer style on a clean light set:
- *   kinetic phrases → one smooth camera move onto a single piece of UI: a reminder that keeps getting
- *   snoozed (a tap on "Amână" on every syllable of "pe care o tot amâni?", the snoozed copies piling up
- *   behind it) → the reminder morphs into a "Treburi amânate" list whose rows arrive as they are said,
- *   the camera gliding row to row → the card collapses to the centre, where the handly logo takes over.
+ * Problem half on a dark set:
+ *   the opening lines are tracked by a camera that drops from phrase to phrase (tilt + motion blur),
+ *   each lands with a light streak; "obositoare" sags letter by letter → one move onto a snoozed
+ *   reminder (a tap on "Amână" on every syllable, the snoozed copies piling up) → a notebook takes
+ *   over: a page per chore with the camera leaning in, then the pages riffle forward fast → the
+ *   notebook collapses into the centre where the handly logo takes over.
  */
 
 const LEAD = 3;
@@ -23,26 +24,82 @@ const hw = (i: number) => f(VO.hook[i][1]) - LEAD;
 const TAPS = VO.postponeSyllables.map((s) => f(s) - 1);
 const WHEN = ["Azi, 18:00", "Mâine", "Joi", "Weekendul ăsta", "Săptămâna viitoare", "Luna viitoare", "Cândva…"];
 const CHORES = [
-  { icon: "droplet", tile: "blue", words: [["Robinet", 5.55], ["care", 5.95], ["curge", 6.2]] as [string, number][], days: 14 },
-  { icon: "hammer", tile: "indigo", words: [["Dulap", 7.13], ["de", 7.5], ["montat", 7.62]] as [string, number][], days: 31 },
-  { icon: "roller", tile: "orange", words: [["Perete", 8.65], ["de", 9.05], ["zugrăvit", 9.18]] as [string, number][], days: 92 },
-] as const;
+  { words: [["Robinet", 5.55], ["care", 5.95], ["curge", 6.2]] as [string, number][], days: 14, day: "Joi", date: 24, month: "Octombrie" },
+  { words: [["Dulap", 7.13], ["de", 7.5], ["montat", 7.62]] as [string, number][], days: 31, day: "Luni", date: 10, month: "Noiembrie" },
+  { words: [["Perete", 8.65], ["de", 9.05], ["zugrăvit", 9.18]] as [string, number][], days: 92, day: "Vineri", date: 23, month: "Ianuarie" },
+];
 const arrive = (i: number) => f(VO.chores[i]) - LEAD;
 const END = f(VO.choresEnd);
 const PAN = f(VO.hookEnd) - 8;
-const LIST0 = f(VO.postponeEnd) + 1;
+const NOTE_OUT = f(VO.postponeEnd) - 2;
+const RIFFLE_FROM = END - 2;
+const RIFFLE_TO = MUSIC_LIFT_FRAME - 14;
+const COLLAPSE = MUSIC_LIFT_FRAME - 14;
 
-const INK_C = "#0c1511";
-const SOFT = "rgba(12,21,17,0.45)";
+// ---------------------------------------------------------------- notebook pages
+type Page = { day: string; date: number; month: string; chore?: number; text?: string };
+const MONTHS = ["Februarie", "Martie", "Aprilie", "Mai", "Iunie", "Iulie", "August", "Septembrie", "Octombrie"];
+const RIFFLE = Array.from({ length: Math.floor((RIFFLE_TO - RIFFLE_FROM) / 2) + 1 }, (_, i) => RIFFLE_FROM + i * 2);
+const PAGES: Page[] = [
+  { day: "Luni", date: 14, month: "Octombrie", text: "Treaba aia" },
+  ...CHORES.map((c, i) => ({ day: c.day, date: c.date, month: c.month, chore: i })),
+  ...RIFFLE.map((_, i) => ({ day: ["Marți", "Joi", "Sâmbătă", "Luni"][i % 4], date: 3 + ((i * 7) % 25), month: MONTHS[i % MONTHS.length], chore: i % 3 })),
+];
+const FLIPS: { at: number; d: number }[] = [...CHORES.map((_, i) => ({ at: arrive(i) - 7, d: 9 })), ...RIFFLE.map((at) => ({ at, d: 6 }))];
 
-/** quiet light set: soft white bloom, faint grid that drifts a little with the camera */
-const LightSet: React.FC<{ shift: number }> = ({ shift }) => {
+const PageFace: React.FC<{ page: Page; w: number; h: number; frame: number; live: boolean }> = ({ page, w, h, frame, live }) => {
+  const c = page.chore !== undefined ? CHORES[page.chore] : null;
+  const a = c && live ? arrive(page.chore!) : -999;
+  const count = c ? (live ? Math.round(1 + (c.days - 1) * ease.outCubic(clamp01((frame - a - 12) / 22))) : c.days) : 0;
+  const sub = live ? ease.outCubic(clamp01((frame - a - 12) / 10)) : 1;
+  const pad = w * 0.11;
+  return (
+    <div style={{ position: "absolute", inset: 0, fontFamily: FONT, fontWeight: BOLD, color: "#0c1511", overflow: "hidden", borderRadius: "4px 18px 18px 4px", background: "linear-gradient(90deg, #e6e9e7 0%, #f9faf9 7%, #ffffff 100%)" }}>
+      {Array.from({ length: 9 }, (_, i) => (
+        <div key={i} style={{ position: "absolute", left: pad, right: pad, top: h * 0.42 + i * h * 0.068, height: 2, background: "rgba(16,40,28,0.06)" }} />
+      ))}
+      <div style={{ position: "absolute", left: pad, top: h * 0.07, fontSize: w * 0.04, letterSpacing: "0.12em", color: "rgba(12,21,17,0.4)" }}>{page.day.toUpperCase()}</div>
+      <div style={{ position: "absolute", left: pad - w * 0.01, top: h * 0.1, fontSize: w * 0.26, letterSpacing: "-0.05em", lineHeight: 1 }}>{page.date}</div>
+      <div style={{ position: "absolute", left: pad, top: h * 0.3, fontSize: w * 0.05, color: "#00a352", letterSpacing: "-0.01em" }}>{page.month}</div>
+      <div style={{ position: "absolute", left: pad, top: h * 0.445, width: w * 0.075, height: w * 0.075, borderRadius: "50%", border: `${Math.max(3, w * 0.007)}px solid rgba(12,21,17,0.25)`, boxSizing: "border-box" }} />
+      <div style={{ position: "absolute", left: pad + w * 0.11, top: h * 0.43 }}>
+        {c && live ? (
+          <KineticText words={c.words.map(([text, sec]) => ({ text, at: f(sec) - LEAD }))} fontSize={w * 0.085} ink={["#2a3530", "#060908"]} tint={["#2be38a", "#00964d"]} shadow="none" style={{ letterSpacing: "-0.035em", alignItems: "flex-start" }} />
+        ) : (
+          <div style={{ fontSize: w * 0.085, letterSpacing: "-0.035em", lineHeight: 1.22 }}>{c ? c.words.map(([t]) => t).join(" ") : page.text}</div>
+        )}
+      </div>
+      <div style={{ position: "absolute", left: pad + w * 0.11, top: h * 0.43 + w * 0.12, fontSize: w * 0.042, color: "rgba(12,21,17,0.42)", opacity: sub }}>
+        {c ? (
+          <>
+            Amânat de <span style={{ color: "#00a352" }}>{count} zile</span>
+          </>
+        ) : (
+          "Mutat pe mâine"
+        )}
+      </div>
+    </div>
+  );
+};
+
+const LeftFace: React.FC<{ w: number; h: number }> = ({ w, h }) => (
+  <div style={{ position: "absolute", inset: 0, borderRadius: "18px 4px 4px 18px", background: "linear-gradient(270deg, #e3e7e5 0%, #f7f9f8 8%, #ffffff 100%)", overflow: "hidden" }}>
+    {Array.from({ length: 9 }, (_, i) => (
+      <div key={i} style={{ position: "absolute", left: w * 0.11, right: w * 0.11, top: h * 0.42 + i * h * 0.068, height: 2, background: "rgba(16,40,28,0.05)" }} />
+    ))}
+  </div>
+);
+
+// ---------------------------------------------------------------- set + small UI bits
+/** dark set: near-black, one soft green light from the top, a faint grid that drifts with the camera */
+const DarkSet: React.FC<{ shift: number }> = ({ shift }) => {
   const L = useLayout();
   const cell = L.vertical ? 90 : 96;
-  const grid = "rgba(16,40,28,0.05)";
+  const grid = "rgba(160,255,200,0.045)";
   const mask = `radial-gradient(ellipse ${L.vertical ? "95% 60%" : "70% 85%"} at 50% 50%, #000 30%, transparent 100%)`;
   return (
-    <AbsoluteFill style={{ background: "radial-gradient(ellipse 80% 70% at 50% 42%, #ffffff 0%, #f4f6f5 62%, #eceeed 100%)" }}>
+    <AbsoluteFill style={{ background: "#030504" }}>
+      <AbsoluteFill style={{ background: `radial-gradient(ellipse ${L.vertical ? "90% 45%" : "55% 70%"} at 50% -8%, rgba(0,191,99,0.26) 0%, rgba(0,140,72,0.09) 38%, rgba(0,0,0,0) 72%)` }} />
       <AbsoluteFill
         style={{
           backgroundImage: `linear-gradient(${grid} 1.5px, transparent 1.5px), linear-gradient(90deg, ${grid} 1.5px, transparent 1.5px)`,
@@ -52,11 +109,12 @@ const LightSet: React.FC<{ shift: number }> = ({ shift }) => {
           maskImage: mask,
         }}
       />
+      <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.6) 100%)" }} />
+      <AbsoluteFill style={{ backgroundImage: `url(${staticFile("images/grain.png")})`, backgroundSize: "512px 512px", opacity: 0.05, mixBlendMode: "overlay" }} />
     </AbsoluteFill>
   );
 };
 
-/** iOS-style touch indicator that lands, presses and lifts at `at` */
 const Touch: React.FC<{ frame: number; at: number; x: number; y: number }> = ({ frame, at, x, y }) => {
   const t = frame - at;
   if (t < -5 || t > 8) return null;
@@ -72,9 +130,8 @@ const Touch: React.FC<{ frame: number; at: number; x: number; y: number }> = ({ 
         width: 68,
         height: 68,
         borderRadius: "50%",
-        background: "rgba(12,21,17,0.16)",
-        border: "2.5px solid rgba(255,255,255,0.9)",
-        boxShadow: "0 8px 20px rgba(12,21,17,0.15)",
+        background: "rgba(255,255,255,0.22)",
+        border: "2.5px solid rgba(255,255,255,0.75)",
         opacity: inA * outA,
         transform: `scale(${(0.8 + 0.2 * inA) * press})`,
       }}
@@ -82,7 +139,6 @@ const Touch: React.FC<{ frame: number; at: number; x: number; y: number }> = ({ 
   );
 };
 
-/** a word that rolls in from below when it changes (for the snooze time) */
 const Roll: React.FC<{ frame: number; values: string[]; changes: number[]; style?: React.CSSProperties }> = ({ frame, values, changes, style }) => {
   const k = changes.filter((c) => frame >= c).length;
   const p = k ? ease.outCubic(clamp01((frame - changes[k - 1]) / 6)) : 1;
@@ -94,61 +150,94 @@ const Roll: React.FC<{ frame: number; values: string[]; changes: number[]; style
   );
 };
 
+/** a soft streak of light that sweeps across a line once it has landed (only lights the letters) */
+const Streak: React.FC<{ frame: number; at: number }> = ({ frame, at }) => {
+  const p = clamp01((frame - at) / 16);
+  if (p <= 0 || p >= 1) return null;
+  return (
+    <AbsoluteFill style={{ mixBlendMode: "overlay", pointerEvents: "none", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: "-20%", bottom: "-20%", left: `${lerp(10, 90, ease.inOutCubic(p)) - 9}%`, width: "18%", transform: "skewX(-18deg)", background: "linear-gradient(90deg, rgba(190,255,215,0) 0%, rgba(190,255,215,1) 50%, rgba(190,255,215,0) 100%)" }} />
+    </AbsoluteFill>
+  );
+};
+
+/** "obositoare": rises in like every other word, then sags letter by letter — tired */
+const Tired: React.FC<{ frame: number; at: number; sag: number; fs: number }> = ({ frame, at, sag, fs }) => {
+  const letters = Array.from("obositoare");
+  return (
+    <div style={{ display: "flex", fontFamily: FONT, fontWeight: BOLD, fontSize: fs, letterSpacing: "-0.04em", lineHeight: 1.22, filter: `drop-shadow(0 0 28px rgba(0,191,99,0.25))${frame - at < 12 ? ` blur(${(1 - ease.outCubic(clamp01((frame - at) / 12))) * fs * 0.08}px)` : ""}` }}>
+      {letters.map((ch, i) => {
+        const l = frame - at - i * 0.55;
+        const e = ease.outExpo(clamp01(l / 13));
+        const wave = Math.sin(i * 0.85) * 0.16 + 0.42;
+        const d = ease.outBack(clamp01((frame - sag - i * 1.3) / 12), 2.2);
+        const drop = d * (0.05 + 0.045 * ((i * 7) % 3)) * fs;
+        const rot = d * (i % 2 ? 1 : -1) * (5 + 3 * ((i * 5) % 4));
+        const c = clamp01((l - 3) / 13);
+        const tired = ease.inOutCubic(clamp01((frame - sag - i * 1.3) / 14));
+        // green while landing → white → a tired, faded grey-green as it sags
+        const top = tired > 0 ? mixColor(INK_DARK[0], "#7f948a", tired) : mixColor(ACCENT[0], INK_DARK[0], c);
+        const bottom = tired > 0 ? mixColor(INK_DARK[1], "#4d5f56", tired) : mixColor(ACCENT[1], INK_DARK[1], c);
+        return (
+          <span
+            key={i}
+            style={{
+              display: "inline-block",
+              opacity: clamp01(l / 4),
+              transform: `translateY(${(1 - e) * wave * fs + drop}px) rotate(${(1 - e) * Math.sin(i * 1.7) * 12 + rot}deg)`,
+              transformOrigin: "50% 90%",
+              backgroundImage: `linear-gradient(180deg, ${top} 10%, ${bottom} 90%)`,
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+            }}
+          >
+            {ch}
+          </span>
+        );
+      })}
+    </div>
+  );
+};
+
 export const Problem: React.FC = () => {
   const frame = useCurrentFrame();
   const L = useLayout();
   const V = L.vertical;
-  const FS = V ? 112 : 136;
+  const FS = V ? 116 : 140;
 
-  // ---------------------------------------------------------------- intro phrases + one camera move onto the UI
-  const push = 1 + 0.05 * ease.inOutCubic(clamp01(frame / 118));
+  // ---------------------------------------------------------------- opening lines: a camera that drops from line to line
+  const STEP = L.H * (V ? 0.42 : 0.62);
+  const lineStart = [hw(0), hw(3), hw(6), hw(7)];
+  const camYAt = (fr: number) => lineStart.slice(1).reduce((y, s) => y + STEP * ease.inOutQuart(clamp01((fr - (s - 7)) / 11)), 0);
+  const camY = camYAt(frame);
+  const vy = camY - camYAt(frame - 1);
+  const tilt = Math.max(-10, Math.min(10, vy * 0.12));
+  const pull = 1 + 0.9 * (1 - ease.outExpo(clamp01((frame - (hw(0) - 4)) / 22)));
   const SPAN = L.W * 1.1;
   const panAt = (fr: number) => ease.inOutCubic(clamp01((fr - PAN) / 16));
   const pan = panAt(frame);
   const panBlur = Math.min(40, Math.abs(pan - panAt(frame - 1)) * SPAN * 0.18);
-  const casaIn = hw(7);
-  const casaOut = PAN + 30;
-  const casaK = 1 - ease.outExpo(clamp01((frame - (casaIn - 1)) / 12));
-  const casaT = clamp01((frame - casaOut) / 7);
   const casaW = textWidth("prin casă", FS, -0.04);
 
-  // ---------------------------------------------------------------- the card: reminder → list
-  const NW = V ? 900 : 900;
-  const NH = V ? 196 : 196;
-  const LW = V ? 940 : 1000;
-  const LH = V ? 820 : 600;
-  const toList = ease.inOutCubic(clamp01((frame - LIST0) / 14));
-  const w = lerp(NW, LW, toList);
-  const h = lerp(NH, LH, toList);
-  const cardY = lerp(V ? 60 : 50, 0, toList);
-  const collapse = ease.inOutCubic(clamp01((frame - (END - 2)) / 12));
-  const taps = TAPS.filter((t) => frame >= t).length;
-  const notifIn = ease.outExpo(clamp01((frame - (PAN + 6)) / 18));
-
-  // list rows + camera gliding row to row
-  const rowY = (i: number) => -LH / 2 + (V ? 230 : 180) + i * (V ? 190 : 132);
-  type Cam = { s: number; y: number };
-  const Z = V ? 1.08 : 1.45;
-  const camAt = (fr: number): Cam => {
-    const c = { s: 1, y: 0 };
-    const moves: [number, number, Cam][] = [
-      [arrive(0) - 2, 12, { s: Z, y: rowY(0) }],
-      [arrive(1) - 6, 10, { s: Z, y: rowY(1) }],
-      [arrive(2) - 6, 10, { s: Z, y: rowY(2) }],
-      [END - 10, 12, { s: 1, y: 0 }],
-    ];
-    for (const [st, d, to] of moves) {
-      const e = ease.inOutCubic(clamp01((fr - st) / d));
-      c.s = lerp(c.s, to.s, e);
-      c.y = lerp(c.y, to.y, e);
-    }
-    return c;
+  const lineBox = (i: number, child: React.ReactNode) => {
+    const y = i * STEP - camY;
+    const away = clamp01(Math.abs(y) / STEP);
+    if (frame < lineStart[i] - 2 || away >= 0.99) return null;
+    return (
+      <AbsoluteFill key={i} style={{ justifyContent: "center", alignItems: "center", transform: `translateY(${y}px)`, opacity: 1 - ease.inCubic(away) * 0.95 }}>
+        <div style={{ position: "relative" }}>{child}</div>
+      </AbsoluteFill>
+    );
   };
-  const cam = camAt(frame);
-  const camBlur = Math.min(24, Math.abs(cam.y - camAt(frame - 1).y) * cam.s * 0.3);
 
-  const amana = { x: NW / 2 - (V ? 120 : 108), y: 0 };
-
+  // ---------------------------------------------------------------- reminder
+  const NW = 900;
+  const NH = 196;
+  const notifIn = ease.outExpo(clamp01((frame - (PAN + 6)) / 18));
+  const notifOut = ease.inCubic(clamp01((frame - NOTE_OUT) / 10));
+  const taps = TAPS.filter((t) => frame >= t).length;
+  const amana = { x: NW / 2 - 108, y: 0 };
   const notification = (depth: number, label: number, key: string) => (
     <div
       key={key}
@@ -158,121 +247,99 @@ export const Problem: React.FC = () => {
         top: -NH / 2,
         width: NW,
         height: NH,
-        borderRadius: 38,
-        background: "rgba(255,255,255,0.96)",
-        boxShadow: "0 30px 60px rgba(16,40,28,0.12), 0 6px 16px rgba(16,40,28,0.06), inset 0 0 0 1px rgba(16,40,28,0.05)",
-        transform: `translateY(${-depth * (V ? 34 : 30)}px) scale(${1 - depth * 0.06})`,
-        opacity: depth === 0 ? 1 : Math.max(0, 1 - depth * 0.25),
+        borderRadius: 40,
+        background: "linear-gradient(180deg, rgba(34,40,38,0.97) 0%, rgba(22,26,25,0.97) 100%)",
+        boxShadow: "0 40px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.10), inset 0 0 0 1px rgba(255,255,255,0.05)",
+        transform: `translateY(${-depth * 30}px) scale(${1 - depth * 0.06})`,
+        opacity: depth < 0.01 ? 1 : Math.max(0, 1 - depth * 0.28),
         fontFamily: FONT,
         fontWeight: BOLD,
         display: "flex",
         alignItems: "center",
-        gap: V ? 28 : 24,
-        padding: `0 ${V ? 34 : 30}px`,
+        gap: 24,
+        padding: "0 30px",
         boxSizing: "border-box",
       }}
     >
       <IconTile name="bell" color="green" size={NH * 0.46} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: NH * 0.12, color: SOFT, letterSpacing: "0.06em" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: NH * 0.12, color: "rgba(220,240,230,0.45)", letterSpacing: "0.06em" }}>
           <span>MEMENTO</span>
           <span style={{ letterSpacing: 0 }}>acum</span>
         </div>
-        <div style={{ fontSize: NH * 0.19, color: INK_C, letterSpacing: "-0.02em" }}>Treaba aia de prin casă</div>
-        <div style={{ fontSize: NH * 0.13, color: SOFT }}>
-          Programat:{" "}
-          {depth === 0 ? (
-            <Roll frame={frame} values={WHEN} changes={TAPS} style={{ color: "#00a352" }} />
-          ) : (
-            <span style={{ color: "#00a352" }}>{WHEN[label]}</span>
-          )}
+        <div style={{ fontSize: NH * 0.19, color: "#f2fff8", letterSpacing: "-0.02em" }}>Treaba aia de prin casă</div>
+        <div style={{ fontSize: NH * 0.13, color: "rgba(220,240,230,0.5)" }}>
+          Programat: {depth < 0.01 ? <Roll frame={frame} values={WHEN} changes={TAPS} style={{ color: "#2be38a" }} /> : <span style={{ color: "#2be38a" }}>{WHEN[label]}</span>}
         </div>
       </div>
-      <div
-        style={{
-          padding: `${NH * 0.07}px ${NH * 0.14}px`,
-          borderRadius: 999,
-          background: "#eef2ef",
-          fontSize: NH * 0.12,
-          color: INK_C,
-          transform: `scale(${TAPS.some((t) => frame >= t && frame < t + 4) ? 0.92 : 1})`,
-        }}
-      >
-        Amână
-      </div>
+      <div style={{ padding: `${NH * 0.07}px ${NH * 0.14}px`, borderRadius: 999, background: "rgba(255,255,255,0.09)", fontSize: NH * 0.12, color: "#f2fff8", transform: `scale(${TAPS.some((t) => frame >= t && frame < t + 4) ? 0.92 : 1})` }}>Amână</div>
     </div>
   );
 
-  const listIn = ease.outCubic(clamp01((frame - (LIST0 + 8)) / 9));
-  const list = (
-    <div style={{ position: "absolute", left: -w / 2, top: -h / 2, width: w, height: h, opacity: listIn, fontFamily: FONT, fontWeight: BOLD }}>
-      <div style={{ position: "absolute", left: 48, right: 48, top: V ? 70 : 52, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ fontSize: V ? 46 : 40, color: INK_C, letterSpacing: "-0.03em" }}>Treburi amânate</div>
-        <div style={{ padding: "6px 16px", borderRadius: 999, background: "#eef2ef", color: SOFT, fontSize: V ? 26 : 22 }}>{CHORES.filter((_, i) => frame >= arrive(i) - 4).length}</div>
-      </div>
-      <div style={{ position: "absolute", left: 48, right: 48, top: V ? 150 : 120, height: 2, background: "rgba(16,40,28,0.06)" }} />
-      {CHORES.map((c, i) => {
-        const a = arrive(i);
-        const rin = ease.outExpo(clamp01((frame - (a - 4)) / 14));
-        if (rin <= 0) return null;
-        const y = rowY(i) + h / 2;
-        const count = Math.round(1 + (c.days - 1) * ease.outCubic(clamp01((frame - a - 8) / 20)));
-        const RH = V ? 150 : 108;
-        return (
-          <div key={i} style={{ position: "absolute", left: 32, right: 32, top: y - RH / 2, height: RH, borderRadius: 24, background: frame < (i < 2 ? arrive(i + 1) - 4 : END) ? "rgba(0,163,82,0.05)" : "rgba(0,0,0,0)", opacity: rin, transform: `translateY(${(1 - rin) * 40}px)`, display: "flex", alignItems: "center", gap: V ? 28 : 24, padding: "0 18px" }}>
-            <IconTile name={c.icon} color={c.tile} size={RH * 0.62} />
-            <div style={{ flex: 1 }}>
-              <KineticText words={c.words.map(([text, sec]) => ({ text, at: f(sec) - LEAD }))} fontSize={V ? 50 : 40} ink={INK} tint={ACCENT_LIGHT} shadow="none" style={{ letterSpacing: "-0.03em", alignItems: "flex-start" }} />
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", borderRadius: 999, background: "#f5eeee", color: "#b54a42", fontSize: V ? 26 : 22, opacity: ease.outCubic(clamp01((frame - a - 8) / 8)) }}>
-              <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#e5554b" }} />
-              Amânat {count} zile
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+  // ---------------------------------------------------------------- notebook
+  const PGW = V ? 520 : 560;
+  const PGH = V ? 740 : 700;
+  const planIn = ease.outExpo(clamp01((frame - (NOTE_OUT + 2)) / 20));
+  const collapse = ease.inOutCubic(clamp01((frame - COLLAPSE) / 10));
+  const flipsStarted = FLIPS.filter((fl) => frame >= fl.at).length;
+  const current = Math.min(PAGES.length - 1, flipsStarted);
+  type Cam = { s: number; x: number; y: number };
+  const base: Cam = V ? { s: 1.5, x: PGW / 2, y: 0 } : { s: 1, x: 0, y: 0 };
+  const lean: Cam = V ? { s: 1.95, x: PGW * 0.5, y: -PGH * 0.02 } : { s: 1.55, x: PGW * 0.46, y: -PGH * 0.02 };
+  const camAt = (fr: number): Cam => {
+    const c = { ...base };
+    CHORES.forEach((_, i) => {
+      const into = ease.inOutCubic(clamp01((fr - (arrive(i) + 1)) / 12));
+      const back = ease.inOutCubic(clamp01((fr - ((i < 2 ? arrive(i + 1) : END) - 11)) / 9));
+      const k = into * (1 - back);
+      c.s = lerp(c.s, lean.s, k);
+      c.x = lerp(c.x, lean.x, k);
+      c.y = lerp(c.y, lean.y, k);
+    });
+    return c;
+  };
+  const cam = camAt(frame);
+  const camPrev = camAt(frame - 1);
+  const camBlur = Math.min(24, Math.hypot(cam.x - camPrev.x, cam.y - camPrev.y) * cam.s * 0.25 + Math.abs(cam.s - camPrev.s) * 120);
 
   return (
     <AbsoluteFill>
-      <LightSet shift={pan * SPAN * 0.3} />
+      <DarkSet shift={pan * SPAN * 0.3} />
       <DirBlur x={panBlur} style={{ position: "absolute", inset: 0 }}>
-        {/* intro phrases */}
+        {/* opening lines */}
         {pan < 1 && (
-          <AbsoluteFill style={{ transform: `translateX(${-pan * SPAN}px) scale(${push})` }}>
-            <PhraseSeq
-              light
-              fontSize={FS}
-              phrases={[
-                { words: [0, 1, 2].map((i) => ({ text: VO.hook[i][0], at: hw(i) })), out: hw(3) - 5, breaks: V ? [1] : [] },
-                { words: [3, 4, 5].map((i) => ({ text: VO.hook[i][0], at: hw(i) })), out: hw(6) - 5 },
-                { words: [{ text: VO.hook[6][0], at: hw(6), color: ACCENT_LIGHT }], out: hw(7) - 6 },
-              ]}
-            />
-            {frame >= casaIn - 1 && casaT < 1 && (
-              <AbsoluteFill
-                style={{
-                  justifyContent: "center",
-                  alignItems: "center",
-                  transform: `scale(${(1 + 0.12 * casaK) * (1 - 0.1 * ease.inCubic(casaT))})`,
-                  opacity: 1 - ease.inCubic(casaT),
-                  filter: casaT > 0 ? `blur(${20 * casaT}px)` : undefined,
-                }}
-              >
-                <div style={{ position: "relative" }}>
-                  <KineticText words={[{ text: "prin", at: casaIn }, { text: "casă", at: hw(8) }]} fontSize={FS} ink={INK} tint={ACCENT_LIGHT} shadow={SHADOW} style={{ letterSpacing: "-0.04em" }} />
+          <AbsoluteFill style={{ transform: `translateX(${-pan * SPAN}px)`, perspective: 1400 }}>
+            <DirBlur y={Math.min(36, Math.abs(vy) * 0.3)} style={{ position: "absolute", inset: 0, transform: `rotateX(${tilt}deg) scale(${pull})`, filter: pull > 1.02 ? `blur(${(pull - 1) * 14}px)` : undefined }}>
+              {lineBox(
+                0,
+                <>
+                  <KineticText words={[0, 1, 2].map((i) => ({ text: VO.hook[i][0], at: hw(i) }))} fontSize={FS} breaks={V ? [1] : []} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.04em" }} />
+                  <Streak frame={frame} at={hw(2) + 12} />
+                </>,
+              )}
+              {lineBox(
+                1,
+                <>
+                  <KineticText words={[3, 4, 5].map((i) => ({ text: VO.hook[i][0], at: hw(i) }))} fontSize={FS} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.04em" }} />
+                  <Streak frame={frame} at={hw(5) + 10} />
+                </>,
+              )}
+              {lineBox(2, <Tired frame={frame} at={hw(6)} sag={hw(6) + 13} fs={FS * 1.12} />)}
+              {lineBox(
+                3,
+                <>
+                  <KineticText words={[{ text: "prin", at: hw(7) }, { text: "casă", at: hw(8) }]} fontSize={FS} ink={INK_DARK} tint={ACCENT} shadow={SHADOW_DARK} style={{ letterSpacing: "-0.04em" }} />
                   <div style={{ position: "absolute", left: casaW + FS * 0.08, bottom: FS * 0.26, display: "flex", gap: FS * 0.1 }}>
                     {[0, 1, 2].map((d) => {
                       const local = frame - (hw(8) + 8) - d * 3;
                       const a = ease.outCubic(clamp01(local / 6));
                       const hop = local > 4 ? Math.max(0, Math.sin(((local - 4) / 15) * Math.PI * 2)) : 0;
-                      return <div key={d} style={{ width: FS * 0.12, height: FS * 0.12, borderRadius: "50%", background: "linear-gradient(180deg, #34463d, #050a07)", opacity: a, transform: `translateY(${-hop * FS * 0.2}px) scale(${0.3 + 0.7 * a})` }} />;
+                      return <div key={d} style={{ width: FS * 0.12, height: FS * 0.12, borderRadius: "50%", background: "linear-gradient(180deg, #ffffff, #b4c4bb)", opacity: a, transform: `translateY(${-hop * FS * 0.2}px) scale(${0.3 + 0.7 * a})` }} />;
                     })}
                   </div>
-                </div>
-              </AbsoluteFill>
-            )}
+                </>,
+              )}
+            </DirBlur>
           </AbsoluteFill>
         )}
 
@@ -280,38 +347,66 @@ export const Problem: React.FC = () => {
         {pan > 0 && collapse < 1 && (
           <AbsoluteFill style={{ transform: `translateX(${(1 - pan) * SPAN}px)` }}>
             <PhraseSeq
-              light
               fontSize={V ? 84 : 76}
               y={V ? -330 : -250}
-              phrases={[{ words: VO.postpone.map(([text, sec]) => ({ text, at: f(sec) - LEAD, color: text.startsWith("amâni") ? ACCENT_LIGHT : undefined })), out: LIST0 - 6 }]}
+              phrases={[{ words: VO.postpone.map(([text, sec]) => ({ text, at: f(sec) - LEAD, color: text.startsWith("amâni") ? ACCENT : undefined })), out: NOTE_OUT - 6 }]}
             />
-            <DirBlur y={camBlur} style={{ position: "absolute", inset: 0, opacity: 1 - collapse, filter: collapse > 0 ? `blur(${collapse * 14}px)` : undefined }}>
-              <div style={{ position: "absolute", left: L.cx, top: L.cy + cardY, transform: `scale(${cam.s * (1 - 0.85 * collapse) * (0.92 + 0.08 * notifIn)}) translateY(${-cam.y}px)`, opacity: notifIn }}>
-                {/* snoozed copies stacking up behind */}
-                {toList < 1 &&
-                  Array.from({ length: Math.min(4, taps) }, (_, k) => {
-                    const depth = Math.min(4, taps) - k;
-                    const settle = ease.outCubic(clamp01((frame - TAPS[taps - depth]) / 7));
-                    return <div key={k} style={{ opacity: 1 - toList }}>{notification(depth - 1 + settle, taps - depth, `b${k}`)}</div>;
-                  })}
-                {/* the card itself: a reminder that morphs into the list */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: -w / 2,
-                    top: -h / 2,
-                    width: w,
-                    height: h,
-                    borderRadius: lerp(38, 40, toList),
-                    background: "rgba(255,255,255,0.97)",
-                    boxShadow: "0 40px 80px rgba(16,40,28,0.12), 0 8px 20px rgba(16,40,28,0.06), inset 0 0 0 1px rgba(16,40,28,0.05)",
-                  }}
-                />
-                {toList < 1 && <div style={{ opacity: 1 - ease.inCubic(clamp01((frame - LIST0) / 6)) }}>{notification(0, 0, "front")}</div>}
-                {toList > 0 && list}
-                {toList < 1 && TAPS.map((t, k) => <Touch key={k} frame={frame} at={t} x={amana.x} y={amana.y} />)}
+            {notifOut < 1 && (
+              <div style={{ position: "absolute", left: L.cx, top: L.cy + 60, transform: `translateY(${notifOut * 260}px) scale(${(0.92 + 0.08 * notifIn) * (1 - 0.4 * notifOut)})`, opacity: notifIn * (1 - notifOut), filter: notifOut > 0 ? `blur(${notifOut * 10}px)` : undefined }}>
+                {Array.from({ length: Math.min(4, taps) }, (_, k) => {
+                  const depth = Math.min(4, taps) - k;
+                  const settle = ease.outCubic(clamp01((frame - TAPS[taps - depth]) / 7));
+                  return notification(depth - 1 + settle, taps - depth, `b${k}`);
+                })}
+                {notification(0, 0, "front")}
+                {TAPS.map((t, k) => (
+                  <Touch key={k} frame={frame} at={t} x={amana.x} y={amana.y} />
+                ))}
               </div>
-            </DirBlur>
+            )}
+
+            {/* the notebook */}
+            {planIn > 0 && (
+              <DirBlur x={camBlur} style={{ position: "absolute", inset: 0, opacity: 1 - collapse, filter: collapse > 0 ? `blur(${collapse * 16}px)` : undefined }}>
+                <div style={{ position: "absolute", left: L.cx, top: L.cy + (V ? 90 : 70), perspective: 2600, transform: `translateY(${(1 - planIn) * L.H * 0.6}px) scale(${(0.92 + 0.08 * planIn) * (1 - 0.75 * collapse)})` }}>
+                  <div style={{ transformStyle: "preserve-3d", transform: `scale(${cam.s}) translate(${-cam.x}px, ${-cam.y}px) rotateX(${lerp(40, 12, planIn) * (1 - 0.6 * clamp01((cam.s - base.s) / (lean.s - base.s)))}deg)` }}>
+                    <div style={{ position: "absolute", left: -PGW * 2, top: -PGH, width: PGW * 4, height: PGH * 2, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(0,191,99,0.12) 0%, rgba(0,0,0,0) 60%)" }} />
+                    <div style={{ position: "absolute", left: -PGW - 26, top: -PGH / 2 - 22, width: PGW * 2 + 52, height: PGH + 44, borderRadius: 26, background: "linear-gradient(180deg, #13734a 0%, #0a4f32 100%)", boxShadow: "0 60px 110px rgba(0,0,0,0.6), 0 14px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.18)" }} />
+                    {[3, 2, 1].map((k) => (
+                      <div key={k} style={{ position: "absolute", left: -PGW - 6 + k * 2, top: -PGH / 2 - 6 + k * 2, width: PGW * 2 + 12 - k * 4, height: PGH + 12 - k * 2, borderRadius: 18, background: k % 2 ? "#dfe4e1" : "#eef1ef" }} />
+                    ))}
+                    <div style={{ position: "absolute", left: -PGW, top: -PGH / 2, width: PGW, height: PGH }}>
+                      <LeftFace w={PGW} h={PGH} />
+                    </div>
+                    <div style={{ position: "absolute", left: 0, top: -PGH / 2, width: PGW, height: PGH }}>
+                      <PageFace page={PAGES[current]} w={PGW} h={PGH} frame={frame} live={PAGES[current].chore !== undefined && current <= CHORES.length} />
+                      {FLIPS.map((fl, j) => {
+                        const p = clamp01((frame - fl.at) / fl.d);
+                        if (p <= 0 || p >= 1) return null;
+                        return <div key={j} style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg, rgba(10,40,25,${0.22 * Math.sin(Math.PI * p)}) 0%, rgba(10,40,25,0) 60%)` }} />;
+                      })}
+                    </div>
+                    {FLIPS.map((fl, j) => {
+                      const p = ease.inOutCubic(clamp01((frame - fl.at) / fl.d));
+                      if (p <= 0 || p >= 1) return null;
+                      return (
+                        <div key={j} style={{ position: "absolute", left: 0, top: -PGH / 2, width: PGW, height: PGH, transformOrigin: "0% 50%", transformStyle: "preserve-3d", transform: `rotateY(${-180 * p}deg)` }}>
+                          <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden" }}>
+                            <PageFace page={PAGES[j]} w={PGW} h={PGH} frame={frame} live={false} />
+                            <div style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg, rgba(10,40,25,${0.18 * p}) 0%, rgba(255,255,255,0) 100%)` }} />
+                          </div>
+                          <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
+                            <LeftFace w={PGW} h={PGH} />
+                            <div style={{ position: "absolute", inset: 0, background: `linear-gradient(270deg, rgba(10,40,25,${0.18 * (1 - p)}) 0%, rgba(255,255,255,0) 100%)` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div style={{ position: "absolute", left: -22, top: -PGH / 2, width: 44, height: PGH, background: "linear-gradient(90deg, rgba(10,40,25,0) 0%, rgba(10,40,25,0.16) 50%, rgba(10,40,25,0) 100%)" }} />
+                  </div>
+                </div>
+              </DirBlur>
+            )}
           </AbsoluteFill>
         )}
       </DirBlur>

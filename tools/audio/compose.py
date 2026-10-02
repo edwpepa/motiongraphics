@@ -577,6 +577,9 @@ def build_sfx():
         place(sfx, stereo(page_flip(), 0.2), fr(f(s_) - 1), 0.32)
     for s_ in (5.41, 7.01, 8.52):
         place(sfx, stereo(page_flip(), 0.2), fr(f(s_) - 10), 0.42)
+    # the notebook riffles forward (every 2 frames from choresEnd-2 to the drop-14)
+    for k, fr_ in enumerate(range(f(9.87) - 2, 336 - 14 + 1, 2)):
+        place(sfx, stereo(page_flip(), 0.3 * (1 if k % 2 else -1)), fr(fr_), 0.22 + 0.02 * k)
     # drops gather into the logo
     place(sfx, whoosh(0.5, 5500, 300, 0.85, (0.0, 0.0), low=0.3), fr(800) - 0.5, 0.35)
     place(sfx, whoosh(0.6, 500, 4000, 0.5, (-0.3, 0.3), air=0.6), fr(822) - 0.1, 0.1)

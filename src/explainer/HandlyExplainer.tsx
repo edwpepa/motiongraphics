@@ -24,7 +24,7 @@ const Window: React.FC<{ from: number; to: number; children: React.ReactNode }> 
   return frame >= from && frame < to ? <>{children}</> : null;
 };
 
-const LOGO_POP = f(VO.choresEnd) + 6; // the handly logo appears on its own once the planner has gone
+const LOGO_POP = MUSIC_LIFT_FRAME - 12; // the handly logo appears as the notebook collapses
 const EXPAND = 16; // frames for the logo window to swallow the frame
 
 /** size (px) of the logo window `t` frames into the burst */
@@ -58,8 +58,8 @@ const LightWorld: React.FC = () => {
         }
       : {};
   return (
-    <AbsoluteFill style={S > 0 ? { filter: "drop-shadow(0 0 16px rgba(43,227,138,0.95))" } : undefined}>
-      <AbsoluteFill style={{ background: "#ffffff", ...mask }}>
+    <AbsoluteFill>
+      <AbsoluteFill style={{ background: "#030504", ...mask }}>
         <Sequence from={PRE_ROLL} durationInFrames={MUSIC_LIFT_FRAME + 10} layout="none">
           <Problem />
         </Sequence>
@@ -82,7 +82,7 @@ const LogoPop: React.FC = () => {
   return (
     <Img
       src={staticFile("images/logo.webp")}
-      style={{ position: "absolute", left: L.cx - s / 2, top: L.cy - s / 2, width: s, height: s, transform: `scale(${(0.4 + 0.6 * p) * breathe * gather})`, opacity: clamp01((local - LOGO_POP) / 4), filter: "drop-shadow(0 10px 30px rgba(0,163,82,0.35))" }}
+      style={{ position: "absolute", left: L.cx - s / 2, top: L.cy - s / 2, width: s, height: s, transform: `scale(${(0.4 + 0.6 * p) * breathe * gather})`, opacity: clamp01((local - LOGO_POP) / 4) }}
     />
   );
 };
@@ -96,7 +96,7 @@ const CornerLogo: React.FC = () => {
   const outT = ease.inOutCubic(clamp01((local - (LOGO_START - 10)) / 10));
   const a = inT * (1 - outT);
   if (a <= 0) return null;
-  const dark = local >= MUSIC_LIFT_FRAME - 1;
+  const dark = true;
   const s = L.vertical ? 50 : 44;
   return (
     <div
@@ -112,7 +112,7 @@ const CornerLogo: React.FC = () => {
         filter: outT > 0 ? `blur(${outT * 8}px)` : undefined,
       }}
     >
-      <Img src={staticFile("images/logo.webp")} style={{ width: s, height: s, filter: dark ? "drop-shadow(0 0 12px rgba(0,230,118,0.35))" : undefined }} />
+      <Img src={staticFile("images/logo.webp")} style={{ width: s, height: s }} />
       <div style={{ fontFamily: FONT, fontWeight: BOLD, fontSize: s * 0.66, lineHeight: 1, letterSpacing: "-0.035em", color: dark ? "#2be38a" : "#00a352", transform: `translateY(${-s * 0.06}px)` }}>handly.ro</div>
     </div>
   );

@@ -14,6 +14,8 @@ export type AppState = {
   loading: number;
   success: number;
   check: number;
+  /** frames since the success state started (drives the live check animation) */
+  since?: number;
 };
 
 export const TASK_TEXT = "Robinet care curge";
@@ -238,23 +240,43 @@ export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
       {/* success state */}
       {s.success > 0 && (
         <div style={{ position: "absolute", inset: 0, background: `rgba(251,252,251,${s.success})`, display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <div
-            style={{
-              marginTop: 250,
-              width: 128,
-              height: 128,
-              borderRadius: "50%",
-              background: C.green,
-              boxShadow: "0 18px 40px rgba(0,191,99,0.35)",
-              transform: `scale(${ease.outBack(clamp01(s.success))})`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <svg width={70} height={70} viewBox="0 0 70 70">
-              <path d="M18 36 L30 48 L53 22" fill="none" stroke="#fff" strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - checkLen} />
-            </svg>
+          <div style={{ position: "relative", marginTop: 250, width: 128, height: 128 }}>
+            {/* ripples keep rolling out of the badge */}
+            {[0, 1, 2].map((k) => {
+              const t = (s.since ?? 0) - 6 - k * 9;
+              const p = t > 0 ? (t % 30) / 30 : 0;
+              if (t <= 0) return null;
+              return <div key={k} style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `${3 * (1 - p)}px solid ${C.green}`, transform: `scale(${1 + 1.1 * ease.outCubic(p)})`, opacity: (1 - p) * 0.7 }} />;
+            })}
+            {/* sparks once the check lands */}
+            {Array.from({ length: 10 }, (_, k) => {
+              const t = (s.since ?? 0) - 12;
+              const p = clamp01(t / 16);
+              if (p <= 0 || p >= 1) return null;
+              const a = (k / 10) * Math.PI * 2;
+              const d = 70 + 60 * ease.outCubic(p);
+              return <div key={`s${k}`} style={{ position: "absolute", left: 64 + Math.cos(a) * d - 4, top: 64 + Math.sin(a) * d - 4, width: 8, height: 8, borderRadius: "50%", background: k % 2 ? C.green : "#9dffc9", opacity: 1 - p, transform: `scale(${1 - 0.6 * p})` }} />;
+            })}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: "50%",
+                overflow: "hidden",
+                background: "radial-gradient(circle at 35% 30%, #5cf0a6 0%, #00c46a 55%, #00a352 100%)",
+                boxShadow: "0 18px 40px rgba(0,191,99,0.35)",
+                transform: `scale(${ease.outBack(clamp01(s.success)) * (1 + 0.04 * Math.sin(((s.since ?? 0) / 30) * Math.PI * 2) * clamp01(((s.since ?? 0) - 20) / 10))})`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <svg width={70} height={70} viewBox="0 0 70 70">
+                <path d="M18 36 L30 48 L53 22" fill="none" stroke="#fff" strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - checkLen} />
+              </svg>
+              {/* a light sweep across the badge */}
+              <div style={{ position: "absolute", top: -40, bottom: -40, width: 34, left: `${-40 + 180 * clamp01(((s.since ?? 0) - 14) / 14)}%`, transform: "rotate(22deg)", background: "linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.7), rgba(255,255,255,0))" }} />
+            </div>
           </div>
           <div style={{ marginTop: 34, fontSize: 30, fontWeight: BOLD, letterSpacing: "-0.03em", opacity: clamp01(s.success * 1.4 - 0.3) }}>Task postat!</div>
           <div style={{ marginTop: 10, width: 280, textAlign: "center", fontSize: 16, fontWeight: BOLD, color: "#7b8480", lineHeight: 1.4, opacity: clamp01(s.success * 1.4 - 0.5) }}>

@@ -28,7 +28,7 @@ FPS = 30
 DUR = 1000 / FPS
 N = int(DUR * SR)
 VO_OFFSET = 0.4
-PRE = 45 / 30  # cold open prepended to the final mix (matches the video's PRE_ROLL)
+PRE = 0  # cold open (seconds) prepended to the final mix (matches the video's PRE_ROLL)
 
 rng = np.random.default_rng(7)
 
@@ -527,6 +527,14 @@ def build_sfx():
     # pause: drops gather and charge, then the drop
     place(sfx, whoosh(1.1, 5000, 300, 0.9, (0.0, 0.0), low=0.4), fr(336) - 1.1, 0.4)
     place(sfx, whoosh(0.7, 250, 6000, 0.35, (0.8, -0.4), low=0.6), fr(332), 0.55)
+    # the bead gathers in and splashes open (local frame MUSIC_LIFT - 3)
+    n = int(0.6 * SR)
+    t = np.arange(n) / SR
+    splash = filt(rng.standard_normal(n), "lowpass", 2600) * np.exp(-t / 0.12) * np.clip(t / 0.004, 0, 1)
+    splash += 0.6 * np.sin(2 * np.pi * (300 - 220 * np.clip(t / 0.25, 0, 1)) * t) * np.exp(-t / 0.09)
+    place(sfx, reverb(splash) * 0.5 + stereo(splash), fr(333), 0.55)
+    for k in range(5):
+        place(sfx, stereo(pop_sfx(900 + 180 * k, 500 + 80 * k, 0.08), (-0.6, -0.2, 0.2, 0.6, 0.0)[k]), fr(334) + 0.03 * k, 0.12)
     # typing "Robinet care curge"
     type_start = f(10.79) + 1
     for i in range(18):
@@ -670,23 +678,24 @@ def main():
     mix = soft_limit(mix, 0.89)
     print(f"stems: vo {lufs(vo_st):.1f} LUFS | music(ducked) {lufs(music):.1f} | sfx {lufs(sfx):.1f} | mix {lufs(mix):.1f} | peak {20 * math.log10(np.max(np.abs(mix))):.2f} dBFS")
 
-    # 1.5 s cold open in front of everything: a soft pad and three radar pings (the video adds the same 45 frames)
-    pre_n = int(PRE * SR)
-    pre = np.zeros((2, pre_n + int(1.2 * SR)))
-    place(pre, pad_chord([57, 64, 69, 71, 76], PRE + 1.0, attack=0.5, release=0.9) * 0.6, 0.0, 1.0)
-    # a ball drops in and bounces (same frames as BOUNCE_HITS in LightWorld.tsx)
-    for k, hit in enumerate((13, 25, 33, 38)):
-        g = (1.0, 0.6, 0.38, 0.22)[k]
-        t = np.arange(int(0.25 * SR)) / SR
-        thud = np.sin(2 * np.pi * (180 - 60 * t / 0.25) * t) * np.exp(-t / 0.06)
-        place(pre, stereo(thud), hit / FPS, 0.9 * g)
-        place(pre, stereo(pop_sfx(820, 430, 0.1)), hit / FPS, 0.35 * g)
-    place(pre, whoosh(0.7, 300, 4200, 0.6, (-0.3, 0.3), air=0.7), PRE - 0.45, 0.25)
-    pre *= 10 ** ((-26.0 - lufs(pre)) / 20)
-    full = np.zeros((2, pre_n + mix.shape[1]))
-    full[:, pre_n:] += mix
-    full[:, : pre.shape[1]] += pre
-    mix = soft_limit(full, 0.89)
+    if PRE > 0:
+        # optional cold open in front of everything: a soft pad and three radar pings (the video adds the same 45 frames)
+        pre_n = int(PRE * SR)
+        pre = np.zeros((2, pre_n + int(1.2 * SR)))
+        place(pre, pad_chord([57, 64, 69, 71, 76], PRE + 1.0, attack=0.5, release=0.9) * 0.6, 0.0, 1.0)
+        # a ball drops in and bounces (same frames as BOUNCE_HITS in LightWorld.tsx)
+        for k, hit in enumerate((13, 25, 33, 38)):
+            g = (1.0, 0.6, 0.38, 0.22)[k]
+            t = np.arange(int(0.25 * SR)) / SR
+            thud = np.sin(2 * np.pi * (180 - 60 * t / 0.25) * t) * np.exp(-t / 0.06)
+            place(pre, stereo(thud), hit / FPS, 0.9 * g)
+            place(pre, stereo(pop_sfx(820, 430, 0.1)), hit / FPS, 0.35 * g)
+        place(pre, whoosh(0.7, 300, 4200, 0.6, (-0.3, 0.3), air=0.7), PRE - 0.45, 0.25)
+        pre *= 10 ** ((-26.0 - lufs(pre)) / 20)
+        full = np.zeros((2, pre_n + mix.shape[1]))
+        full[:, pre_n:] += mix
+        full[:, : pre.shape[1]] += pre
+        mix = soft_limit(full, 0.89)
 
     out_dir = os.path.join(ROOT, "public/audio")
     with tempfile.TemporaryDirectory() as td:

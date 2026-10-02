@@ -62,6 +62,7 @@ export const S4Post: React.FC = () => {
     loading: clamp01((frame - (PRESS + 3)) / 12),
     success: ease.outCubic(clamp01((frame - SUCCESS) / 9)),
     check: clamp01((frame - (SUCCESS + 4)) / 12),
+    since: frame - SUCCESS,
   };
 
   // camera: push in on the input while the task is typed, ease back out for the post + confirmation

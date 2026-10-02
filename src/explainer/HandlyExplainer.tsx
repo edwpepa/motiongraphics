@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Audio, Img, Sequence, staticFile, useCurrentFrame } from "remotion";
-import { BurstRing, burstRadius, LightBackdrop } from "./components/LightWorld";
+import { LiquidSplash, SPLASH_COVER } from "./components/LightWorld";
 import { Stage } from "./components/Stage";
 import { useExplainerFonts } from "./fonts";
 import { clamp01, ease } from "./lib/anim";
@@ -13,13 +13,11 @@ import { LOGO_START } from "./scenes/S8Words";
 import { S8Words } from "./scenes/S8Words";
 import { S9Logo } from "./scenes/S9Logo";
 import { BOLD, FONT } from "./theme";
-import { DURATION_IN_FRAMES, f, MUSIC_LIFT_FRAME, PRE_ROLL, VO } from "./timing";
+import { DURATION_IN_FRAMES, MUSIC_LIFT_FRAME, PRE_ROLL } from "./timing";
 import { useLayout } from "./layout";
 
 // Everything authored against the voiceover lives in "local" frames; the cold open shifts it by PRE_ROLL.
 const BURST = MUSIC_LIFT_FRAME - 3; // local frame the orb bursts open
-const PULL_FROM = f(VO.choresEnd) - 2;
-const PULL_TO = MUSIC_LIFT_FRAME - 4;
 
 /** Mounts a scene only inside its window. Scenes read the (local) frame, so every beat is authored in VO frames. */
 const Window: React.FC<{ from: number; to: number; children: React.ReactNode }> = ({ from, to, children }) => {
@@ -27,18 +25,13 @@ const Window: React.FC<{ from: number; to: number; children: React.ReactNode }> 
   return frame >= from && frame < to ? <>{children}</> : null;
 };
 
-/** The white world (spheres, grid, cold-open radar, the problem scenes), cut open by the burst. */
+/** The white world (plain white set + the problem scenes); the liquid splash floods over it on the drop. */
 const LightWorld: React.FC = () => {
   const frame = useCurrentFrame();
-  const L = useLayout();
   const local = frame - PRE_ROLL;
-  const t = local - BURST;
-  if (t > 16) return null;
-  const R = t >= 0 ? burstRadius(t, L.W, L.H) : 0;
-  const mask = R > 0 ? `radial-gradient(circle at 50% 50%, transparent ${R}px, #000 ${R + 1.5}px)` : undefined;
+  if (local - BURST >= SPLASH_COVER) return null;
   return (
-    <AbsoluteFill style={mask ? { WebkitMaskImage: mask, maskImage: mask } : undefined}>
-      <LightBackdrop frame={frame} frames={PRE_ROLL + MUSIC_LIFT_FRAME + 20} pull={clamp01((local - PULL_FROM) / (PULL_TO - PULL_FROM))} />
+    <AbsoluteFill style={{ background: "#ffffff" }}>
       <Sequence from={PRE_ROLL} durationInFrames={MUSIC_LIFT_FRAME + 10} layout="none">
         <Problem />
       </Sequence>
@@ -125,6 +118,6 @@ export const HandlyExplainer: React.FC = () => {
 
 const BurstAt: React.FC = () => {
   const frame = useCurrentFrame();
-  return <BurstRing t={frame - BURST} />;
+  return <LiquidSplash t={frame - BURST} />;
 };
 

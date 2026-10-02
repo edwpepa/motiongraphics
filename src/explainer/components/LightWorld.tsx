@@ -279,3 +279,74 @@ export const RadarOpen: React.FC<{ frame: number; end: number }> = ({ frame, end
     </svg>
   );
 };
+
+/** wobbling closed outline (sum of slow sines around a circle) */
+const wobblePath = (r: number, t: number, amt: number, pts = 64) => {
+  let d = "";
+  for (let i = 0; i <= pts; i++) {
+    const th = (i / pts) * Math.PI * 2;
+    const rr = r * (1 + amt * (Math.sin(3 * th + t * 0.9) * 0.6 + Math.sin(2 * th - t * 1.3) * 0.4));
+    d += (i ? "L" : "M") + (Math.cos(th) * rr).toFixed(1) + " " + (Math.sin(th) * rr).toFixed(1);
+  }
+  return d + "Z";
+};
+
+/** minimal liquid bead: flat green, softly wobbling, one clean highlight */
+export const LiquidDrop: React.FC<{ r: number; frame: number }> = ({ r, frame }) => (
+  <svg width={r * 4} height={r * 4} viewBox={`${-r * 2} ${-r * 2} ${r * 4} ${r * 4}`} style={{ position: "absolute", left: -r * 2, top: -r * 2, overflow: "visible" }}>
+    <defs>
+      <linearGradient id="drop-fill" x1="0.2" y1="0" x2="0.8" y2="1">
+        <stop offset="0%" stopColor="#3df29a" />
+        <stop offset="100%" stopColor="#00a352" />
+      </linearGradient>
+    </defs>
+    <path d={wobblePath(r, frame / 3, 0.06)} fill="url(#drop-fill)" />
+    <path d={`M ${-r * 0.55} ${-r * 0.12} A ${r * 0.6} ${r * 0.6} 0 0 1 ${-r * 0.1} ${-r * 0.58}`} fill="none" stroke="#ffffff" strokeWidth={r * 0.1} strokeLinecap="round" opacity={0.9} />
+  </svg>
+);
+
+/** frames the splash needs to cover the whole frame */
+export const SPLASH_COVER = 13;
+
+/**
+ * The splash: the bead bursts into a gooey liquid crown — a core that floods outwards with droplets
+ * flung ahead of it, dark ink with a bright green rim — until it covers the frame; then it clears
+ * to reveal the dark set underneath.
+ */
+export const LiquidSplash: React.FC<{ t: number }> = ({ t }) => {
+  const L = useLayout();
+  if (t < 0 || t > SPLASH_COVER + 10) return null;
+  const maxR = Math.hypot(L.W, L.H) / 2 + 120;
+  const k = clamp01(t / SPLASH_COVER);
+  // explosive start, then the flood keeps rolling out to the corners
+  const core = maxR * (0.07 + 0.93 * Math.pow(k, 1.5));
+  const drops = Array.from({ length: 18 }, (_, i) => {
+    const a = (i / 18) * Math.PI * 2 + seeded(i, 21) * 0.25;
+    const sp = seeded(i, 22);
+    // flung just ahead of the rim, then swallowed by it again
+    const lead = (30 + 230 * sp) * Math.sin(Math.PI * Math.min(1, k * 1.25));
+    const d = core + lead;
+    return { x: Math.cos(a) * d, y: Math.sin(a) * d, r: (16 + 34 * seeded(i, 23)) * (1 + 0.6 * k) };
+  });
+  const clear = 1 - ease.inOutCubic(clamp01((t - SPLASH_COVER - 1) / 9));
+  const shapes = (grow: number, fill: string) => (
+    <g filter="url(#splash-goo)" fill={fill}>
+      <circle r={core + grow} />
+      {drops.map((d, i) => (
+        <circle key={i} cx={d.x} cy={d.y} r={d.r + grow} />
+      ))}
+    </g>
+  );
+  return (
+    <svg width={L.W} height={L.H} viewBox={`${-L.cx} ${-L.cy} ${L.W} ${L.H}`} style={{ position: "absolute", inset: 0, opacity: clear }}>
+      <defs>
+        <filter id="splash-goo" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="22" />
+          <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 30 -11" />
+        </filter>
+      </defs>
+      {shapes(14, "#2be38a")}
+      {shapes(0, "#04100b")}
+    </svg>
+  );
+};

@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { textWidth } from "../components/AppleText";
-import { VectorOrb } from "../components/LightWorld";
+import { LiquidDrop } from "../components/LightWorld";
 import { INK, KineticText, SHADOW } from "../components/KineticText";
 import { ACCENT_LIGHT, PhraseSeq } from "../components/Phrase";
 import { DirBlur } from "../lib/Blur";
@@ -171,7 +171,13 @@ export const Problem: React.FC = () => {
   // ---------------------------------------------------------------- intro: a slow push-in over the phrases
   const push = 1 + 0.06 * ease.inOutCubic(clamp01(frame / 118));
   const casaIn = hw(7);
-  const casaOut = f(VO.hookEnd) - 6;
+  // camera tracking: one whip-pan carries us from the last phrase straight onto the planner
+  const PAN = PLAN_IN - 2;
+  const SPAN = L.W * 1.12;
+  const panAt = (fr: number) => ease.inOutCubic(clamp01((fr - PAN) / 16));
+  const pan = panAt(frame);
+  const panBlur = Math.min(40, Math.abs(pan - panAt(frame - 1)) * SPAN * 0.18);
+  const casaOut = PAN + 30;
   const casaK = 1 - ease.outExpo(clamp01((frame - (casaIn - 1)) / 12));
   const casaT = clamp01((frame - casaOut) / 7);
   const casaW = textWidth("prin casă", FS, -0.04);
@@ -179,7 +185,7 @@ export const Problem: React.FC = () => {
   // ---------------------------------------------------------------- planner
   const PGW = V ? 520 : 560;
   const PGH = V ? 740 : 700;
-  const planIn = ease.outExpo(clamp01((frame - PLAN_IN) / 22));
+  const planIn = ease.outCubic(clamp01((frame - PAN) / 18));
   const planOut = ease.inOutCubic(clamp01((frame - (END + 2)) / 12));
   const flipsDone = FLIPS.filter((s) => frame >= s + FD).length;
   const current = Math.min(PAGES.length - 1, FLIPS.filter((s) => frame >= s).length);
@@ -206,14 +212,14 @@ export const Problem: React.FC = () => {
   const camBlur = Math.min(24, Math.hypot(cam.x - camPrev.x, cam.y - camPrev.y) * cam.s * 0.25 + Math.abs(cam.s - camPrev.s) * 120);
 
   // ---------------------------------------------------------------- the orb pulls everything in, charges and bursts
-  const charge = ease.inCubic(clamp01((frame - FLY) / (DROP - FLY)));
   const OS = V ? 150 : 140;
-  const core = pop(frame, FLY, 12, 140) * (1 + 0.45 * charge + 0.07 * Math.sin(frame / 1.8) * charge) * (1 - 0.35 * ease.inCubic(clamp01((frame - (DROP - 6)) / 6)));
   return (
     <AbsoluteFill>
 
+      <DirBlur x={panBlur} style={{ position: "absolute", inset: 0 }}>
       {/* intro phrases */}
-      <AbsoluteFill style={{ transform: `scale(${push})` }}>
+      {pan < 1 && (
+      <AbsoluteFill style={{ transform: `translateX(${-pan * SPAN}px) scale(${push})` }}>
         <PhraseSeq
           light
           fontSize={FS}
@@ -248,7 +254,9 @@ export const Problem: React.FC = () => {
           </AbsoluteFill>
         )}
       </AbsoluteFill>
+      )}
 
+      <AbsoluteFill style={{ transform: `translateX(${(1 - pan) * SPAN}px)` }}>
       {/* "pe care o tot amâni?" above the planner */}
       <PhraseSeq
         light
@@ -266,7 +274,7 @@ export const Problem: React.FC = () => {
               left: L.cx,
               top: L.cy + (V ? 90 : 70),
               perspective: 2600,
-              transform: `translateY(${(1 - planIn) * L.H * 0.7}px) scale(${(0.9 + 0.1 * planIn) * (1 - 0.3 * planOut)})`,
+              transform: `scale(${(0.94 + 0.06 * planIn) * (1 - 0.3 * planOut)})`,
             }}
           >
             <div style={{ transformStyle: "preserve-3d", transform: `scale(${cam.s}) translate(${-cam.x}px, ${-cam.y}px) rotateX(${lerp(38, 12, planIn) * (1 - 0.6 * clamp01((cam.s - base.s) / (lean.s - base.s)))}deg)` }}>
@@ -311,26 +319,13 @@ export const Problem: React.FC = () => {
           </div>
         </DirBlur>
       )}
+      </AbsoluteFill>
+      </DirBlur>
 
-      {/* the orb: flat vector disc that pings radar rings while it charges */}
-      {frame >= FLY && (
-        <div style={{ position: "absolute", left: L.cx, top: L.cy }}>
-          <svg width={L.W} height={L.H} viewBox={`${-L.cx} ${-L.cy} ${L.W} ${L.H}`} style={{ position: "absolute", left: -L.cx, top: -L.cy, overflow: "visible" }}>
-            {[0, 7, 14, 21].map((d) => {
-              const p = clamp01((frame - (FLY + 4 + d)) / 20);
-              if (p <= 0 || p >= 1) return null;
-              const R = OS * 0.5 + OS * 3.2 * ease.outCubic(p);
-              return (
-                <g key={d}>
-                  <circle r={R} fill="rgba(0,196,106,0.06)" opacity={1 - p} />
-                  <circle r={R} fill="none" stroke="#00c46a" strokeWidth={3} opacity={(1 - p) * 0.8} />
-                </g>
-              );
-            })}
-          </svg>
-          <div style={{ position: "absolute", transform: `scale(${core})` }}>
-            <VectorOrb r={OS / 2} frame={frame} />
-          </div>
+      {/* the drop: a minimal liquid bead that wobbles, gathers itself in, then splashes (see LiquidSplash) */}
+      {frame >= FLY && frame < DROP - 3 && (
+        <div style={{ position: "absolute", left: L.cx, top: L.cy, transform: `scale(${pop(frame, FLY, 11, 150) * (1 - 0.45 * ease.inCubic(clamp01((frame - (DROP - 11)) / 8)))})` }}>
+          <LiquidDrop r={OS / 2} frame={frame} />
         </div>
       )}
     </AbsoluteFill>

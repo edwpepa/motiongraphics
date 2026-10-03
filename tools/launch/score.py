@@ -168,7 +168,7 @@ HOOK = [
 ]
 
 
-def build():
+def build(marks=None):
     B = {k: np.zeros((2, N)) for k in ("drums", "bass", "pad", "lead", "choir", "pluck", "fx")}
     chain = np.ones(N)
     stomp_s, clap_s = stomp(), bigclap()
@@ -260,8 +260,12 @@ def build():
     chorus(bar(0), 16, 4, intensity=1.0)
 
     # ---------------------------------------------------------- bridge: the breakdown (boxed in the mix)
-    for k in range(16, 34):
+    SUS = marks["suspense"] if marks else bar(34)
+    BRK = marks["brk"] if marks else bar(36)
+    for k in range(16, 40):
         t0 = bar(k)
+        if t0 >= SUS - 0.05:
+            break
         name, root, tones = PROG[(k // 2) % 4]
         if k % 2 == 0:
             place("pad", pad(tones, 2 * BAR, attack=0.5, release=1.0, cutoff=2000), t0, 0.6)
@@ -276,6 +280,34 @@ def build():
             place("drums", clap_s, t0 + 2 * BEAT, 0.4)
             for s in range(8):
                 place("drums", C.hat(), t0 + s * BEAT / 2, 0.08, pan=0.25)
+
+    # ---------------------------------------------------------- the build: tension until the break
+    kb = int(math.ceil((SUS - D) / BEAT - 1e-6))
+    ke = int((BRK - D) / BEAT)
+    nbeats = max(1, ke - kb)
+    for j in range(nbeats):
+        tb = D + (kb + j) * BEAT
+        x = j / nbeats
+        # kick: quarters -> eighths -> sixteenths
+        div = 1 if x < 0.35 else 2 if x < 0.7 else 4
+        for q in range(div):
+            place("drums", kick_s, tb + q * BEAT / div, 0.55 + 0.45 * x)
+            duck(tb + q * BEAT / div, 0.6, 0.08)
+        # snare roll, growing
+        sd = 2 if x < 0.5 else 4
+        for q in range(sd):
+            place("drums", bigclap(), tb + q * BEAT / sd, 0.15 + 0.55 * x)
+        # pulsing bass drone on G, octave up at the end
+        for q in range(2):
+            place("bass", dbass(31 + (12 if x > 0.75 else 0), BEAT / 2 - 0.03), tb + q * BEAT / 2, 0.55 + 0.3 * x)
+        # rising arpeggio: Gm, up an octave every bar
+        octv = 12 * min(2, int(j / 4))
+        for q in range(4):
+            m = [67, 70, 74, 79][q] + octv
+            place("pluck", pluck(m, 0.25, 0.08), tb + q * BEAT / 4, 0.35 + 0.35 * x, pan=(-0.4, 0.4)[q % 2])
+    span_b = BRK - (D + kb * BEAT)
+    place("fx", C.riser(span_b, 250, 14000), D + kb * BEAT, 0.7)
+    place("pad", pad([43, 50, 55, 58, 62], span_b, attack=span_b * 0.8, release=0.05, cutoff=3000), D + kb * BEAT, 0.6)
 
     # ---------------------------------------------------------- chorus B: the final drop to the last hit
     nb = int((END_HIT - FINAL) / BAR)

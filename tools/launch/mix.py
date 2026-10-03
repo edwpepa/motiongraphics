@@ -58,7 +58,8 @@ def main():
 
     # ---- song edit
     import score
-    mus = score.build()
+    M0 = json.load(open(os.path.join(ROOT, "tools/launch/cues.json")))["marks"]
+    mus = score.build(M0)
     # tail of the song fades out by END
     t = np.arange(N) / SR
     mus *= np.interp(t, [END - 2.5, END - 0.05], [1, 0])[None, :]
@@ -68,14 +69,15 @@ def main():
     pf = np.clip((t - M0["preFadeFrom"]) / (M0["preFadeTo"] - M0["preFadeFrom"]), 0, 1)
     env = np.where(t < D, (1 - pf) ** 2, 1.0)
     env *= np.interp(t, [M0["contFrom"], M0["contFrom"] + 0.6, M0["contTo"] - 0.4, M0["contTo"]], [1, 0.8, 0.8, 1])
-    # suspense: the music stops dead while the shapes gather, until the final chorus
-    env *= np.interp(t, [M0["suspense"] - 0.25, M0["suspense"], M0["final"] - 0.03, M0["final"]], [1, 0, 0, 1])
+    # the build cuts dead at the break; silence for "Handly.", then the final drop
+    env *= np.interp(t, [M0["brk"] - 0.02, M0["brk"], M0["final"] - 0.03, M0["final"]], [1, 0, 0, 1])
     mus *= env[None, :]
     # from the end of the chorus to the final drop the song plays as if from inside a box:
     # band-limited, a small boxy room, and lower — then it bursts back open on the final chorus
     box = np.stack([C.filt(C.filt(mus[ch], "lowpass", 650, 4), "highpass", 140, 2) for ch in range(2)])
     box = box * 1.9 + C.reverb(box, C.IR_ROOM)[:, :N] * 0.35
-    m = np.interp(t, [M0["bridge"] - 0.15, M0["bridge"] + 0.25, M0["final"] - 0.02, M0["final"]], [0, 1, 1, 0])
+    # the box opens up through the build (a filter sweep you can feel), then the break, then the drop
+    m = np.interp(t, [M0["bridge"] - 0.15, M0["bridge"] + 0.25, M0["suspense"], M0["brk"] - 0.1, M0["final"] - 0.02, M0["final"]], [0, 1, 1, 0, 0, 0])
     mus = mus * (1 - m)[None, :] + box * (m * 0.62)[None, :]
 
     # ---- sfx (cue sheet exported from the picture: node tools/launch/cues.mjs)

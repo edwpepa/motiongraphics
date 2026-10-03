@@ -438,6 +438,13 @@ def ignite():
     return verb(norm(body + warm + air) * 0.8, 0.45)
 
 
+def flatline():
+    """A soft monitor tone: one short blip, then a long flat beep that fades."""
+    t = T(1.4)
+    y = np.sin(2 * np.pi * 988 * t) * (0.6 * (t < 0.08) + (t > 0.5) * np.exp(-(t - 0.5) / 0.6) * np.clip((t - 0.5) / 0.02, 0, 1))
+    return verb(st(norm(C.filt(y, "lowpass", 3000)) * 0.35), 0.3, C.IR_ROOM)
+
+
 def heart():
     out = np.zeros(int(0.5 * SR))
     for d, g in ((0.0, 1.0), (0.17, 0.7)):
@@ -524,5 +531,5 @@ GAIN = {
     "nope": 0.45, "cut": 0.75, "search": 0.4, "ring": 0.35, "tick": 0.35, "fall": 0.35, "bell": 0.42, "shimmer": 0.5,
     "drop": 1.0, "slam": 0.55, "zoom": 0.5, "tap": 0.45, "success": 0.5, "notif": 0.45, "select": 0.45, "expand": 0.45,
     "bubble": 0.4, "sent": 0.4, "lock": 0.5, "dissolve": 0.55, "step": 0.4, "release": 0.5, "morphhit": 0.55,
-    "spin": 0.5, "sparkle": 0.4, "coin": 0.3, "cash": 0.45, "click": 0.4, "zip": 0.4, "end": 1.0, "charge": 0.6, "calm": 0.6, "heart": 0.45, "roll": 0.8, "glide": 0.55, "ignite": 0.7,
+    "spin": 0.5, "sparkle": 0.4, "coin": 0.3, "cash": 0.45, "click": 0.4, "zip": 0.4, "end": 1.0, "charge": 0.6, "calm": 0.6, "heart": 0.45, "roll": 0.8, "glide": 0.55, "ignite": 0.7, "flatline": 0.3,
 }

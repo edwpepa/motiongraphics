@@ -340,16 +340,25 @@ export const A5: React.FC = () => {
   return (
     <AbsoluteFill>
       <Bg kind="black" />
-      <Txt words={kw("nici1", { only: [0, 1] })} size={56} on="black" x={170} y={CY - 290} align="left" out={outAll} />
-      {lines.map(([at, a, b], i) => {
-        const key = i < 2 ? "nici1" : "nici2";
-        const dim = i < 2 ? 1 - 0.65 * clamp01((frame - (lines[i + 1][0] - 6)) / 6) : 1;
-        return (
-          <div key={i} style={{ opacity: dim }}>
-            <Txt words={kw(key, { only: [a, b], color: { [b]: MINT_INK } })} size={118} on="black" x={170} y={CY - 140 + i * 150} align="left" out={outAll} />
-          </div>
-        );
-      })}
+      {/* eyebrow */}
+      <div style={{ position: "absolute", left: 170, top: CY - 250, opacity: clamp01((frame - (w("nici1", 0) - 4)) / 8) * (1 - clamp01((frame - outAll) / 7)), fontFamily: FONT, fontWeight: 500, fontSize: 30, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(185,255,214,0.7)" }}>care n-ai</div>
+      {/* a picker wheel: the current "nici …" sits in the middle, the others roll away above it */}
+      {(() => {
+        const pos = lerp(0, 1, ease.inOutCubic(clamp01((frame - (kTools - 8)) / 12))) + lerp(0, 1, ease.inOutCubic(clamp01((frame - (kNerves - 8)) / 12)));
+        const fade = 1 - ease.inCubic(clamp01((frame - outAll) / 8));
+        return lines.map(([at, a, b], i) => {
+          const key = i < 2 ? "nici1" : "nici2";
+          const d = i - pos;
+          if (frame < at - 6) return null;
+          const ad = Math.abs(d);
+          const y = CY + d * 150;
+          return (
+            <div key={i} style={{ position: "absolute", inset: 0, transformOrigin: `170px ${y}px`, transform: `perspective(1200px) rotateX(${-d * 28}deg) scale(${1 - 0.22 * Math.min(1, ad)})`, opacity: (1 - 0.7 * Math.min(1, ad)) * fade, filter: ad > 0.4 ? `blur(${(ad - 0.4) * 4}px)` : undefined }}>
+              <Txt words={kw(key, { only: [a, b], color: { [b]: MINT_INK } })} size={130} on="black" x={170} y={y} align="left" />
+            </div>
+          );
+        });
+      })()}
       <Shape pts={pts} x={SX + jitter} y={SY} size={size} fill={bat > 0 ? "#1c2420" : P.green} gradient={bat > 0 ? ["#2a3631", "#141a17"] : GREEN_GRAD} id={bat > 0 ? "a5b" : "a5"} shadow="drop-shadow(0 30px 70px rgba(0,191,99,0.25))" />
       {/* nerves: a battery draining into the red */}
       {bat > 0 && (
@@ -394,7 +403,7 @@ export const A6: React.FC = () => {
   const GH = ROWS * CH + (ROWS - 1) * G;
   const FIRST = 3; // October starts on a Thursday
   // the postponing spreads day by day across the month
-  const reach = lerp(2, 24, ease.inOutCubic(clamp01((frame - (t0 + 3)) / (L - 6))));
+  const reach = lerp(1, 22, 0.5 - 0.5 * Math.cos(Math.PI * clamp01((frame - (t0 + 2)) / (L - 4))));
   const count = Math.max(0, Math.floor(reach));
   return (
     <AbsoluteFill>
@@ -416,9 +425,19 @@ export const A6: React.FC = () => {
             const col = i % COLS;
             const row = Math.floor(i / COLS);
             if (day < 1 || day > 31) return null;
-            const r = clamp01((reach - day + 1.6) / 1.6);
-            const e = ease.inOutCubic(r);
+            const r = clamp01((reach - day + 1.8) / 1.8);
+            const f = ease.inOutCubic(r);
             const isToday = day === count + 1;
+            const face: React.CSSProperties = {
+              position: "absolute",
+              inset: 0,
+              borderRadius: 34,
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+              fontFamily: FONT,
+              fontWeight: BOLD,
+              overflow: "hidden",
+            };
             return (
               <div
                 key={i}
@@ -428,19 +447,20 @@ export const A6: React.FC = () => {
                   top: row * (CH + G),
                   width: CW,
                   height: CH,
-                  borderRadius: 34,
-                  background: `linear-gradient(160deg, rgba(255,255,255,${0.08 * (1 - e)}), rgba(255,255,255,${0.025 * (1 - e)})), linear-gradient(160deg, rgba(255,69,58,${e}), rgba(215,20,12,${e}))`,
-                  border: `1.5px solid ${e > 0 ? `rgba(255,150,140,${0.2 + 0.6 * e})` : isToday ? "rgba(185,255,214,0.8)" : "rgba(255,255,255,0.1)"}`,
-                  boxShadow: e > 0 ? `0 0 ${60 * e}px rgba(255,59,48,${0.55 * e}), inset 0 1px 0 rgba(255,255,255,${0.35 * e})` : undefined,
-                  transform: `translateZ(${e * -18 + (isToday ? 24 : 0)}px)`,
-                  fontFamily: FONT,
-                  fontWeight: BOLD,
-                  overflow: "hidden",
+                  transformStyle: "preserve-3d",
+                  transform: `translateZ(${Math.sin(Math.PI * f) * 60 + (isToday ? 20 : 0)}px) rotateX(${-180 * f}deg)`,
                 }}
               >
-                <div style={{ position: "absolute", left: 22, top: 16, fontSize: 52, letterSpacing: "-0.04em", color: "#fff" }}>{day}</div>
-                <div style={{ position: "absolute", left: 22, bottom: 18, fontSize: 18, fontWeight: 500, color: "rgba(255,255,255,0.9)", opacity: e }}>amânat</div>
-                <div style={{ position: "absolute", left: 18, right: 18, top: 50, height: 4, borderRadius: 2, background: "#ffffff", transformOrigin: "0 50%", transform: `scaleX(${ease.inOutCubic(clamp01((r - 0.45) / 0.55))}) rotate(-10deg)` }} />
+                {/* front: an ordinary day */}
+                <div style={{ ...face, background: "linear-gradient(160deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03))", border: `1.5px solid ${isToday ? "rgba(185,255,214,0.8)" : "rgba(255,255,255,0.1)"}` }}>
+                  <div style={{ position: "absolute", left: 22, top: 16, fontSize: 52, letterSpacing: "-0.04em", color: "#fff" }}>{day}</div>
+                </div>
+                {/* back: postponed */}
+                <div style={{ ...face, transform: "rotateX(180deg)", background: "linear-gradient(160deg, #ff5247 0%, #e0261b 100%)", boxShadow: `0 0 50px rgba(255,59,48,${0.5 * f}), inset 0 1px 0 rgba(255,255,255,0.35)` }}>
+                  <div style={{ position: "absolute", left: 22, top: 16, fontSize: 52, letterSpacing: "-0.04em", color: "#fff" }}>{day}</div>
+                  <div style={{ position: "absolute", left: 22, bottom: 18, fontSize: 18, fontWeight: 500, color: "rgba(255,255,255,0.9)" }}>amânat</div>
+                  <div style={{ position: "absolute", left: 18, right: 18, top: 50, height: 4, borderRadius: 2, background: "#ffffff", transformOrigin: "0 50%", transform: `scaleX(${ease.inOutCubic(clamp01((r - 0.6) / 0.4))}) rotate(-10deg)` }} />
+                </div>
               </div>
             );
           })}
@@ -469,47 +489,42 @@ export const A7: React.FC = () => {
   const frame = useCurrentFrame();
   const t0 = A6_END;
   const a = io(frame, t0 + 2, A7_END, 10, 8);
-  // a loader that keeps going round… until, on "singur", it fails
+  // the loader spins… slows… closes into a dull ring… and unrolls into a flat line
   const failAt = w("speri3", 2) - 2;
-  const spin = (f: number) => {
-    const l = f - t0;
-    return { head: l * 9 + 120 * (1 - Math.cos(l / 9)), len: 0.18 + 0.5 * (0.5 + 0.5 * Math.sin(l / 7)) };
-  };
-  const f1 = frame - failAt;
-  const live = f1 < 0;
-  const frozen = spin(Math.min(frame, failAt));
-  const jerk = f1 >= 0 ? Math.exp(-f1 / 3) * Math.sin(f1 * 2.2) * 8 : 0;
-  const red = clamp01(f1 / 6);
-  const col = live ? P.green : mixColor(P.green, "#ff3b30", red);
-  const shakeX = f1 >= 0 && f1 < 14 ? Math.sin(f1 * 3.1) * 6 * (1 - f1 / 14) : 0;
-  const breakT = f1 - 12;
-  const SEG = 6;
+  const slow = clamp01((frame - (failAt - 12)) / 16);
+  const l = frame - t0;
+  const head = l * 9 * (1 - 0.85 * ease.outCubic(slow)) + 120 * (1 - Math.cos(l / 9));
+  const len = lerp(0.18 + 0.5 * (0.5 + 0.5 * Math.sin(l / 7)), 1, ease.inOutCubic(clamp01((frame - (failAt - 2)) / 10)));
+  const dull = ease.inOutCubic(clamp01((frame - (failAt - 2)) / 10));
+  const unroll = ease.inOutCubic(clamp01((frame - (failAt + 8)) / 18));
+  const col = mixColor(P.green, "#ff3b30", dull);
+  const N = 120;
+  const R = 50;
+  const HALF = 170;
+  const pts: string[] = [];
+  for (let i = 0; i <= N; i++) {
+    const u = i / N;
+    const ang = Math.PI / 2 + u * Math.PI * 2;
+    const cx = Math.cos(ang) * R;
+    const cy = Math.sin(ang) * R;
+    const lx = (u - 0.5) * 2 * HALF;
+    const ly = R;
+    // a last tiny blip travels along the line once it's flat
+    const blipC = clamp01((frame - (failAt + 26)) / 16);
+    const blip = unroll >= 1 && blipC > 0 && blipC < 1 ? Math.exp(-Math.pow((u - blipC) * 18, 2)) * -16 * (1 - blipC) : 0;
+    pts.push(`${lerp(cx, lx, unroll).toFixed(2)},${(lerp(cy, ly, unroll) + blip).toFixed(2)}`);
+  }
   return (
     <AbsoluteFill>
       <Bg kind="black" />
-      <svg width={420} height={600} viewBox="-84 -60 168 240" style={{ position: "absolute", left: CX - 210, top: CY - 250, opacity: a, transform: `translateX(${shakeX}px) scale(${0.8 + 0.2 * a})`, overflow: "visible" }}>
-        <circle r={50} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={6} opacity={1 - clamp01(breakT / 10)} />
-        {breakT < 0 ? (
-          <circle r={50} fill="none" stroke={col} strokeWidth={7} strokeLinecap="round" pathLength={1} strokeDasharray={`${live ? spin(frame).len : frozen.len} 1`} transform={`rotate(${(live ? spin(frame).head : frozen.head + jerk) - 90})`} style={{ filter: `drop-shadow(0 0 8px ${live ? "rgba(0,191,99,0.6)" : "rgba(255,59,48,0.7)"})` }} />
+      <svg width={600} height={300} viewBox="-200 -75 400 200" style={{ position: "absolute", left: CX - 300, top: CY - 250, opacity: a, overflow: "visible" }}>
+        {unroll <= 0 ? (
+          <>
+            <circle r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={6} />
+            <circle r={R} fill="none" stroke={col} strokeWidth={7} strokeLinecap="round" pathLength={1} strokeDasharray={`${len} 1`} transform={`rotate(${head - 90})`} style={{ filter: `drop-shadow(0 0 6px ${dull > 0.5 ? "rgba(255,59,48,0.5)" : "rgba(0,191,99,0.6)"})` }} />
+          </>
         ) : (
-          Array.from({ length: SEG }, (_, i) => {
-            const segLen = frozen.len / SEG;
-            const ang = frozen.head - 90 + (i + 0.5) * segLen * 360;
-            const rad = (ang * Math.PI) / 180;
-            const u = breakT / 26;
-            const dx = Math.cos(rad) * 18 * u + (seeded(i, 1) - 0.5) * 30 * u;
-            const dy = Math.sin(rad) * 18 * u + 150 * u * u;
-            return (
-              <g key={i} transform={`translate(${dx} ${dy}) rotate(${(seeded(i, 2) - 0.5) * 120 * u} ${Math.cos(rad) * 50} ${Math.sin(rad) * 50})`} opacity={1 - clamp01((u - 0.6) / 0.4)}>
-                <circle r={50} fill="none" stroke="#ff3b30" strokeWidth={7} strokeLinecap="round" pathLength={1} strokeDasharray={`${segLen * 0.82} 1`} transform={`rotate(${frozen.head - 90 + i * segLen * 360})`} />
-              </g>
-            );
-          })
-        )}
-        {breakT > 2 && (
-          <g opacity={clamp01((breakT - 2) / 6)} transform={`scale(${ease.outBack(clamp01((breakT - 2) / 10))})`}>
-            <path d="M-14 -14 L14 14 M14 -14 L-14 14" stroke="#ff3b30" strokeWidth={7} strokeLinecap="round" />
-          </g>
+          <polyline points={pts.join(" ")} fill="none" stroke={col} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 6px rgba(255,59,48,0.5))" }} />
         )}
       </svg>
       <Txt words={[...kw("speri1"), ...kw("speri2")]} size={84} on="black" y={CY + 110} out={w("speri3", 0) - 6} />

@@ -39,6 +39,7 @@ export const cues = (): Cue[] => {
     const at = S.A5_END + (520 + 116 - 960 + 60 + i * 250) / 9;
     if (at > S.A5_END && at < S.A6_END) add(at, "late");
   }
+  add(w("speri3", 2) + 24, "flatline");
   add(S.A7_END + 2, "whoosh");
   for (let i = 0; i < 6; i++) add(w("lumea", 5) - 2 + (i * 14) / 6, "key", 0.8);
   add(w("lumea", 9) - 2, "nope");
@@ -109,10 +110,7 @@ export const cues = (): Cue[] => {
   [0, 2].forEach((j) => add(w("taskurile", 2) + 4 + j * 5, "pop", 0.7));
   add(w("muncesti", 2) - 4, "tick");
   add(w("muncesti", 2) + 2, "zip");
-  add(S.C5_END, "charge");
-  add(S.C5_END, "glide", 1);
-  add(S.C5_END + Math.round((BREAK - S.C5_END) * 0.4), "ignite", 1);
-  S.HEARTBEATS.forEach((f) => add(f, "heart"));
+  add(S.C5_END, "whoosh", 1);
   add(BREAK - 12, "suck");
   add(w("handly", 0) - 4, "shimmer");
   add(FINAL, "drop");

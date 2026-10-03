@@ -150,21 +150,21 @@ export const EndScene: React.FC<{ from: number }> = ({ from }) => {
           const t = T - from;
           ctx.globalCompositeOperation = "lighter";
           fog(ctx, T, 0.9 * reveal, H * 0.66);
-          for (const s of [-1, 1]) beam(ctx, W / 2 + s * 560, H + 20, s * (0.1 + 0.03 * Math.sin(T * 0.7)), 1500, 0.08, 0.45 * reveal);
+          for (const s of [-1, 1]) beam(ctx, W / 2 + s * 560, H + 20, s * (0.1 + 0.03 * Math.sin(T * 0.7)), 1500, 0.08, 0.25 * reveal);
           const k = Math.exp(-Math.max(0, T - R) / 0.4);
-          if (T >= R - 0.1) flare(ctx, W / 2, H / 2 - 70, clamp01(k + (1 - reveal) * 0.5), 1400, 140);
-          glow(ctx, W / 2, H / 2 - 60, 700, 0.07 * reveal);
+          if (T >= R - 0.1) flare(ctx, W / 2, H / 2 - 30, clamp01(k + (1 - reveal) * 0.5) * 0.45, 800, 50);
+          glow(ctx, W / 2, H / 2 - 30, 500, 0.05 * reveal);
           ctx.globalCompositeOperation = "source-over";
           if (t < 0.15) {
-            ctx.fillStyle = `rgba(255,255,255,${(1 - t / 0.15) * 0.8})`;
+            ctx.fillStyle = `rgba(255,255,255,${(1 - t / 0.15) * 0.2})`;
             ctx.fillRect(0, 0, W, H);
           }
         }}
       />
-      <div style={{ position: "absolute", left: W / 2, top: H / 2 - 70, transform: `translate(-50%, -50%) scale(${scale})`, opacity: reveal, filter: `blur(${(1 - reveal) * 16}px)` }}>
-        <Logo width={960} sweep={sweep} />
+      <div style={{ position: "absolute", left: W / 2, top: H / 2 - 30, transform: `translate(-50%, -50%) scale(${scale})`, opacity: reveal, filter: `blur(${(1 - reveal) * 10}px)` }}>
+        <Logo width={400} sweep={sweep} />
       </div>
-      <div style={{ position: "absolute", left: 0, right: 0, top: H / 2 + 175, display: "flex", justifyContent: "center", fontFamily: FONT, fontWeight: 500, fontSize: 40, color: "#e9ebef", letterSpacing: "0.02em" }}>
+      <div style={{ position: "absolute", left: 0, right: 0, top: H / 2 + 95, display: "flex", justifyContent: "center", fontFamily: FONT, fontWeight: 500, fontSize: 26, color: "#cfd2d8", letterSpacing: "0.06em" }}>
         {tag.split("").map((ch, i) => {
           const a = ease.outCubic((T - tagAt - i * 0.03) / 0.5);
           return (

@@ -64,7 +64,7 @@ export const LogoScene: React.FC<{ from: number; to: number }> = ({ from, to }) 
   const up = rng01(T, w("roof", 0) - 0.2, w("roof", 0) + 1.0, ease.inOut);
   const sweep = rng01(T, R + 0.1, R + 1.5, ease.inOut);
   const out = rng01(T, to - 0.3, to, ease.inCubic);
-  const scale = lerp(1.12, 1.0, ease.outCubic((T - R) / 2.5)) * lerp(1, 0.42, up);
+  const scale = lerp(1.06, 1.0, ease.outCubic((T - R) / 3));
   return (
     <AbsoluteFill>
       <CanvasScene
@@ -77,7 +77,7 @@ export const LogoScene: React.FC<{ from: number; to: number }> = ({ from, to }) 
           fog(ctx, T, 0.6 + 0.8 * post, H * 0.62);
           for (const s of [-1, 1]) {
             const ang = s * (0.42 - 0.3 * ease.inOut(t / 2.4)) + Math.sin(T * 0.9 + s) * 0.06;
-            beam(ctx, W / 2 + s * 520, H + 20, ang * (1 - reveal) + s * 0.08 * reveal, 1500, 0.09, pre * 0.9 + post * 0.55);
+            beam(ctx, W / 2 + s * 520, H + 20, ang * (1 - reveal) + s * 0.08 * reveal, 1500, 0.09, pre * 0.9 + post * 0.3);
           }
           // the slit of light that opens into the logo
           const slit = rng01(T, R - 0.55, R, ease.inCubic) * (1 - reveal);
@@ -88,8 +88,8 @@ export const LogoScene: React.FC<{ from: number; to: number }> = ({ from, to }) 
           }
           if (T >= R) {
             const k = Math.exp(-(T - R) / 0.35);
-            flare(ctx, W / 2, H / 2 - 40, k, 1300, 160);
-            ctx.fillStyle = `rgba(255,255,255,${0.35 * Math.exp(-(T - R) / 0.12)})`;
+            flare(ctx, W / 2, H / 2, k * 0.45, 800, 50);
+            ctx.fillStyle = `rgba(255,255,255,${0.08 * Math.exp(-(T - R) / 0.2)})`;
             ctx.fillRect(0, 0, W, H);
           }
           // dust in the light
@@ -155,13 +155,13 @@ export const LogoScene: React.FC<{ from: number; to: number }> = ({ from, to }) 
           style={{
             position: "absolute",
             left: W / 2,
-            top: lerp(H / 2 - 20, 250, up),
+            top: H / 2 - 10,
             transform: `translate(-50%, -50%) scale(${scale})`,
-            filter: `blur(${(1 - reveal) * 18}px)`,
-            opacity: reveal * (1 - out),
+            filter: `blur(${(1 - reveal) * 10 + up * 8}px)`,
+            opacity: reveal * (1 - out) * (1 - up),
           }}
         >
-          <Logo width={1000} sweep={sweep} />
+          <Logo width={380} sweep={sweep} />
         </div>
       )}
     </AbsoluteFill>

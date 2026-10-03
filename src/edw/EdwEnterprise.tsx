@@ -6,7 +6,7 @@ import { BuildScene, CityScene, RoadScene } from "./act2";
 import { LogoScene } from "./act3";
 import { EndScene, IdeaScene, MessageScene } from "./act5";
 import { DareScene, DevicesScene, NetworkScene, ScopeScene, SplitScene } from "./act4";
-import { Captions, FPS, Grade } from "./kit";
+import { Captions, CornerLogo, FPS, Grade } from "./kit";
 
 /** mounts children for [from, to) seconds */
 export const Shot: React.FC<{ from: number; to: number; children: React.ReactNode }> = ({ from, to, children }) => {
@@ -62,6 +62,7 @@ export const EdwEnterprise: React.FC<{ audio?: boolean }> = ({ audio = true }) =
         <EndScene from={63.75} />
       </Shot>
       <Grade />
+      <CornerLogo />
       <Captions hide={["edw", "yours"]} />
       {audio && (
         <Sequence>

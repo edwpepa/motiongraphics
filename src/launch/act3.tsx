@@ -26,67 +26,49 @@ const beatAt = (frame: number) => Math.floor((frame - D0 + 0.5) / BEATS);
 const C1: React.FC = () => {
   const frame = useCurrentFrame();
   const ws = words("dar");
-  const at = ws.map(([, f]) => f - 3);
-  const end = at[at.length - 1] + 14;
-  // a slow, steady push-in across the whole line
-  const cam = lerp(1.12, 1.0, ease.inOutCubic(clamp01((frame - at[0]) / (end - at[0]))));
-  const out = ease.inCubic(clamp01((frame - (C1_END - 8)) / 8));
-  const underline = ease.inOutCubic(clamp01((frame - (at[4] + 10)) / 18));
-  const lp = ease.outBack(clamp01((frame - at[1]) / 16), 1.2);
-  const W = (k: number, size: number, color: string, extra?: React.CSSProperties) => {
-    const t = clamp01((frame - at[k]) / 12);
-    const e = ease.outCubic(t);
-    return (
-      <span
-        key={k}
-        style={{
-          display: "inline-block",
-          fontSize: size,
-          color,
-          opacity: clamp01(t * 2.5),
-          transform: `translateY(${(1 - e) * 0.35}em) scale(${lerp(1.35, 1, e)})`,
-          transformOrigin: "50% 80%",
-          filter: e < 0.98 ? `blur(${(1 - e) * 14}px)` : undefined,
-          ...extra,
-        }}
-      >
-        {ws[k][0]}
-      </span>
-    );
+  const FS = 104;
+  const gap = 0.27 * FS;
+  const Y1 = CY + 40;
+  const Y2 = CY + 170;
+  // word centres, laid out exactly like the two centred lines below
+  const centres = (idx: number[], y: number) => {
+    const wd = idx.map((i) => textWidth(ws[i][0], FS, -0.045));
+    const total = wd.reduce((p, q) => p + q, 0) + gap * (idx.length - 1);
+    let x = CX - total / 2;
+    return idx.map((_, j) => {
+      const c = x + wd[j] / 2;
+      x += wd[j] + gap;
+      return { x: c, y };
+    });
   };
+  const pos = [...centres([0, 1, 2, 3, 4], Y1), ...centres([5, 6, 7, 8, 9, 10, 11], Y2)];
+  const at = ws.map(([, f]) => f - 3);
+  // camera: close on the words as they arrive, gliding along, then it pulls back to show it all
+  let fx = pos[0].x;
+  let fy = pos[0].y;
+  for (let k = 1; k < pos.length; k++) {
+    const t = ease.inOutCubic(clamp01((frame - at[k] + 4) / 14));
+    if (t <= 0) break;
+    fx = lerp(fx, pos[k].x, t);
+    fy = lerp(fy, pos[k].y, t);
+  }
+  const wide = ease.inOutCubic(clamp01((frame - (at[at.length - 1] + 2)) / 22));
+  const intro = ease.outCubic(clamp01((frame - (BRIDGE - 2)) / 16));
+  const z = lerp(lerp(2.2, 1.75, intro), 1, wide);
+  const cx = lerp(fx, CX, wide);
+  const cy = lerp(fy, CY + 30, wide);
+  const enter = ease.outExpo(clamp01((frame - BRIDGE) / 20));
+  const spin = ease.inOutCubic(clamp01((frame - (at[4] - 2)) / 18));
+  const S = 230;
   return (
     <AbsoluteFill>
       <Bg kind="white" />
-      <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", opacity: 1 - out, filter: out > 0 ? `blur(${out * 16}px)` : undefined, transform: `scale(${cam})` }}>
-        <div style={{ fontFamily: FONT, fontWeight: BOLD, letterSpacing: "-0.045em", lineHeight: 1, color: P.ink, display: "flex", flexDirection: "column", alignItems: "center", gap: 26 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 30 }}>
-            <div style={{ transform: `scale(${lp}) rotate(${(1 - lp) * -30}deg)`, opacity: clamp01(lp * 2) }}>
-              <Logo size={118} />
-            </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 32 }}>
-              {W(0, 128, P.ink)}
-              {W(1, 128, P.green)}
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 32, position: "relative" }}>
-            {W(2, 128, P.ink)}
-            {W(3, 128, P.ink)}
-            <span style={{ position: "relative", display: "inline-block" }}>
-              {W(4, 200, P.green)}
-              {underline > 0.01 && (() => {
-                const dw = textWidth(ws[4][0], 200, -0.045);
-                return (
-                  <svg width={dw} height={30} style={{ position: "absolute", left: 0, bottom: -18, overflow: "visible" }}>
-                    <path d={`M 4 18 C ${dw * 0.3} 11, ${dw * 0.65} 21, ${dw - 4} 9`} stroke={P.green} strokeWidth={8} fill="none" strokeLinecap="round" pathLength={1} strokeDasharray={`${underline} 2`} />
-                  </svg>
-                );
-              })()}
-            </span>
-          </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 17, marginTop: 34, color: "#3b4440" }}>
-            {[5, 6, 7, 8, 9, 10, 11].map((k) => W(k, 64, "#3b4440"))}
-          </div>
+      <AbsoluteFill style={{ transformOrigin: "0 0", transform: `translate(${CX - cx * z}px, ${CY - cy * z}px) scale(${z})` }}>
+        <div style={{ position: "absolute", left: CX - S / 2, top: CY - 220 - S / 2, width: S, height: S, transform: `perspective(1200px) rotateY(${spin * 360}deg) scale(${(0.8 + 0.2 * enter) * (1 + 0.1 * Math.sin(Math.PI * spin))})`, opacity: enter * clamp01((frame - (at[1] - 6)) / 8) }}>
+          <Logo size={S} />
         </div>
+        <Txt words={kw("dar", { only: [0, 1, 2, 3, 4], color: { 1: GREEN_INK, 4: GREEN_INK } })} size={FS} on="white" y={Y1} out={C1_END - 6} />
+        <Txt words={kw("dar", { only: [5, 6, 7, 8, 9, 10, 11] })} size={FS} on="white" y={Y2} out={C1_END - 6} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
@@ -146,7 +128,7 @@ const C3: React.FC = () => {
       <div style={{ position: "absolute", left: CX - 135, top: CY - 310, transform: `scale(${pop * punch(frame, cuts[i], 0.06, 14)}) rotate(${(1 - pop) * -20}deg)` }}>
         <ServiceTile name={s.icon as ServiceName} size={270} tone={s.bg === "green" ? "white" : "green"} />
       </div>
-      <Txt key={i} words={kw("skills", { only: s.words, lead: 4 }).map((x) => ({ ...x, at: Math.max(x.at, cuts[i]) }))} size={150} on={s.bg} y={CY + 170} dur={9} />
+      <Txt key={i} words={kw("skills", { only: s.words, lead: 4, cap: true }).map((x) => ({ ...x, at: Math.max(x.at, cuts[i]) }))} size={150} on={s.bg} y={CY + 170} dur={9} />
     </AbsoluteFill>
   );
 };
@@ -169,7 +151,7 @@ const C4: React.FC = () => {
       <Bg kind="deep" />
       <Txt words={kw("cont", { only: [0, 1, 2, 3, 4], color: { 4: MINT_INK } })} size={88} on="deep" x={140} y={CY - 60} align="left" out={ph2 - 4} />
       <Txt words={kw("cont", { only: [5, 6, 7] })} size={88} on="deep" x={140} y={CY + 50} align="left" out={ph2 - 4} />
-      <Txt words={kw("cont", { only: [8, 9, 10, 11], color: { 11: MINT_INK } })} size={88} on="deep" x={140} y={CY - 60} align="left" out={C4_END - 6} />
+      <Txt words={kw("cont", { only: [8, 9, 10, 11], cap: true, color: { 11: MINT_INK } })} size={88} on="deep" x={140} y={CY - 60} align="left" out={C4_END - 6} />
       <Txt words={kw("cont", { only: [12, 13, 14, 15, 16, 17] })} size={88} on="deep" x={140} y={CY + 50} align="left" out={C4_END - 6} />
       {/* profile */}
       <div

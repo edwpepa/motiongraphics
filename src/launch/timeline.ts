@@ -46,10 +46,13 @@ export const pEnd = (key: PhraseKey) => F(voToOut(key, W[key].end));
 export const w = (key: PhraseKey, i: number) => words(key)[i][1];
 
 /** KineticText words for a phrase (optional per-index colours, a lead so letters land on the syllable) */
-export const kw = (key: PhraseKey, opts: { lead?: number; color?: Record<number, [string, string]>; only?: number[] } = {}): KWord[] => {
+export const kw = (key: PhraseKey, opts: { lead?: number; color?: Record<number, [string, string]>; only?: number[]; cap?: boolean } = {}): KWord[] => {
   const lead = opts.lead ?? 3;
-  return words(key)
+  const list = words(key)
     .map(([text, at], i) => ({ text, at: at - lead, color: opts.color?.[i], i }))
     .filter((x) => !opts.only || opts.only.includes(x.i))
-    .map(({ text, at, color }) => ({ text, at, color }));
+    .map(({ text, at, color, i }) => ({ text, at, color, i }));
+  // every new text scene starts with a capital letter (phrase starts by default, or when asked)
+  const cap = opts.cap ?? (list.length > 0 && list[0].i === 0);
+  return list.map(({ text, at, color }, j) => ({ text: j === 0 && cap ? text.charAt(0).toLocaleUpperCase("ro-RO") + text.slice(1) : text, at, color }));
 };

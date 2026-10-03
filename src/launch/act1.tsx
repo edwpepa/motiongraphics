@@ -1,5 +1,5 @@
 import React from "react";
-import { A10_END, A12_END, A1_END, A2_END, A3_END, A5_END, A6_END, A7_END, A8_END, A9_END } from "./scenes";
+import { A10_END, A12_END, A1_END, A2_END, A3_END, A4_END, A5_END, A6_END, A7_END, A8_END, A9_END, ECG_BEATS, ECG_FAIL, ECG_FLAT } from "./scenes";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { textWidth } from "../explainer/components/AppleText";
 import { Avatar } from "../explainer/components/Avatar";
@@ -239,7 +239,7 @@ const PaintStroke: React.FC<{ p: number; y: number; frame: number }> = ({ p, y, 
   if (p <= 0) return null;
   const d = `M -80 ${y + 18} C 400 ${y - 30}, 900 ${y + 26}, 1300 ${y - 6} S 1800 ${y - 22}, 2020 ${y + 4}`;
   const bristles = Array.from({ length: 14 }, (_, i) => ({ off: -64 + i * 9.8 + seeded(i, 1) * 4, wdt: 3 + seeded(i, 2) * 6, a: 0.12 + seeded(i, 3) * 0.3, lag: seeded(i, 4) * 0.08, light: i % 3 === 0 }));
-  const drips = [380, 690, 1120, 1460, 1720].map((x, i) => ({ x, len: 50 + seeded(i, 7) * 110, wdt: 9 + seeded(i, 8) * 9, at: 0.35 + (x / 1920) * 0.55 }));
+  const drips = [300, 610, 1050, 1390, 1690].map((x, i) => ({ x, len: 60 + seeded(i, 7) * 120, wdt: 10 + seeded(i, 8) * 8, at: 0.25 + (x / 1920) * 0.6 }));
   return (
     <svg width={1920} height={1080} style={{ position: "absolute", inset: 0, overflow: "visible" }}>
       <defs>
@@ -258,18 +258,29 @@ const PaintStroke: React.FC<{ p: number; y: number; frame: number }> = ({ p, y, 
         {bristles.map((b, i) => (
           <path key={i} d={d} transform={`translate(0 ${b.off})`} stroke={b.light ? "#b9ffd6" : "#008a45"} strokeOpacity={b.a} strokeWidth={b.wdt} fill="none" strokeLinecap="round" pathLength={1} strokeDasharray={`${clamp01(p - b.lag)} 1`} />
         ))}
-        {drips.map((dr, i) => {
-          const g = ease.outCubic(clamp01((p - dr.at) / 0.25)) * (0.6 + 0.4 * clamp01((frame % 600) / 600));
-          if (g <= 0) return null;
-          const top = y + 50;
-          return (
-            <g key={i}>
-              <rect x={dr.x - dr.wdt / 2} y={top} width={dr.wdt} height={dr.len * g} rx={dr.wdt / 2} fill="#00a454" />
-              <circle cx={dr.x} cy={top + dr.len * g} r={dr.wdt * 0.75} fill="#00a454" />
-            </g>
-          );
-        })}
       </g>
+      {/* paint runs: a wide neck from the stroke, tapering, with a bead at the tip, oozing down */}
+      {drips.map((dr, i) => {
+        const u = clamp01((p - dr.at) / 0.45);
+        if (u <= 0) return null;
+        // slow start, a little run, then it slows as it dries
+        const flow = 1 - Math.pow(1 - u, 2.4);
+        const len = dr.len * 0.75 * flow + Math.sin(frame / 9 + i) * 1.5 * flow;
+        const top = y + 40;
+        const w0 = dr.wdt * 2.6;
+        const w1 = dr.wdt * 0.95;
+        const bead = dr.wdt * 1.25 * (0.6 + 0.4 * flow);
+        const x = dr.x;
+        const d = `M ${x - w0} ${top} C ${x - w0 * 0.6} ${top + len * 0.25}, ${x - w1} ${top + len * 0.6}, ${x - w1} ${top + len} L ${x + w1} ${top + len} C ${x + w1} ${top + len * 0.6}, ${x + w0 * 0.6} ${top + len * 0.25}, ${x + w0} ${top} Z`;
+        return (
+          <g key={`run${i}`}>
+            <path d={d} fill="url(#paint)" />
+            <ellipse cx={x} cy={top + len + bead * 0.55} rx={bead} ry={bead * 1.15} fill="#00a454" />
+            <ellipse cx={x - bead * 0.35} cy={top + len + bead * 0.25} rx={bead * 0.25} ry={bead * 0.35} fill="rgba(255,255,255,0.45)" />
+            <path d={`M ${x - w1 * 0.4} ${top + 8} L ${x - w1 * 0.4} ${top + len * 0.9}`} stroke="rgba(255,255,255,0.25)" strokeWidth={2} strokeLinecap="round" />
+          </g>
+        );
+      })}
       {/* wet sheen */}
       <path d={d} transform="translate(0 -40)" stroke="rgba(255,255,255,0.35)" strokeWidth={8} fill="none" strokeLinecap="round" pathLength={1} strokeDasharray={`${clamp01(p - 0.1) * 0.9} 1`} style={{ filter: "blur(3px)" }} />
     </svg>
@@ -318,7 +329,7 @@ export const A5: React.FC = () => {
   const kTools = w("nici1", 5);
   const kNerves = w("nici2", 1);
   const kAll = w("nici2", 2);
-  const SX = CX + 470;
+  const SX = CX + 560;
   const SY = CY;
   let pts = shape("circle");
   if (frame >= kTools - 10 && frame < kNerves - 10) pts = morphNamed("circle", "square", ease.outBack(clamp01((frame - (kTools - 10)) / 12)), 1, frame);
@@ -340,24 +351,63 @@ export const A5: React.FC = () => {
   return (
     <AbsoluteFill>
       <Bg kind="black" />
-      {/* eyebrow */}
-      <div style={{ position: "absolute", left: 170, top: CY - 250, opacity: clamp01((frame - (w("nici1", 0) - 4)) / 8) * (1 - clamp01((frame - outAll) / 7)), fontFamily: FONT, fontWeight: 500, fontSize: 30, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(185,255,214,0.7)" }}>care n-ai</div>
-      {/* a picker wheel: the current "nici …" sits in the middle, the others roll away above it */}
+      {/* a blur text scroller: the line being said sits in the middle, sharp, with an arrow;
+          the rest curve away above and below on a cylinder, soft and blurred */}
       {(() => {
-        const pos = lerp(0, 1, ease.inOutCubic(clamp01((frame - (kTools - 8)) / 12))) + lerp(0, 1, ease.inOutCubic(clamp01((frame - (kNerves - 8)) / 12)));
-        const fade = 1 - ease.inCubic(clamp01((frame - outAll) / 8));
-        return lines.map(([at, a, b], i) => {
-          const key = i < 2 ? "nici1" : "nici2";
-          const d = i - pos;
-          if (frame < at - 6) return null;
-          const ad = Math.abs(d);
-          const y = CY + d * 150;
-          return (
-            <div key={i} style={{ position: "absolute", inset: 0, transformOrigin: `170px ${y}px`, transform: `perspective(1200px) rotateX(${-d * 28}deg) scale(${1 - 0.22 * Math.min(1, ad)})`, opacity: (1 - 0.7 * Math.min(1, ad)) * fade, filter: ad > 0.4 ? `blur(${(ad - 0.4) * 4}px)` : undefined }}>
-              <Txt words={kw(key, { only: [a, b], color: { [b]: MINT_INK } })} size={130} on="black" x={170} y={y} align="left" />
-            </div>
-          );
-        });
+        const items = [
+          { text: "Care n-ai", at: w("nici1", 0) },
+          { text: "Nici timpul,", at: w("nici1", 2) },
+          { text: "Nici sculele,", at: w("nici1", 4) },
+          { text: "Nici nervii", at: w("nici2", 0) },
+          { text: "Pentru toate astea.", at: w("nici2", 2) },
+        ];
+        let pos = 0;
+        for (let i = 1; i < items.length; i++) pos += ease.inOutCubic(clamp01((frame - (items[i].at - 7)) / 11));
+        const inA = ease.outCubic(clamp01((frame - (A4_END - 2)) / 12));
+        const outA = 1 - ease.inCubic(clamp01((frame - (A5_END - 8)) / 8));
+        const TH = 0.42;
+        const RAD = 430;
+        const X0 = 300;
+        const arrowA = clamp01(1 - Math.abs(pos - Math.round(pos)) * 3);
+        return (
+          <AbsoluteFill style={{ opacity: inA * outA }}>
+            {items.map((it, i) => {
+              const d = i - pos;
+              const ang = d * TH;
+              if (Math.abs(ang) > Math.PI / 2) return null;
+              const y = CY + Math.sin(ang) * RAD;
+              const ad = Math.abs(d);
+              return (
+                <div
+                  key={i}
+                  style={{
+                    position: "absolute",
+                    left: X0,
+                    top: y,
+                    transform: `translateY(-50%) perspective(1400px) rotateX(${(-ang * 180) / Math.PI}deg) scaleY(${0.35 + 0.65 * Math.cos(ang)})`,
+                    transformOrigin: "0 50%",
+                    fontFamily: FONT,
+                    fontWeight: BOLD,
+                    fontSize: 150,
+                    letterSpacing: "-0.045em",
+                    lineHeight: 1,
+                    whiteSpace: "nowrap",
+                    color: ad < 0.5 ? "#ffffff" : "rgba(255,255,255,0.85)",
+                    opacity: Math.max(0, 1 - 0.38 * ad),
+                    filter: ad > 0.08 ? `blur(${Math.min(14, ad * 9)}px)` : undefined,
+                  }}
+                >
+                  {it.text}
+                </div>
+              );
+            })}
+            {/* the arrow marking the line being said */}
+            <svg width={110} height={110} viewBox="0 0 24 24" style={{ position: "absolute", left: X0 - 140, top: CY - 55, opacity: arrowA, transform: `translateX(${(1 - arrowA) * -20}px)` }} fill="none" stroke={P.green} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12h15" />
+              <path d="m13 6 6 6-6 6" />
+            </svg>
+          </AbsoluteFill>
+        );
       })()}
       <Shape pts={pts} x={SX + jitter} y={SY} size={size} fill={bat > 0 ? "#1c2420" : P.green} gradient={bat > 0 ? ["#2a3631", "#141a17"] : GREEN_GRAD} id={bat > 0 ? "a5b" : "a5"} shadow="drop-shadow(0 30px 70px rgba(0,191,99,0.25))" />
       {/* nerves: a battery draining into the red */}
@@ -381,7 +431,6 @@ export const A5: React.FC = () => {
           <Glyph name="wrench" size={170} color="#fff" weight={2.2} />
         </div>
       )}
-      <Txt words={kw("nici2", { only: [2, 3, 4] })} size={96} on="black" y={CY} out={A5_END - 6} />
     </AbsoluteFill>
   );
 };
@@ -485,46 +534,63 @@ export const A6: React.FC = () => {
 
 // ------------------------------------------------------------------ A7: hoping it fixes itself
 
+const pqrst = (d: number) =>
+  0.12 * Math.exp(-Math.pow((d + 6) / 1.6, 2)) -
+  0.18 * Math.exp(-Math.pow((d + 1.1) / 0.5, 2)) +
+  1.0 * Math.exp(-Math.pow(d / 0.55, 2)) -
+  0.32 * Math.exp(-Math.pow((d - 1.3) / 0.6, 2)) +
+  0.22 * Math.exp(-Math.pow((d - 7) / 2.2, 2));
+
 export const A7: React.FC = () => {
   const frame = useCurrentFrame();
   const t0 = A6_END;
   const a = io(frame, t0 + 2, A7_END, 10, 8);
-  // the loader spins… slows… closes into a dull ring… and unrolls into a flat line
-  const failAt = w("speri3", 2) - 2;
-  const slow = clamp01((frame - (failAt - 12)) / 16);
+  // the loader spins, slows, closes, unrolls into a monitor line… three fading beats… then flat
+  const failAt = ECG_FAIL;
+  const slow = clamp01((frame - (failAt - 10)) / 14);
   const l = frame - t0;
   const head = l * 9 * (1 - 0.85 * ease.outCubic(slow)) + 120 * (1 - Math.cos(l / 9));
-  const len = lerp(0.18 + 0.5 * (0.5 + 0.5 * Math.sin(l / 7)), 1, ease.inOutCubic(clamp01((frame - (failAt - 2)) / 10)));
-  const dull = ease.inOutCubic(clamp01((frame - (failAt - 2)) / 10));
-  const unroll = ease.inOutCubic(clamp01((frame - (failAt + 8)) / 18));
-  const col = mixColor(P.green, "#ff3b30", dull);
-  const N = 120;
+  const len = lerp(0.18 + 0.5 * (0.5 + 0.5 * Math.sin(l / 7)), 1, ease.inOutCubic(clamp01((frame - failAt) / 8)));
+  const unroll = ease.inOutCubic(clamp01((frame - (failAt + 8)) / 14));
+  const dead = ease.inOutCubic(clamp01((frame - ECG_FLAT) / 12));
+  const col = mixColor(P.green, "#ff3b30", dead);
   const R = 50;
-  const HALF = 170;
+  const HALF = 330;
+  const WIN = 46; // frames of history across the trace
+  const AMP = [1, 0.6, 0.28];
+  const sig = (tf: number) => ECG_BEATS.reduce((acc, b, k) => acc + AMP[k] * pqrst(tf - b), 0) * 70;
+  const N = 160;
   const pts: string[] = [];
   for (let i = 0; i <= N; i++) {
     const u = i / N;
     const ang = Math.PI / 2 + u * Math.PI * 2;
-    const cx = Math.cos(ang) * R;
-    const cy = Math.sin(ang) * R;
     const lx = (u - 0.5) * 2 * HALF;
-    const ly = R;
-    // a last tiny blip travels along the line once it's flat
-    const blipC = clamp01((frame - (failAt + 26)) / 16);
-    const blip = unroll >= 1 && blipC > 0 && blipC < 1 ? Math.exp(-Math.pow((u - blipC) * 18, 2)) * -16 * (1 - blipC) : 0;
-    pts.push(`${lerp(cx, lx, unroll).toFixed(2)},${(lerp(cy, ly, unroll) + blip).toFixed(2)}`);
+    const tf = frame - (1 - u) * WIN;
+    const ly = R - (unroll >= 1 ? sig(tf) : 0);
+    pts.push(`${lerp(Math.cos(ang) * R, lx, unroll).toFixed(2)},${lerp(Math.sin(ang) * R, ly, unroll).toFixed(2)}`);
   }
+  const headY = R - sig(frame);
   return (
     <AbsoluteFill>
       <Bg kind="black" />
-      <svg width={600} height={300} viewBox="-200 -75 400 200" style={{ position: "absolute", left: CX - 300, top: CY - 250, opacity: a, overflow: "visible" }}>
+      <svg width={900} height={400} viewBox="-450 -150 900 400" style={{ position: "absolute", left: CX - 450, top: CY - 280, opacity: a, overflow: "visible" }}>
+        <defs>
+          <linearGradient id="ecgFade" gradientUnits="userSpaceOnUse" x1={-HALF} y1={0} x2={HALF} y2={0}>
+            <stop offset="0%" stopColor={col} stopOpacity={0} />
+            <stop offset="35%" stopColor={col} stopOpacity={0.7} />
+            <stop offset="100%" stopColor={col} stopOpacity={1} />
+          </linearGradient>
+        </defs>
         {unroll <= 0 ? (
           <>
             <circle r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={6} />
-            <circle r={R} fill="none" stroke={col} strokeWidth={7} strokeLinecap="round" pathLength={1} strokeDasharray={`${len} 1`} transform={`rotate(${head - 90})`} style={{ filter: `drop-shadow(0 0 6px ${dull > 0.5 ? "rgba(255,59,48,0.5)" : "rgba(0,191,99,0.6)"})` }} />
+            <circle r={R} fill="none" stroke={P.green} strokeWidth={6} strokeLinecap="round" pathLength={1} strokeDasharray={`${len} 1`} transform={`rotate(${head - 90})`} style={{ filter: "drop-shadow(0 0 6px rgba(0,191,99,0.6))" }} />
           </>
         ) : (
-          <polyline points={pts.join(" ")} fill="none" stroke={col} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 6px rgba(255,59,48,0.5))" }} />
+          <>
+            <polyline points={pts.join(" ")} fill="none" stroke={unroll < 1 ? P.green : "url(#ecgFade)"} strokeWidth={4.5} strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 0 6px ${dead > 0.5 ? "rgba(255,59,48,0.55)" : "rgba(0,191,99,0.6)"})` }} />
+            {unroll >= 1 && <circle cx={HALF} cy={headY} r={7} fill={col} style={{ filter: `drop-shadow(0 0 10px ${dead > 0.5 ? "rgba(255,59,48,0.9)" : "rgba(0,191,99,0.9)"})` }} />}
+          </>
         )}
       </svg>
       <Txt words={[...kw("speri1"), ...kw("speri2")]} size={84} on="black" y={CY + 110} out={w("speri3", 0) - 6} />
@@ -619,7 +685,7 @@ export const A9: React.FC = () => {
               <path d="m20 20-4.5-4.5" />
             </svg>
           </div>
-          <Txt words={kw("obositor", { only: [3, 4] })} size={170} on="green" y={CY + 90} />
+          <Txt words={kw("obositor", { only: [3, 4], cap: true })} size={170} on="green" y={CY + 90} />
         </>
       )}
       {which === 1 && (
@@ -634,7 +700,7 @@ export const A9: React.FC = () => {
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" fill="none" stroke="#fff" strokeWidth={2.4} strokeLinejoin="round" transform="scale(1.2)" />
             </g>
           </svg>
-          <Txt words={kw("obositor", { only: [5, 6], color: { 6: MINT_INK } })} size={170} on="black" y={CY + 90} />
+          <Txt words={kw("obositor", { only: [5, 6], cap: true, color: { 6: MINT_INK } })} size={170} on="black" y={CY + 90} />
         </>
       )}
       {which === 2 && (
@@ -645,7 +711,7 @@ export const A9: React.FC = () => {
               {price}
             </Label>
           </div>
-          <Txt words={kw("obositor", { only: [7, 8], color: { 8: GREEN_INK } })} size={170} on="white" y={CY + 90} />
+          <Txt words={kw("obositor", { only: [7, 8], cap: true, color: { 8: GREEN_INK } })} size={170} on="white" y={CY + 90} />
         </>
       )}
     </AbsoluteFill>

@@ -46,3 +46,7 @@ export const HEARTBEATS = (() => {
   }
   return out;
 })();
+/** "se rezolvă singur": the loader gives up, becomes a heart monitor, three fading beats, then flat */
+export const ECG_FAIL = w("speri3", 0) - 6;
+export const ECG_BEATS = [ECG_FAIL + 26, ECG_FAIL + 44, ECG_FAIL + 64];
+export const ECG_FLAT = ECG_FAIL + 78;

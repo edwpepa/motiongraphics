@@ -39,7 +39,8 @@ export const cues = (): Cue[] => {
     const at = S.A5_END + (520 + 116 - 960 + 60 + i * 250) / 9;
     if (at > S.A5_END && at < S.A6_END) add(at, "late");
   }
-  add(w("speri3", 2) + 24, "flatline");
+  S.ECG_BEATS.forEach((f, k) => add(f, "beep", [1, 0.7, 0.45][k]));
+  add(S.ECG_FLAT, "flatline");
   add(S.A7_END + 2, "whoosh");
   for (let i = 0; i < 6; i++) add(w("lumea", 5) - 2 + (i * 14) / 6, "key", 0.8);
   add(w("lumea", 9) - 2, "nope");

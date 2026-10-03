@@ -397,8 +397,8 @@ const B4: React.FC = () => {
         </>
       )}
       <Txt words={kw("alegi", { only: [0, 1, 2, 3, 4] })} size={76} on="green" y={CY + 330} out={s2 - 4} />
-      <Txt words={kw("alegi", { only: [5, 6, 7, 8, 9, 10] })} size={76} on="green" y={CY + 330} out={s3 - 4} />
-      <Txt words={kw("alegi", { only: [11, 12, 13, 14] })} size={76} on="green" y={CY + 330} out={B4_END - 6} />
+      <Txt words={kw("alegi", { only: [5, 6, 7, 8, 9, 10], cap: true })} size={76} on="green" y={CY + 330} out={s3 - 4} />
+      <Txt words={kw("alegi", { only: [11, 12, 13, 14], cap: true })} size={76} on="green" y={CY + 330} out={B4_END - 6} />
     </AbsoluteFill>
   );
 };

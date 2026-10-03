@@ -21,7 +21,7 @@ export const SLAM: Array<{ bg: BgKind; logo: "white" | "green"; word: string }> 
  * The brand switch: logo + wordmark, the whole set flipping colour on every beat with a punch.
  * `from` is the frame the switching starts at; `offset` picks the first colour.
  */
-export const Slam: React.FC<{ from: number; offset?: number; ro?: boolean; badges?: boolean; zoomOutAt?: number; size?: number; hold?: number; shakeAt?: number }> = ({
+export const Slam: React.FC<{ from: number; offset?: number; ro?: boolean; badges?: boolean; zoomOutAt?: number; size?: number; hold?: number; shakeAt?: number; grid?: { d0: number; beats: number } }> = ({
   from,
   offset = 0,
   ro = false,
@@ -30,14 +30,17 @@ export const Slam: React.FC<{ from: number; offset?: number; ro?: boolean; badge
   size = 1,
   hold,
   shakeAt,
+  grid,
 }) => {
   const frame = useCurrentFrame();
-  const k0 = beatAt(from);
-  const kNow = hold !== undefined && frame >= hold ? beatAt(hold) : beatAt(frame);
+  const bAt = (f: number) => (grid ? Math.floor((f - grid.d0 + 0.5) / grid.beats) : beatAt(f));
+  const bF = (k: number) => (grid ? Math.round(grid.d0 + k * grid.beats) : bt(k));
+  const k0 = bAt(from);
+  const kNow = hold !== undefined && frame >= hold ? bAt(hold) : bAt(frame);
   const i = (((kNow - k0 + offset) % SLAM.length) + SLAM.length) % SLAM.length;
   const s = SLAM[i];
   const zoomOut = zoomOutAt === undefined ? 0 : ease.inExpo(clamp01((frame - zoomOutAt) / 8));
-  const sc = punch(frame, Math.max(from, bt(kNow)), 0.08, 12) * (1 + 0.04 * clamp01((frame - from) / 60)) * (1 + 3 * zoomOut) * size;
+  const sc = punch(frame, Math.max(from, bF(kNow)), 0.08, 12) * (1 + 0.04 * clamp01((frame - from) / 60)) * (1 + 3 * zoomOut) * size;
   const sh = shakeAt === undefined ? { x: 0, y: 0 } : shake(frame, shakeAt);
   return (
     <AbsoluteFill style={{ transform: `translate(${sh.x}px, ${sh.y}px)` }}>

@@ -31,134 +31,108 @@ def load(path):
     return x.astype(np.float64).T / 32768
 
 
-# ------------------------------------------------------------------ electro-pop: A minor, electric piano, plucks, vocal chops
-CHORDS = [(33, [57, 60, 64, 67]), (29, [53, 57, 60, 64]), (36, [55, 60, 64, 67]), (31, [55, 59, 62, 67])]  # Am7 Fmaj7 C G
-HOOK = [
-    [(0, 76, 0.5), (0.75, 79, 0.25), (1, 81, 0.5), (2, 79, 0.5), (2.5, 76, 0.5), (3, 74, 1)],
-    [(0, 72, 0.5), (0.5, 74, 0.5), (1, 76, 1), (2.5, 74, 0.5), (3, 72, 1)],
-    [(0, 76, 0.5), (0.75, 79, 0.25), (1, 84, 0.5), (2, 81, 0.5), (2.5, 79, 0.5), (3, 76, 1)],
-    [(0, 74, 0.5), (0.5, 76, 0.5), (1, 79, 1.5), (3, 74, 0.5), (3.5, 71, 0.5)],
-]
-
-
-def epiano(notes, dur):
-    """a warm electric piano: FM bell tine over a sine body, with a little tremolo"""
-    n = int((dur + 0.6) * SR)
-    t = np.arange(n) / SR
-    out = np.zeros(n)
-    for m in notes:
-        f = C.midi(m)
-        idx = 1.6 * np.exp(-t / 0.25)
-        out += np.sin(2 * np.pi * f * t + idx * np.sin(2 * np.pi * f * t)) * np.exp(-t / 1.4)
-        out += 0.25 * np.sin(2 * np.pi * 2 * f * t) * np.exp(-t / 0.3)
-    trem = 1 + 0.12 * np.sin(2 * np.pi * 4.5 * t)
-    env = np.clip(t / 0.004, 0, 1) * np.clip((dur + 0.6 - t) / 0.4, 0, 1)
-    return out * trem * env / len(notes)
-
-
-def chop(m, dur):
-    """a vocal chop singing "ah": a bright source through vowel formants, with a tiny scoop"""
-    n = int((dur + 0.08) * SR)
-    t = np.arange(n) / SR
-    f = C.midi(m) * (1 - 0.03 * np.exp(-t / 0.03)) * (1 + 0.004 * np.sin(2 * np.pi * 6 * t))
-    src = S.fsaw(f, n) + 0.5 * S.fsaw(f * 1.005, n, 0.4)
-    y = C.filt(src, "bandpass", (700, 950), 2) * 1.0 + C.filt(src, "bandpass", (1100, 1350), 2) * 0.7 + C.filt(src, "bandpass", (2600, 3000), 2) * 0.25
-    env = np.clip(t / 0.01, 0, 1) * np.clip((dur + 0.08 - t) / 0.06, 0, 1)
-    return np.tanh(y * env * 2.0) * 0.6
-
-
+# ------------------------------------------------------------------ the launch film's sound: G minor anthem, stomps, the hook, a choir
 def build_score():
-    B = {k: np.zeros((2, N)) for k in ("drums", "bass", "keys", "lead", "fx")}
+    B = {k: np.zeros((2, N)) for k in ("drums", "bass", "pad", "lead", "choir", "pluck", "fx")}
     chain = np.ones(N)
 
     def place(bus, x, at, g=1.0, pan=0.0):
         C.place(B[bus], x if x.ndim == 2 else C.stereo(x, pan), at, g)
 
-    def duck(at, depth=0.8, tau=0.12):
+    def duck(at, depth=0.8, tau=0.11):
         i = int(at * SR)
         if 0 <= i < N:
-            dip = 1 - depth * np.exp(-np.arange(int(0.3 * SR)) / SR / tau)
+            dip = 1 - depth * np.exp(-np.arange(int(0.35 * SR)) / SR / tau)
             j = min(N, i + len(dip))
             chain[i:j] = np.minimum(chain[i:j], dip[: j - i])
 
     bar = lambda k: D + k * BAR  # noqa: E731
-    kick, clap = C.kick(), C.clap()
+    stomp, clap, kick, hey = S.stomp(), S.bigclap(), S.hard_kick(), S.hey()
 
-    def section(t0, chord, k, full):
-        root, notes = chord
-        place("keys", epiano(notes, BAR), t0, 0.8 if full else 0.65)
-        for s16 in range(16):
-            m = notes[[0, 1, 2, 3, 2, 1, 3, 2][s16 % 8]] + 12
-            place("keys", C.pluck(m, 0.3, tau=0.08, bright=1.3), t0 + s16 * BEAT / 4, (0.16 if full else 0.1) * (1.3 if s16 % 4 == 0 else 1), pan=(-0.45, 0.45)[s16 % 2])
-        if full:
-            for b in range(4):
-                place("drums", kick, t0 + b * BEAT, 0.95)
-                duck(t0 + b * BEAT)
-                place("drums", C.hat(open_=True), t0 + (b + 0.5) * BEAT, 0.2, pan=0.2)
-            for b in (1, 3):
-                place("drums", clap, t0 + b * BEAT, 0.75)
-            for s16 in range(16):
-                place("drums", C.hat(), t0 + s16 * BEAT / 4, 0.05 + 0.04 * (s16 % 2), pan=-0.25)
-            for b in range(4):
-                place("bass", C.bass_note(root + 12, BEAT / 2 - 0.04, attack=0.005, release=0.05), t0 + (b + 0.5) * BEAT, 0.9)
-                place("bass", C.bass_note(root, BEAT / 2 - 0.04, attack=0.005, release=0.05), t0 + b * BEAT, 0.5)
-            for b, m, L in HOOK[k % 4]:
-                place("lead", chop(m, L * BEAT * 0.85), t0 + b * BEAT, 0.7, pan=0.05)
-                if k >= 4:
-                    place("lead", chop(m - 12, L * BEAT * 0.85), t0 + b * BEAT, 0.3)
-            if k % 4 == 0:
-                place("fx", C.crash(2.2), t0, 0.3)
-        else:
-            place("drums", kick, t0, 0.4)
-            place("drums", kick, t0 + 2 * BEAT, 0.3)
-            duck(t0, 0.35)
-            for b in (1, 3):
-                place("drums", C.shaker(), t0 + b * BEAT, 0.18)
-            place("bass", C.bass_note(root + 12, BAR - 0.1, attack=0.2, release=0.3), t0, 0.35)
-
+    # intro: a driving pulse that keeps building under the story
     k0 = -int(D // BAR)
     for k in range(k0, 0):
         t0 = bar(k)
         if t0 < 0.05:
             continue
-        section(t0, CHORDS[(k - k0) % 4], k - k0, False)
+        name, root, tones = S.PROG[(k - k0) % 4]
+        late = k >= -4
+        place("pad", S.pad(tones, BAR, attack=0.3, release=0.5, cutoff=1600 + 1400 * late), t0, 0.5)
+        for s16 in range(16):
+            m = tones[[0, 2, 1, 3][s16 % 4]] + 12
+            place("pluck", S.pluck(m, 0.3, 0.1), t0 + s16 * BEAT / 4, 0.16 + 0.08 * late, pan=(-0.4, 0.4)[s16 % 2])
+        for b in range(4):
+            place("drums", stomp * 0.8, t0 + b * BEAT, 0.5 if b % 2 == 0 else 0.3)
+            duck(t0 + b * BEAT, 0.45)
+        for b in (1, 3):
+            place("drums", clap, t0 + b * BEAT, 0.3 + 0.2 * late)
+        for q in range(8):
+            place("bass", S.dbass(root, BEAT / 2 - 0.04), t0 + q * BEAT / 2, 0.35 + 0.15 * late)
     tb = bar(-1)
     for j in range(16):
-        place("drums", clap, tb + j * BEAT / 4, 0.08 + 0.5 * (j / 16) ** 1.5)
-    place("fx", C.riser(BAR, 300, 12000), tb, 0.5)
-    place("lead", chop(81, BEAT * 0.9), tb + 3 * BEAT, 0.5)
+        place("drums", S.bigclap(), tb + j * BEAT / 4, 0.12 + 0.6 * (j / 16) ** 1.4)
+    place("fx", C.riser(BAR, 300, 13000), tb, 0.6)
 
+    # the drop: eight bars of the full anthem
     for k in range(8):
-        section(bar(k), CHORDS[k % 4], k, True)
-    place("fx", C.crash(3.0), bar(0), 0.45)
+        t0 = bar(k)
+        name, root, tones = S.PROG[k % 4]
+        for b in range(4):
+            place("drums", kick, t0 + b * BEAT, 1.0)
+            duck(t0 + b * BEAT, 0.85, 0.12)
+        for b in (0, 2):
+            place("drums", stomp, t0 + b * BEAT, 0.5)
+        for b in (1, 3):
+            place("drums", clap, t0 + b * BEAT, 0.9)
+        for s8 in range(8):
+            place("drums", C.hat(open_=(s8 % 2 == 1)), t0 + s8 * BEAT / 2, 0.22 if s8 % 2 else 0.1, pan=0.25)
+        if k % 2 == 1:
+            place("drums", hey, t0 + 3 * BEAT, 0.55)
+        if k % 4 == 0:
+            place("fx", C.crash(2.6), t0, 0.45)
+        for s16 in range(16):
+            place("bass", S.dbass(root + (12 if s16 % 4 == 2 else 0), BEAT / 4 - 0.02), t0 + s16 * BEAT / 4, 0.7 if s16 % 4 else 0.45)
+        place("pad", S.pad([n + 12 for n in tones], BAR, attack=0.01, release=0.2, cutoff=5200), t0, 0.55)
+        for s4 in range(4):
+            place("pad", S.pad([n + 24 for n in tones[:3]], BEAT * 0.38, attack=0.003, release=0.08, cutoff=7000), t0 + (s4 + 0.5) * BEAT, 0.3)
+        for b, m, L in S.HOOK[k % 4]:
+            place("lead", S.lead(m, L * BEAT * 0.92), t0 + b * BEAT, 0.7)
+            place("lead", S.lead(m + 12, L * BEAT * 0.92), t0 + b * BEAT, 0.28)
+        if k >= 4:
+            place("choir", S.choir([tones[0] + 12, tones[1] + 12, tones[2] + 12, tones[0] + 24], BAR), t0, 0.8)
+    place("fx", C.crash(3.0), bar(0), 0.5)
 
+    # "Am pornit din Timișoara…": a two-bar build, the box opening, into the last hit on "Handly."
     for j in range(8):
         tbb = bar(8) + j * BEAT
         x = j / 8
-        place("keys", epiano(CHORDS[3][1] if j >= 4 else CHORDS[1][1], BEAT), tbb, 0.5 + 0.2 * x)
+        div = 1 if x < 0.4 else 2 if x < 0.75 else 4
+        for q in range(div):
+            place("drums", kick, tbb + q * BEAT / div, 0.55 + 0.45 * x)
+            duck(tbb + q * BEAT / div, 0.6, 0.08)
         for q in range(2 if x < 0.5 else 4):
-            place("drums", kick, tbb + q * BEAT / (2 if x < 0.5 else 4), 0.5 + 0.4 * x)
-            duck(tbb + q * BEAT / (2 if x < 0.5 else 4), 0.5, 0.08)
-        place("drums", clap, tbb + BEAT / 2, 0.25 + 0.4 * x)
-    place("fx", C.riser(2 * BAR, 300, 13000), bar(8), 0.5)
+            place("drums", S.bigclap(), tbb + q * BEAT / (2 if x < 0.5 else 4), 0.15 + 0.5 * x)
+        for q in range(4):
+            place("pluck", S.pluck([67, 70, 74, 79][q] + 12 * (j // 4), 0.25, 0.08), tbb + q * BEAT / 4, 0.35 + 0.35 * x)
+        place("bass", S.dbass(31 + (12 if x > 0.75 else 0), BEAT - 0.03), tbb, 0.55 + 0.3 * x)
+    place("fx", C.riser(2 * BAR, 250, 14000), bar(8), 0.7)
+    place("pad", S.pad([43, 50, 55, 58, 62], 2 * BAR, attack=1.6, release=0.05, cutoff=3000), bar(8), 0.6)
 
     hit = bar(10)
     ring = END - hit
-    place("keys", epiano([57, 60, 64, 69, 72, 76], ring - 0.6), hit, 1.0)
-    place("keys", S.pad([57, 64, 69, 72, 76], ring - 0.8, attack=0.01, release=1.4, cutoff=4500), hit, 0.45)
-    place("bass", C.bass_note(33, ring - 0.5, attack=0.005, release=1.5), hit, 0.85)
-    place("drums", kick, hit, 1.1)
+    place("pad", S.pad([55, 58, 62, 67, 70, 74], ring - 0.8, attack=0.01, release=1.4, cutoff=4200), hit, 0.9)
+    place("choir", S.choir([67, 70, 74], ring - 0.8, attack=0.05), hit, 0.9)
+    place("bass", C.bass_note(31, ring - 0.5, attack=0.005, release=1.6), hit, 0.9)
+    place("drums", stomp, hit, 1.2)
     place("drums", clap, hit, 0.8)
-    place("fx", C.crash(3.5), hit, 0.45)
-    place("lead", chop(81, 0.9), hit, 0.6)
-    place("lead", chop(76, 0.9), hit + 0.03, 0.4)
+    place("fx", C.crash(4.0), hit, 0.7)
 
-    B["bass"] *= chain[None, :]
-    B["keys"] *= chain[None, :] ** 0.5
-    wet = C.reverb(B["keys"] * 0.3 + B["lead"] * 0.4 + B["drums"] * 0.1 + B["fx"] * 0.3, C.IR_HALL)[:, :N]
-    delay = C.delay_pingpong(B["lead"], BEAT * 0.75, feedback=0.3, taps=4)[:, :N]
-    mix = B["drums"] * 0.9 + B["bass"] * 0.75 + B["keys"] * 0.7 + B["lead"] * 0.65 + delay * 0.2 + B["fx"] * 0.5 + wet * 0.3
-    return np.tanh(mix * 1.1) / 1.1, hit
+    for k in ("bass", "pad", "choir", "pluck"):
+        B[k] *= chain[None, :] ** (1.0 if k == "bass" else 0.6)
+    wet = C.reverb(B["drums"] * 0.18 + B["pad"] * 0.35 + B["lead"] * 0.35 + B["choir"] * 0.6 + B["pluck"] * 0.5 + B["fx"] * 0.4, C.IR_HALL)[:, :N]
+    delay = C.delay_pingpong(B["lead"], BEAT * 0.75, feedback=0.32, taps=4)[:, :N]
+    mix = B["drums"] * 0.9 + B["bass"] * 0.7 + B["pad"] * 0.55 + B["lead"] * 0.62 + delay * 0.18 + B["choir"] * 0.55 + B["pluck"] * 0.5 + B["fx"] * 0.5 + wet * 0.32
+    return np.tanh(mix * 1.15) / 1.15, hit
 
 
 def main():
@@ -174,10 +148,17 @@ def main():
     scenes = [T("orice") - 0.3, T("s0") - 0.15, T("tot") - 0.15, T("alegi") - 0.2, T("daca") - 0.2, T("pornit") - 0.2]
     for at in scenes:
         C.place(sfx, X.whoosh(), at, 0.35)
-    for key in ("s0", "s1", "s2", "s3", "s4", "s5"):
-        C.place(sfx, X.pop(), T(key) - 0.1, 0.35)
-    C.place(sfx, X.pop(), T("s6", 3) - 0.2, 0.35)
-    C.place(sfx, X.suck(), T("tot") + 0.1, 0.4)
+    for key in ("s0", "s1", "s2", "s3", "s4", "s5", "s6"):
+        clip, off = X.cut()
+        C.place(sfx, clip, T(key) - 0.1 + off, 0.55)
+    for k in range(1, 2):
+        clip, off = X.slam()
+        C.place(sfx, clip, D + k * BEAT + off, 0.4)
+    for k in range(-4, 0):
+        clip, off = X.slam()
+        C.place(sfx, clip, hit + k * BEAT + off, 0.35)
+    C.place(sfx, X.suck(), T("pe", 1) - 0.4, 0.5)
+    C.place(sfx, X.shimmer(), T("pe", 1) - 0.2, 0.3)
     C.place(sfx, X.drop(), D, 0.9)
     for i in range(3):
         C.place(sfx, X.notif(), T("oferte", 6) - 0.2 + i * 0.2, 0.3)

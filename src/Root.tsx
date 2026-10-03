@@ -4,6 +4,7 @@ import { HandlyExplainer } from "./explainer/HandlyExplainer";
 import * as EX from "./explainer/timing";
 import { HandlyLaunch } from "./launch/HandlyLaunch";
 import { HandlyTimisoara } from "./tm/HandlyTimisoara";
+import { HandlyTimisoaraIso } from "./tm/HandlyTimisoaraIso";
 import * as TMT from "./tm/timeline";
 import * as LA from "./launch/timeline";
 import { DURATION_IN_FRAMES, FPS, HEIGHT, WIDTH } from "./constants";
@@ -35,7 +36,8 @@ export const Root: React.FC = () => {
         width={1080}
         height={1920}
       />
-      <Composition id="HandlyTimisoara" component={HandlyTimisoara} durationInFrames={TMT.TOTAL} fps={TMT.FPS} width={1920} height={1080} />
+      <Composition id="HandlyTimisoaraSketch" component={HandlyTimisoara} durationInFrames={TMT.TOTAL} fps={TMT.FPS} width={1920} height={1080} />
+      <Composition id="HandlyTimisoara" component={HandlyTimisoaraIso} durationInFrames={TMT.TOTAL} fps={TMT.FPS} width={1920} height={1080} />
       <Composition id="HandlyLaunch" component={HandlyLaunch} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
     </>
   );

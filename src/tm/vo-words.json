@@ -1,0 +1,537 @@
+{
+ "tm": {
+  "start": 0.07,
+  "end": 0.81,
+  "text": "Timișoara…",
+  "words": [
+   [
+    "Timișoara…",
+    0.07
+   ]
+  ]
+ },
+ "veste": {
+  "start": 1.18,
+  "end": 2.43,
+  "text": "avem o veste bună.",
+  "words": [
+   [
+    "avem",
+    1.18
+   ],
+   [
+    "o",
+    1.58
+   ],
+   [
+    "veste",
+    1.73
+   ],
+   [
+    "bună.",
+    2.05
+   ]
+  ]
+ },
+ "orice": {
+  "start": 3.55,
+  "end": 5.15,
+  "text": "Orice ai nevoie prin casă,",
+  "words": [
+   [
+    "Orice",
+    3.55
+   ],
+   [
+    "ai",
+    3.97
+   ],
+   [
+    "nevoie",
+    4.22
+   ],
+   [
+    "prin",
+    4.7
+   ],
+   [
+    "casă,",
+    4.8
+   ]
+  ]
+ },
+ "loc": {
+  "start": 5.25,
+  "end": 7.59,
+  "text": "de acum se rezolvă dintr-un singur loc.",
+  "words": [
+   [
+    "de",
+    5.25
+   ],
+   [
+    "acum",
+    5.52
+   ],
+   [
+    "se",
+    5.76
+   ],
+   [
+    "rezolvă",
+    6.1
+   ],
+   [
+    "dintr-un",
+    6.63
+   ],
+   [
+    "singur",
+    7.07
+   ],
+   [
+    "loc.",
+    7.49
+   ]
+  ]
+ },
+ "s0": {
+  "start": 7.99,
+  "end": 8.75,
+  "text": "Instalații.",
+  "words": [
+   [
+    "Instalații.",
+    7.99
+   ]
+  ]
+ },
+ "s1": {
+  "start": 8.97,
+  "end": 9.9,
+  "text": "Montat mobilă.",
+  "words": [
+   [
+    "Montat",
+    8.97
+   ],
+   [
+    "mobilă.",
+    9.4
+   ]
+  ]
+ },
+ "s2": {
+  "start": 10.05,
+  "end": 10.6,
+  "text": "Zugrăvit.",
+  "words": [
+   [
+    "Zugrăvit.",
+    10.05
+   ]
+  ]
+ },
+ "s3": {
+  "start": 10.85,
+  "end": 11.55,
+  "text": "Curățenie.",
+  "words": [
+   [
+    "Curățenie.",
+    10.85
+   ]
+  ]
+ },
+ "s4": {
+  "start": 11.7,
+  "end": 12.45,
+  "text": "Tuns iarba.",
+  "words": [
+   [
+    "Tuns",
+    11.7
+   ],
+   [
+    "iarba.",
+    12.03
+   ]
+  ]
+ },
+ "s5": {
+  "start": 12.6,
+  "end": 13.15,
+  "text": "Mutat.",
+  "words": [
+   [
+    "Mutat.",
+    12.6
+   ]
+  ]
+ },
+ "s6": {
+  "start": 13.35,
+  "end": 15.13,
+  "text": "Ba chiar și plimbat cățelul.",
+  "words": [
+   [
+    "Ba",
+    13.35
+   ],
+   [
+    "chiar",
+    13.66
+   ],
+   [
+    "și",
+    13.85
+   ],
+   [
+    "plimbat",
+    14.11
+   ],
+   [
+    "cățelul.",
+    14.54
+   ]
+  ]
+ },
+ "tot": {
+  "start": 15.59,
+  "end": 15.94,
+  "text": "Tot.",
+  "words": [
+   [
+    "Tot.",
+    15.59
+   ]
+  ]
+ },
+ "pe": {
+  "start": 16.26,
+  "end": 16.88,
+  "text": "Pe Handly.",
+  "words": [
+   [
+    "Pe",
+    16.26
+   ],
+   [
+    "Handly.",
+    16.46
+   ]
+  ]
+ },
+ "postezi": {
+  "start": 17.22,
+  "end": 19.58,
+  "text": "Postezi ce ai nevoie în mai puțin de un minut,",
+  "words": [
+   [
+    "Postezi",
+    17.22
+   ],
+   [
+    "ce",
+    17.7
+   ],
+   [
+    "ai",
+    17.7
+   ],
+   [
+    "nevoie",
+    17.93
+   ],
+   [
+    "în",
+    18.46
+   ],
+   [
+    "mai",
+    18.61
+   ],
+   [
+    "puțin",
+    18.63
+   ],
+   [
+    "de",
+    18.99
+   ],
+   [
+    "un",
+    19.1
+   ],
+   [
+    "minut,",
+    19.33
+   ]
+  ]
+ },
+ "oferte": {
+  "start": 19.76,
+  "end": 22.86,
+  "text": "iar taskeri verificați din Timișoara îți trimit oferte.",
+  "words": [
+   [
+    "iar",
+    19.76
+   ],
+   [
+    "taskeri",
+    20.01
+   ],
+   [
+    "verificați",
+    20.3
+   ],
+   [
+    "din",
+    21.04
+   ],
+   [
+    "Timișoara",
+    21.22
+   ],
+   [
+    "îți",
+    21.82
+   ],
+   [
+    "trimit",
+    22.06
+   ],
+   [
+    "oferte.",
+    22.34
+   ]
+  ]
+ },
+ "alegi": {
+  "start": 23.2,
+  "end": 23.78,
+  "text": "Tu alegi,",
+  "words": [
+   [
+    "Tu",
+    23.2
+   ],
+   [
+    "alegi,",
+    23.41
+   ]
+  ]
+ },
+ "platesti": {
+  "start": 23.97,
+  "end": 25.12,
+  "text": "plătești în siguranță",
+  "words": [
+   [
+    "plătești",
+    23.97
+   ],
+   [
+    "în",
+    24.33
+   ],
+   [
+    "siguranță",
+    24.56
+   ]
+  ]
+ },
+ "urmaresti": {
+  "start": 25.29,
+  "end": 27.26,
+  "text": "și urmărești totul din aplicație.",
+  "words": [
+   [
+    "și",
+    25.29
+   ],
+   [
+    "urmărești",
+    25.53
+   ],
+   [
+    "totul",
+    26.11
+   ],
+   [
+    "din",
+    26.33
+   ],
+   [
+    "aplicație.",
+    26.67
+   ]
+  ]
+ },
+ "daca": {
+  "start": 27.63,
+  "end": 29.22,
+  "text": "Și dacă știi să faci ceva,",
+  "words": [
+   [
+    "Și",
+    27.63
+   ],
+   [
+    "dacă",
+    27.78
+   ],
+   [
+    "știi",
+    28.26
+   ],
+   [
+    "să",
+    28.39
+   ],
+   [
+    "faci",
+    28.6
+   ],
+   [
+    "ceva,",
+    28.82
+   ]
+  ]
+ },
+ "castigi": {
+  "start": 29.42,
+  "end": 30.5,
+  "text": "câștigi din asta,",
+  "words": [
+   [
+    "câștigi",
+    29.42
+   ],
+   [
+    "din",
+    29.98
+   ],
+   [
+    "asta,",
+    30.19
+   ]
+  ]
+ },
+ "timp": {
+  "start": 30.72,
+  "end": 31.53,
+  "text": "când ai tu timp.",
+  "words": [
+   [
+    "când",
+    30.72
+   ],
+   [
+    "ai",
+    30.93
+   ],
+   [
+    "tu",
+    31.13
+   ],
+   [
+    "timp.",
+    31.29
+   ]
+  ]
+ },
+ "pornit": {
+  "start": 31.97,
+  "end": 33.47,
+  "text": "Am pornit din Timișoara.",
+  "words": [
+   [
+    "Am",
+    31.97
+   ],
+   [
+    "pornit",
+    32.2
+   ],
+   [
+    "din",
+    32.57
+   ],
+   [
+    "Timișoara.",
+    32.68
+   ]
+  ]
+ },
+ "curand": {
+  "start": 33.76,
+  "end": 35.66,
+  "text": "În curând, în toate orașele.",
+  "words": [
+   [
+    "În",
+    33.76
+   ],
+   [
+    "curând,",
+    33.97
+   ],
+   [
+    "în",
+    34.43
+   ],
+   [
+    "toate",
+    34.52
+   ],
+   [
+    "orașele.",
+    34.84
+   ]
+  ]
+ },
+ "handly": {
+  "start": 36.12,
+  "end": 36.6,
+  "text": "Handly.",
+  "words": [
+   [
+    "Handly.",
+    36.12
+   ]
+  ]
+ },
+ "cta": {
+  "start": 36.9,
+  "end": 39.39,
+  "text": "Descarcă aplicația și hai să rezolvăm.",
+  "words": [
+   [
+    "Descarcă",
+    36.9
+   ],
+   [
+    "aplicația",
+    37.53
+   ],
+   [
+    "și",
+    38.21
+   ],
+   [
+    "hai",
+    38.48
+   ],
+   [
+    "să",
+    38.7
+   ],
+   [
+    "rezolvăm.",
+    38.89
+   ]
+  ]
+ }
+}

@@ -91,6 +91,8 @@ def main():
             clip, off = X.charge(M["brk"] - cue["t"]), 0.0
         elif k == "calm":
             clip, off = X.calm(D - cue["t"]), 0.0
+        elif k == "glide":
+            clip, off = X.glide((M["brk"] - cue["t"]) * 0.4 + 0.3), 0.0
         elif k == "roll":
             clip, off = X.roll(D - cue["t"]), 0.0
         else:

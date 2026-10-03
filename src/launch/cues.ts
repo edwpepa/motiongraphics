@@ -110,9 +110,8 @@ export const cues = (): Cue[] => {
   add(w("muncesti", 2) - 4, "tick");
   add(w("muncesti", 2) + 2, "zip");
   add(S.C5_END, "charge");
-  add(S.C5_END, "zoom", 1);
-  add(S.C5_END + Math.round((BREAK - S.C5_END) * 0.4), "cut", 1);
-  add(S.C5_END + Math.round((BREAK - S.C5_END) * 0.4), "release", 0.7);
+  add(S.C5_END, "glide", 1);
+  add(S.C5_END + Math.round((BREAK - S.C5_END) * 0.4), "ignite", 1);
   S.HEARTBEATS.forEach((f) => add(f, "heart"));
   add(BREAK - 12, "suck");
   add(w("handly", 0) - 4, "shimmer");

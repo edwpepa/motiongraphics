@@ -414,6 +414,30 @@ def calm(dur):
     return C.stereo_sweep(out, -0.15, 0.15)
 
 
+def glide(dur):
+    """A smooth airy whoosh that swells with the arrow's run and settles as it lands."""
+    t = T(dur)
+    x = t / dur
+    shape = np.sin(np.pi * np.clip(x, 0, 1)) ** 1.4
+    nb = int(math.ceil(len(t) / 256))
+    xb = np.linspace(0, 1, nb)
+    centers = 300 + 2600 * np.sin(np.pi * xb) ** 1.5
+    n = C.swept(noise(dur), "bandpass", [(c * 0.6, c * 1.5) for c in centers])
+    tone = np.sin(2 * np.pi * np.cumsum(110 + 110 * np.sin(np.pi * x) ** 2) / SR) * 0.25
+    y = (norm(n) * 0.7 + tone) * shape
+    return C.stereo_sweep(norm(y) * 0.6, -0.7, 0.2)
+
+
+def ignite():
+    """The ring powering on: a warm, deep swell (no click), with a soft airy shimmer on top."""
+    t = T(2.0)
+    f = 55 + 30 * np.exp(-t / 0.25)
+    body = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.clip(t / 0.03, 0, 1) * np.exp(-t / 0.7)
+    warm = sum(np.sin(2 * np.pi * C.midi(m) * t) for m in (43, 50, 55)) * np.clip(t / 0.08, 0, 1) * np.exp(-t / 0.6) * 0.25
+    air = C.filt(noise(2.0), "bandpass", (2500, 7000), 2) * np.clip(t / 0.05, 0, 1) * np.exp(-t / 0.35) * 0.12
+    return verb(norm(body + warm + air) * 0.8, 0.45)
+
+
 def heart():
     out = np.zeros(int(0.5 * SR))
     for d, g in ((0.0, 1.0), (0.17, 0.7)):
@@ -492,7 +516,7 @@ def charge(dur):
     return C.stereo_sweep(y, -0.2, 0.2) + st(C.filt(y, "lowpass", 200)) * 0.0
 
 
-KINDS = {k: v for k, v in globals().items() if callable(v) and k not in ("T", "st", "verb", "norm", "noise", "sweep_tone", "impact", "charge", "calm", "roll", "shepard", "boom808")}
+KINDS = {k: v for k, v in globals().items() if callable(v) and k not in ("T", "st", "verb", "norm", "noise", "sweep_tone", "impact", "charge", "calm", "roll", "shepard", "boom808", "glide")}
 
 GAIN = {
     "bloom": 0.6, "air": 0.5, "wipe": 0.6, "drip": 0.22, "splash": 0.32, "roller": 0.5, "brush": 0.6, "thud": 0.7, "pop": 0.45,
@@ -500,5 +524,5 @@ GAIN = {
     "nope": 0.45, "cut": 0.75, "search": 0.4, "ring": 0.35, "tick": 0.35, "fall": 0.35, "bell": 0.42, "shimmer": 0.5,
     "drop": 1.0, "slam": 0.55, "zoom": 0.5, "tap": 0.45, "success": 0.5, "notif": 0.45, "select": 0.45, "expand": 0.45,
     "bubble": 0.4, "sent": 0.4, "lock": 0.5, "dissolve": 0.55, "step": 0.4, "release": 0.5, "morphhit": 0.55,
-    "spin": 0.5, "sparkle": 0.4, "coin": 0.3, "cash": 0.45, "click": 0.4, "zip": 0.4, "end": 1.0, "charge": 0.6, "calm": 0.6, "heart": 0.45, "roll": 0.8,
+    "spin": 0.5, "sparkle": 0.4, "coin": 0.3, "cash": 0.45, "click": 0.4, "zip": 0.4, "end": 1.0, "charge": 0.6, "calm": 0.6, "heart": 0.45, "roll": 0.8, "glide": 0.55, "ignite": 0.7,
 }

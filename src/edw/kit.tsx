@@ -198,13 +198,13 @@ export const Hero: React.FC<{ text: string; at: number; out: number; size?: numb
 };
 
 /** the logo, white, with a light sweep travelling across it */
-export const Logo: React.FC<{ width: number; sweep?: number; opacity?: number; style?: React.CSSProperties }> = ({ width, sweep = -1, opacity = 1, style }) => {
+export const Logo: React.FC<{ width: number; sweep?: number; opacity?: number; white?: boolean; style?: React.CSSProperties }> = ({ width, sweep = -1, opacity = 1, white, style }) => {
   const src = staticFile("images/edw-logo.png");
   const h = (width * 650) / 1792;
   const sx = -30 + 160 * sweep;
   return (
     <div style={{ position: "relative", width, height: h, opacity, ...style }}>
-      <Img src={src} style={{ position: "absolute", inset: 0, width, height: h, filter: "brightness(0.82) contrast(1.05)" }} />
+      <Img src={src} style={{ position: "absolute", inset: 0, width, height: h, filter: white ? "brightness(0) invert(1)" : "brightness(0.82) contrast(1.05)" }} />
       <div
         style={{
           position: "absolute",
@@ -231,8 +231,8 @@ export const CornerLogo: React.FC = () => {
     rng01(t, w("roof", 0) + 0.2, w("roof", 0) + 1.2, ease.inOutSine) * (1 - rng01(t, w("yours", 0) - 1.0, w("yours", 0) - 0.3, ease.inOutSine));
   if (o <= 0.001) return null;
   return (
-    <div style={{ position: "absolute", left: 64, top: BAR_H + 36, opacity: o * 0.8 }}>
-      <Logo width={104} />
+    <div style={{ position: "absolute", left: 64, top: BAR_H + 36, opacity: o }}>
+      <Logo width={104} white />
     </div>
   );
 };

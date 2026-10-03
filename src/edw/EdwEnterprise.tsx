@@ -6,7 +6,7 @@ import { BuildScene, CityScene, RoadScene } from "./act2";
 import { LogoScene } from "./act3";
 import { EndScene, IdeaScene, MessageScene } from "./act5";
 import { DareScene, DevicesScene, NetworkScene, ScopeScene, SplitScene } from "./act4";
-import { Captions, CornerLogo, FPS, Grade } from "./kit";
+import { Captions, CornerLogo, FPS, Grade, w } from "./kit";
 
 /** mounts children for [from, to) seconds */
 export const Shot: React.FC<{ from: number; to: number; children: React.ReactNode }> = ({ from, to, children }) => {
@@ -14,6 +14,9 @@ export const Shot: React.FC<{ from: number; to: number; children: React.ReactNod
   if (t < from || t >= to) return null;
   return <>{children}</>;
 };
+
+const MSG = w("write", 0) + 0.25;
+const FIN = w("yours", 0) - 0.05;
 
 export const EdwEnterprise: React.FC<{ audio?: boolean }> = ({ audio = true }) => {
   useExplainerFonts();
@@ -52,14 +55,14 @@ export const EdwEnterprise: React.FC<{ audio?: boolean }> = ({ audio = true }) =
       <Shot from={51.25} to={56.7}>
         <DevicesScene from={51.25} to={56.7} />
       </Shot>
-      <Shot from={56.7} to={59.95}>
-        <IdeaScene from={56.7} to={59.95} />
+      <Shot from={56.7} to={MSG}>
+        <IdeaScene from={56.7} to={MSG} />
       </Shot>
-      <Shot from={59.95} to={63.75}>
-        <MessageScene from={59.95} to={63.75} />
+      <Shot from={MSG} to={FIN}>
+        <MessageScene from={MSG} to={FIN} />
       </Shot>
-      <Shot from={63.75} to={70}>
-        <EndScene from={63.75} />
+      <Shot from={FIN} to={70}>
+        <EndScene from={FIN} />
       </Shot>
       <Grade />
       <CornerLogo />

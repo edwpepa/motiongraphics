@@ -722,7 +722,7 @@
  },
  "idea": {
   "start": 56.99,
-  "end": 59.38,
+  "end": 59.76,
   "text": "If you've got an idea you can't get out of your head,",
   "words": [
    [
@@ -731,7 +731,7 @@
    ],
    [
     "you've",
-    57.11
+    57.27
    ],
    [
     "got",
@@ -739,132 +739,132 @@
    ],
    [
     "an",
-    57.51
+    57.6
    ],
    [
     "idea",
-    57.81
+    57.86
    ],
    [
     "you",
-    58.09
+    58.33
    ],
    [
     "can't",
-    58.26
+    58.45
    ],
    [
     "get",
-    58.55
+    58.65
    ],
    [
     "out",
-    58.58
+    58.94
    ],
    [
     "of",
-    58.83
+    59.06
    ],
    [
     "your",
-    59.1
+    59.42
    ],
    [
     "head,",
-    59.14
+    59.63
    ]
   ]
  },
  "write": {
-  "start": 59.71,
-  "end": 60.39,
+  "start": 59.86,
+  "end": 60.55,
   "text": "write to us.",
   "words": [
    [
     "write",
-    59.71
+    59.86
    ],
    [
     "to",
-    59.97
+    60.11
    ],
    [
     "us.",
-    60.22
+    60.4
    ]
   ]
  },
  "best": {
-  "start": 60.75,
-  "end": 63.56,
+  "start": 60.94,
+  "end": 63.7,
   "text": "We build the best applications and software out there,",
   "words": [
    [
     "We",
-    60.75
+    60.94
    ],
    [
     "build",
-    61.0
+    61.16
    ],
    [
     "the",
-    61.13
+    61.3
    ],
    [
     "best",
-    61.44
+    61.61
    ],
    [
     "applications",
-    61.69
+    61.87
    ],
    [
     "and",
-    62.51
+    62.66
    ],
    [
     "software",
-    62.64
+    62.94
    ],
    [
     "out",
-    63.09
+    63.22
    ],
    [
     "there,",
-    63.35
+    63.45
    ]
   ]
  },
  "yours": {
-  "start": 63.81,
-  "end": 65.32,
+  "start": 63.97,
+  "end": 65.66,
   "text": "and we'd love to build yours.",
   "words": [
    [
     "and",
-    63.81
+    63.97
    ],
    [
     "we'd",
-    64.08
+    64.25
    ],
    [
     "love",
-    64.39
+    64.62
    ],
    [
     "to",
-    64.5
+    64.85
    ],
    [
     "build",
-    64.82
+    65.04
    ],
    [
     "yours.",
-    65.14
+    65.39
    ]
   ]
  }

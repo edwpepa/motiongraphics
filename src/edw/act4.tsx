@@ -286,59 +286,125 @@ export const ScopeScene: React.FC<{ from: number; to: number }> = ({ from, to })
   />
 );
 
-/** 42.45 – 46.6 s: "all of them with ideas that most companies wouldn't even dare to try." */
+/** 42.45 – 46.6 s: "all of them with ideas that most companies wouldn't even dare to try."
+ *  A floor of identical tiles in the dark. One lights up (an idea); a ripple runs out from it and every other tile
+ *  sinks into the black (most companies); the lit one rises out of the floor as a cube and the camera follows it up. */
 export const DareScene: React.FC<{ from: number; to: number }> = ({ from, to }) => {
-  const dareAt = w("dare", 8);
+  const textAt = w("dare", 10) - 0.12;
   return (
     <AbsoluteFill>
       <CanvasScene
         draw={(ctx, T) => {
           const t = T - from;
           const fade = rng01(t, 0, 0.3) * (1 - rng01(T, to - 0.25, to));
-          const idea = rng01(T, w("dare", 4) - 0.1, w("dare", 4) + 0.4, ease.outCubic);
-          const breakout = rng01(T, dareAt - 0.4, w("dare", 12) + 0.3, ease.inOut);
-          const dim = rng01(T, dareAt - 0.3, dareAt + 0.3);
-          const cols = 17, rows = 8, cw = 92, ch = 92, gap = 14;
-          const gx = W / 2 - (cols * (cw + gap) - gap) / 2, gy = H / 2 - (rows * (ch + gap) - gap) / 2;
-          const zoom = lerp(1.05, 0.95, t / 4);
-          ctx.save();
-          ctx.translate(W / 2, H / 2);
-          ctx.scale(zoom, zoom);
-          ctx.translate(-W / 2, -H / 2);
-          const hi = 8, hj = 3;
-          for (let j = 0; j < rows; j++)
-            for (let i = 0; i < cols; i++) {
-              if (i === hi && j === hj) continue;
-              const a = fade * clamp01((t - 0.05 - hash(i * 7 + j) * 0.5) / 0.3) * (1 - 0.6 * dim);
-              ctx.strokeStyle = `rgba(150,155,165,${0.35 * a})`;
-              ctx.fillStyle = `rgba(30,31,35,${0.6 * a})`;
-              ctx.lineWidth = 1.2;
-              ctx.beginPath();
-              ctx.roundRect(gx + i * (cw + gap), gy + j * (ch + gap), cw, ch, 10);
-              ctx.fill();
-              ctx.stroke();
-            }
-          ctx.restore();
-          // the one that dares: it lights up and leaves the grid, coming at us
-          const bx0 = W / 2 + (gx + hi * (cw + gap) + cw / 2 - W / 2) * zoom, by0 = H / 2 + (gy + hj * (ch + gap) + ch / 2 - H / 2) * zoom;
-          const bx = lerp(bx0, W / 2, breakout), by = lerp(by0, H / 2 - 40, breakout);
-          const s = (cw / 2) * zoom * lerp(1, 2.3, breakout);
+          const idea = rng01(T, w("dare", 4) - 0.1, w("dare", 4) + 0.35, ease.outCubic);
+          const rip0 = w("dare", 6) - 0.15;
+          const rise = rng01(T, w("dare", 8) - 0.35, w("dare", 12) + 0.15, ease.inOut);
+          const tryAt = w("dare", 12);
+          const COLS = 21, ROWS = 13, SP = 1.0, TS = 0.86;
+          const yaw = -0.5 + 0.11 * t + 0.25 * rise;
+          const pitch = lerp(-0.68, -0.22, rise);
+          const dist = 6.5;
+          const zoomS = lerp(105, 120, ease.inOut(t / 4)) * lerp(1, 1.9, rise);
+          const ty = 1.7 * rise;
+          const cyS = H / 2 + lerp(40, -40, rise);
+          const cam = (p: V3) => rotX(rotY([p[0], p[1] - ty, p[2]], yaw), pitch);
+          const P = (p: V3) => proj(cam(p), zoomS, dist, W / 2, cyS);
           ctx.globalAlpha = fade;
-          ctx.fillStyle = `rgb(${lerp(30, 240, idea)},${lerp(31, 242, idea)},${lerp(35, 248, idea)})`;
-          ctx.save();
-          ctx.translate(bx, by);
-          ctx.rotate(breakout * Math.PI * 0.5 * (1 - breakout * 0.5) * 0.5);
-          ctx.beginPath();
-          ctx.roundRect(-s, -s, 2 * s, 2 * s, 10 * (s / 46));
-          ctx.fill();
-          ctx.restore();
+          // the floor
+          type Q = { pts: { x: number; y: number }[]; z: number; c: number; e: number };
+          const quads: Q[] = [];
+          for (let j = 0; j < ROWS; j++)
+            for (let i = 0; i < COLS; i++) {
+              const x = (i - (COLS - 1) / 2) * SP, z = (j - (ROWS - 1) / 2) * SP;
+              if (i === (COLS - 1) / 2 && j === (ROWS - 1) / 2) continue;
+              const d = Math.hypot(x, z);
+              const appear = ease.outCubic((t - 0.05 - d * 0.05) / 0.6);
+              if (appear <= 0) continue;
+              const front = (T - rip0) * 7.5;
+              const hitW = Math.exp(-((d - front) ** 2) / 0.5) * (T > rip0 ? 1 : 0);
+              const sink = ease.inCubic(clamp01((T - rip0 - d / 7.5) / 0.9));
+              const y = lerp(-0.8, 0, appear) + 0.025 * Math.sin(T * 2.2 + i * 0.6 + j * 0.4) + 0.22 * hitW - 1.6 * sink;
+              const h = TS / 2;
+              const corners = [[x - h, y, z - h], [x + h, y, z - h], [x + h, y, z + h], [x - h, y, z + h]] as V3[];
+              if (corners.some((cp) => cam(cp)[2] < -dist + 0.8)) continue;
+              const pts = corners.map(P);
+              const lit = 120 * Math.exp(-d / 2.0) * idea * (1 - 0.6 * rise);
+              const c = (22 + lit + 55 * hitW) * (1 - 0.85 * sink) * appear;
+              quads.push({ pts, z: cam([x, y, z])[2], c, e: (0.3 + 0.7 * hitW) * (1 - sink) * appear });
+            }
+          quads.sort((a, b) => b.z - a.z);
+          ctx.lineWidth = 1.1;
+          for (const q of quads) {
+            ctx.fillStyle = `rgb(${q.c},${q.c + 1},${q.c + 4})`;
+            ctx.strokeStyle = `rgba(190,195,205,${0.3 * q.e})`;
+            ctx.beginPath();
+            q.pts.forEach((p, k) => (k ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+          }
+          // the shock ring on the floor as it breaks free
+          const ring = rng01(T, rip0, rip0 + 1.6, ease.outCubic);
+          if (ring > 0 && ring < 1) {
+            ctx.strokeStyle = `rgba(240,243,250,${(1 - ring) * 0.7})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let k = 0; k <= 64; k++) {
+              const a = (k / 64) * Math.PI * 2;
+              const p = P([Math.cos(a) * ring * 12, 0.02, Math.sin(a) * ring * 12]);
+              k ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
+            }
+            ctx.stroke();
+          }
+          // the one that dares: a lit tile that becomes a cube and rises
+          const cy = 0.03 + 2.2 * rise;
+          const hh = lerp(0.03, TS / 2, ease.outCubic(rise * 1.6));
+          const s = TS / 2 * lerp(1, 0.9, rise);
+          const spin = rise * Math.PI * 0.9 + Math.max(0, T - tryAt) * 0.6;
+          const tilt = rise * 0.45;
+          const V: V3[] = [];
+          for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) V.push(rotX(rotY([sx * s, sy * hh, sz * s], spin), tilt));
+          const Vw = V.map((v) => [v[0], v[1] + cy, v[2]] as V3);
+          const F = [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1], [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]];
+          const ctr = P([0, cy, 0]);
           ctx.globalCompositeOperation = "lighter";
-          glow(ctx, bx, by, s * 4, 0.35 * idea * fade);
+          glow(ctx, ctr.x, ctr.y, 3.2 * zoomS * ctr.k, 0.22 * idea);
+          ctx.globalCompositeOperation = "source-over";
+          const faces = F.map((f) => {
+            const c = f.map((k) => cam(Vw[k]));
+            const ux = c[1][0] - c[0][0], uy = c[1][1] - c[0][1], uz = c[1][2] - c[0][2];
+            const vx = c[3][0] - c[0][0], vy = c[3][1] - c[0][1], vz = c[3][2] - c[0][2];
+            const n: V3 = [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx];
+            const m = Math.hypot(...n) || 1;
+            const z = (c[0][2] + c[1][2] + c[2][2] + c[3][2]) / 4;
+            const cc = cam([0, cy, 0]);
+            const fcx = (c[0][0] + c[2][0]) / 2, fcy = (c[0][1] + c[2][1]) / 2, fcz = (c[0][2] + c[2][2]) / 2;
+            const vis = (fcx - cc[0]) * fcx + (fcy - cc[1]) * fcy + (fcz - cc[2]) * (fcz + dist) < 0;
+            return { f, n: [n[0] / m, n[1] / m, n[2] / m] as V3, z, vis };
+          }).filter((o) => o.vis);
+          for (const fc of faces) {
+            const lit = clamp01(0.55 + 0.45 * Math.abs(-0.4 * fc.n[0] + 0.7 * fc.n[1] - 0.6 * fc.n[2]));
+            const v = Math.round(lerp(40, 255, idea) * lit);
+            const pts = fc.f.map((k) => P(Vw[k]));
+            ctx.fillStyle = `rgb(${v},${v},${Math.min(255, v + 4)})`;
+            ctx.strokeStyle = `rgba(255,255,255,${0.9 * idea})`;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            pts.forEach((p, k) => (k ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+          }
+          ctx.globalCompositeOperation = "lighter";
+          if (idea > 0 && idea < 1) flare(ctx, ctr.x, ctr.y, Math.sin(Math.PI * idea) * 0.8, 900, 50);
+          const hit = rng01(T, tryAt, tryAt + 0.7, ease.outCubic);
+          if (hit > 0 && hit < 1) flare(ctx, ctr.x, ctr.y, (1 - hit) * 0.9, 1300, 90);
           ctx.globalCompositeOperation = "source-over";
           ctx.globalAlpha = 1;
         }}
       />
-      <Hero text="DARE TO TRY." at={dareAt - 0.05} out={to - 0.4} size={140} y={H / 2 + 230} tracking={0.2} />
+      <Hero text="DARE TO TRY." at={textAt} out={to - 0.4} size={120} y={H / 2 + 250} tracking={0.24} />
     </AbsoluteFill>
   );
 };

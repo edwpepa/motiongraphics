@@ -13,7 +13,7 @@ PIECES = [
     ("edw-vo1.mp3", 0.0, 12.30, 1.40),
     ("edw-vo2.mp3", 0.0, 15.40, 14.00),
     ("edw-vo2.mp3", 16.20, 40.40, 31.60),
-    ("edw-vo2.mp3", 40.40, 49.16, 56.80),
+    ("edw-vo3.mp3", 0.0, 8.83, 56.84),  # the radio take of the closing lines
 ]
 # key, piece, src start, src end, text
 PHRASES = [
@@ -36,10 +36,10 @@ PHRASES = [
     ("room", 2, 31.28, 33.58, "When you put minds like that in the same room,"),
     ("build", 2, 33.91, 35.60, "there's very little they can't build,"),
     ("apps", 2, 35.94, 40.15, "from mobile apps and web platforms to custom hardware made for your project."),
-    ("idea", 3, 40.59, 42.98, "If you've got an idea you can't get out of your head,"),
-    ("write", 3, 43.31, 43.99, "write to us."),
-    ("best", 3, 44.35, 47.16, "We build the best applications and software out there,"),
-    ("yours", 3, 47.41, 48.92, "and we'd love to build yours."),
+    ("idea", 3, 0.15, 2.92, "If you've got an idea you can't get out of your head,"),
+    ("write", 3, 3.02, 3.71, "write to us."),
+    ("best", 3, 4.10, 6.86, "We build the best applications and software out there,"),
+    ("yours", 3, 7.13, 8.82, "and we'd love to build yours."),
 ]
 SYL = {"edw": 5, "enterprise,": 3, "everyone": 3, "nobody": 3, "people": 2, "specialists,": 4, "technicians": 3,
        "applications": 4, "companies": 3, "platforms": 2, "hardware": 2, "software": 2, "history": 3, "custom": 2}

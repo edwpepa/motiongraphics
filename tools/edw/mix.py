@@ -74,7 +74,7 @@ def stac(m, dur=0.13):
 
 def drone(notes, dur, cutoff=700, attack=2.0):
     p = S.pad(notes, dur, attack=attack, release=1.5, cutoff=cutoff)
-    t = tt(p.shape[1] / SR)
+    t = np.arange(p.shape[1]) / SR
     lfo = 0.8 + 0.2 * np.sin(2 * np.pi * 0.15 * t)
     return p * lfo[None, :]
 
@@ -251,6 +251,46 @@ def build_score():
     return np.tanh(mix * 1.1) / 1.1
 
 
+def tx_in(f1=1250, f2=1850, static=0.22):
+    """Radio key-up: a click, a short burst of squelch static, then a quick rising chirp."""
+    d = static + 0.2
+    t = tt(d)
+    y = np.zeros(len(t))
+    k = int(0.006 * SR)
+    y[:k] += rng.standard_normal(k) * np.exp(-np.arange(k) / (0.0015 * SR)) * 1.2
+    ns = int(static * SR)
+    crackle = (rng.random(ns) < 0.02) * rng.standard_normal(ns) * 3
+    stat = C.filt(rng.standard_normal(ns) + crackle, "bandpass", (900, 4200), 2) * np.clip(np.arange(ns) / (0.01 * SR), 0, 1) * np.clip((ns - np.arange(ns)) / (0.04 * SR), 0, 1)
+    y[k:k + ns] += stat[: len(y) - k] * 0.6
+    c0 = k + ns
+    tc = tt(0.09)
+    chirp = np.sin(2 * np.pi * np.cumsum(f1 + (f2 - f1) * (tc / 0.09)) / SR) * np.sin(np.pi * tc / 0.09) ** 0.5
+    y[c0:c0 + len(tc)] += chirp[: len(y) - c0] * 0.45
+    y = C.filt(y, "bandpass", (300, 5000), 2)
+    return X.verb(X.st(norm(y) * 0.7), 0.12, C.IR_ROOM)
+
+
+def tx_out(f1=1500, f2=1000, tail=0.3):
+    """Radio un-key: a falling two-tone roger beep, then the squelch tail hissing off and a click."""
+    d = 0.2 + tail + 0.05
+    t = tt(d)
+    y = np.zeros(len(t))
+    for i, f in enumerate((f1, f2)):
+        tb = tt(0.075)
+        b = np.sin(2 * np.pi * f * tb) * np.clip(tb / 0.004, 0, 1) * np.clip((0.075 - tb) / 0.006, 0, 1)
+        i0 = int(i * 0.085 * SR)
+        y[i0:i0 + len(tb)] += b * 0.5
+    i0 = int(0.19 * SR)
+    nt = int(tail * SR)
+    hiss = C.filt(rng.standard_normal(nt), "bandpass", (1500, 6500), 2) * np.exp(-np.arange(nt) / (tail * 0.35 * SR))
+    y[i0:i0 + nt] += hiss * 0.7
+    k = int(0.005 * SR)
+    j = min(len(y) - k, i0 + nt)
+    y[j:j + k] += rng.standard_normal(k) * np.exp(-np.arange(k) / (0.001 * SR))
+    y = C.filt(y, "bandpass", (300, 6000), 2)
+    return X.verb(X.st(norm(y) * 0.7), 0.12, C.IR_ROOM)
+
+
 # ------------------------------------------------------------------ sound design over the picture
 def build_sfx():
     s = np.zeros((2, N))
@@ -296,12 +336,17 @@ def build_sfx():
     P(C.reverse_swell(0.5), T("write", 0) - 0.3, 0.5)
     P(X.impact(0.6, 0.8), T("write", 0) + 0.2, 0.5)
     msg = "I have an idea I can't get out of my head."
-    t0, t1 = 59.95 + 0.35, T("best", 6)
+    t0, t1 = T("write", 0) + 0.25 + 0.35, T("best", 6)
     for i, ch in enumerate(msg):
         if ch != " ":
             P(X.key(), t0 + (t1 - t0) * i / len(msg), 0.25)
     P(X.click(), T("best", 8) + 0.2, 0.7)
     P(X.sent(), T("best", 8) + 0.25, 0.7)
+    # the radio voice: keyed in before each transmission, keyed out after (each pair a little different)
+    P(tx_in(1250, 1850, 0.22), T("born", 0) - 0.5, 1.0)
+    P(tx_out(1500, 1000, 0.3), W["spark"]["end"] + 0.12, 1.0)
+    P(tx_in(980, 1600, 0.3), T("idea", 0) - 0.55, 1.0)
+    P(tx_out(1320, 880, 0.45), W["yours"]["end"] + 0.12, 1.0)
     return s
 
 

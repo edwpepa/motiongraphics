@@ -81,7 +81,7 @@ function people() {
 }
 
 /** 29.4 – 36.7 s: silence, beams in the fog, BRAAM — "At EDW ENTERPRISE, we decided to bring those people together under one roof." */
-export const LogoScene: React.FC<{ from: number; to: number }> = ({ from, to }) => {
+export const LogoScene: React.FC<{ from: number; to: number; roofOnly?: boolean }> = ({ from, to, roofOnly }) => {
   const T = useT();
   const R = w("edw", 0) - 0.02;
   const reveal = rng01(T, R, R + 0.55, ease.outCubic);
@@ -99,6 +99,7 @@ export const LogoScene: React.FC<{ from: number; to: number }> = ({ from, to }) 
           const post = reveal * (1 - up * 0.6);
           ctx.globalCompositeOperation = "lighter";
           fog(ctx, T, 0.6 + 0.8 * post, H * 0.62);
+          if (!roofOnly) {
           for (const s of [-1, 1]) {
             const ang = s * (0.42 - 0.3 * ease.inOut(t / 2.4)) + Math.sin(T * 0.9 + s) * 0.06;
             const outw = ease.inOutSine(clamp01((T - R) / 2.6));
@@ -122,6 +123,7 @@ export const LogoScene: React.FC<{ from: number; to: number }> = ({ from, to }) 
             const x = (hash(i) * W + T * 8 * (hash(i + 3) - 0.5) * 6 + W) % W;
             const y = (hash(i + 1.7) * H - T * 12 * hash(i + 9) + H * 4) % H;
             glow(ctx, x, y, 3 + 3 * hash(i + 5), 0.35 * (pre + post) * (0.5 + 0.5 * Math.sin(T * 2 + i)));
+          }
           }
           ctx.globalCompositeOperation = "source-over";
           // the people, gathering under one roof
@@ -175,7 +177,7 @@ export const LogoScene: React.FC<{ from: number; to: number }> = ({ from, to }) 
           }
         }}
       />
-      {T >= R - 0.05 && (
+      {!roofOnly && T >= R - 0.05 && (
         <div
           style={{
             position: "absolute",

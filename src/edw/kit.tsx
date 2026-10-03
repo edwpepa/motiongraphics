@@ -229,8 +229,8 @@ export const CornerLogo: React.FC = () => {
   const R = w("edw", 0);
   const o =
     rng01(t, 1.2, 2.4, ease.inOutSine) *
-    (1 - rng01(t, R - 1.0, R - 0.4, ease.inOutSine)) +
-    rng01(t, w("roof", 0) + 0.2, w("roof", 0) + 1.2, ease.inOutSine) * (1 - rng01(t, w("yours", 0) - 1.0, w("yours", 0) - 0.3, ease.inOutSine));
+    (1 - rng01(t, 28.9, 29.4, ease.inOutSine)) +
+    rng01(t, w("roof", 0) + 0.5, w("roof", 0) + 1.3, ease.inOutSine) * (1 - rng01(t, w("yours", 0) - 1.0, w("yours", 0) - 0.3, ease.inOutSine));
   if (o <= 0.001) return null;
   return (
     <div style={{ position: "absolute", left: 64, top: BAR_H + 36, opacity: o }}>

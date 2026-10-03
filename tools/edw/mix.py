@@ -291,6 +291,15 @@ def tx_out(f1=1500, f2=1000, tail=0.3):
     return X.verb(X.st(norm(y) * 0.7), 0.12, C.IR_ROOM)
 
 
+def shing():
+    """A metallic glint: a bright inharmonic ring with a breath of air, for light running along an edge."""
+    d = 1.6
+    t = tt(d)
+    ring = sum(np.sin(2 * np.pi * f * t + rng.uniform(0, 6)) * g for f, g in ((2350, 1.0), (3710, 0.6), (5230, 0.4), (6890, 0.25))) * np.exp(-t / 0.45)
+    air = C.filt(rng.standard_normal(len(t)), "bandpass", (3000, 11000), 2) * np.sin(np.pi * np.clip(t / 0.5, 0, 1)) * 0.6
+    return X.verb(C.stereo_sweep(norm(ring * 0.5 + air) * 0.5, -0.5, 0.5), 0.6)
+
+
 # ------------------------------------------------------------------ sound design over the picture
 def build_sfx():
     s = np.zeros((2, N))
@@ -342,6 +351,21 @@ def build_sfx():
             P(X.key(), t0 + (t1 - t0) * i / len(msg), 0.25)
     P(X.click(), T("best", 8) + 0.2, 0.7)
     P(X.sent(), T("best", 8) + 0.25, 0.7)
+    # the 3D logo: a glint on every macro pass, a hit on every cut, the big one on the full reveal
+    R2 = T("edw", 0) - 0.02
+    for at in (29.4, 30.25, 31.05):
+        P(shing(), at, 0.8)
+    for at in (30.25, 31.05):
+        clip, off = X.cut()
+        P(clip, at + off, 0.6)
+    fin = T("yours", 0) - 0.05
+    for at in (fin, fin + 0.63, fin + 1.23):
+        P(shing(), at, 0.7)
+    for at in (fin + 0.63, fin + 1.23):
+        clip, off = X.cut()
+        P(clip, at + off, 0.7)
+    P(X.impact(1.2, 1.0, 2.4), fin + 1.83, 0.9)
+    P(shing(), fin + 1.9, 0.6)
     # the radio voice: keyed in before each transmission, keyed out after (each pair a little different)
     P(tx_in(1250, 1850, 0.22), T("born", 0) - 0.5, 1.0)
     P(tx_out(1500, 1000, 0.3), W["spark"]["end"] + 0.12, 1.0)

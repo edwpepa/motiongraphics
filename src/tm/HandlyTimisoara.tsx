@@ -49,9 +49,11 @@ const S8 = pStart("handly") - 8;
 const Intro: React.FC = () => (
   <AbsoluteFill>
     <Paper />
-    <Cathedral at={2} speed={1.3} />
-    <Txt words={kw("tm")} size={120} on="white" y={150} ink={[C.ink, C.ink]} tint={GREEN_INK} out={pStart("veste") - 6} />
-    <Txt words={kw("veste", { color: { 2: GREEN_INK, 3: GREEN_INK } })} size={96} on="white" y={150} ink={[C.ink, C.ink]} tint={GREEN_INK} out={S1 - 4} />
+    <div style={{ position: "absolute", inset: 0, transform: "translateY(80px) scale(0.86)", transformOrigin: "50% 60%" }}>
+      <Cathedral at={2} speed={1.3} />
+    </div>
+    <Txt words={kw("tm")} size={110} on="white" y={120} ink={[C.ink, C.ink]} tint={GREEN_INK} out={pStart("veste") - 6} />
+    <Txt words={kw("veste", { color: { 2: GREEN_INK, 3: GREEN_INK } })} size={92} on="white" y={120} ink={[C.ink, C.ink]} tint={GREEN_INK} out={S1 - 4} />
   </AbsoluteFill>
 );
 
@@ -362,7 +364,7 @@ const MapScene: React.FC = () => {
               <g transform={`scale(${pop})`}>
                 <path d="M 0 0 C -30 -40, -30 -70, 0 -80 C 30 -70, 30 -40, 0 0 Z" fill={C.green} stroke={C.ink} strokeWidth={4} transform="translate(0 -4)" />
                 <circle cy={-58} r={10} fill="#fff" />
-                <text x={34} y={-50} fontFamily={FONT} fontWeight={BOLD} fontSize={40} fill={C.ink} letterSpacing="-0.03em">
+                <text x={-34} y={-50} textAnchor="end" fontFamily={FONT} fontWeight={BOLD} fontSize={40} fill={C.ink} letterSpacing="-0.03em">
                   Timișoara
                 </text>
               </g>
@@ -370,8 +372,8 @@ const MapScene: React.FC = () => {
           );
         })()}
       </svg>
-      <Txt words={kw("pornit", { color: { 3: GREEN_INK } })} size={80} on="white" y={120} ink={[C.ink, C.ink]} tint={GREEN_INK} out={pStart("curand") - 6} />
-      <Txt words={kw("curand", { color: { 3: GREEN_INK, 4: GREEN_INK } })} size={80} on="white" y={120} ink={[C.ink, C.ink]} tint={GREEN_INK} out={S8 - 4} />
+      <Txt words={kw("pornit", { color: { 3: GREEN_INK } })} size={76} on="white" y={110} ink={[C.ink, C.ink]} tint={GREEN_INK} out={pStart("curand") - 6} />
+      <Txt words={kw("curand", { color: { 3: GREEN_INK, 4: GREEN_INK } })} size={76} on="white" y={110} ink={[C.ink, C.ink]} tint={GREEN_INK} out={S8 - 4} />
     </AbsoluteFill>
   );
 };

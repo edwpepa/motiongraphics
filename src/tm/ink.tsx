@@ -4,7 +4,7 @@ import { clamp01, ease } from "../explainer/lib/anim";
 
 /** palette: warm paper, soft ink, watercolour washes */
 export const C = {
-  paper: "#f6f0e4",
+  paper: "#fbfaf6",
   ink: "#1f2a25",
   inkSoft: "#4a5650",
   green: "#22b76a",
@@ -23,7 +23,7 @@ export const InkDefs: React.FC = () => (
       {[0, 1, 2, 3, 4].map((s) => (
         <filter key={s} id={`boil${s}`} x="-10%" y="-10%" width="120%" height="120%">
           <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves={2} seed={s * 7 + 3} result="n" />
-          <feDisplacementMap in="SourceGraphic" in2="n" scale={3.2} xChannelSelector="R" yChannelSelector="G" />
+          <feDisplacementMap in="SourceGraphic" in2="n" scale={2.2} xChannelSelector="R" yChannelSelector="G" />
         </filter>
       ))}
       {[0, 1, 2].map((s) => (
@@ -48,9 +48,9 @@ export const useBoil = () => {
 
 /** warm paper with fibres and grain */
 export const Paper: React.FC<{ tint?: string }> = ({ tint }) => (
-  <AbsoluteFill style={{ background: `radial-gradient(ellipse 80% 90% at 50% 45%, #fbf7ee 0%, ${C.paper} 60%, #ebe2cf 100%)` }}>
+  <AbsoluteFill style={{ background: `radial-gradient(ellipse 85% 95% at 50% 45%, #ffffff 0%, ${C.paper} 65%, #f1eee6 100%)` }}>
     {tint && <AbsoluteFill style={{ background: tint }} />}
-    <AbsoluteFill style={{ backgroundImage: `url(${staticFile("images/grain.png")})`, backgroundSize: "512px 512px", opacity: 0.18, mixBlendMode: "multiply" }} />
+    <AbsoluteFill style={{ backgroundImage: `url(${staticFile("images/grain.png")})`, backgroundSize: "512px 512px", opacity: 0.07, mixBlendMode: "multiply" }} />
   </AbsoluteFill>
 );
 

@@ -4,11 +4,11 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { textWidth } from "../explainer/components/AppleText";
 import { Avatar } from "../explainer/components/Avatar";
 import { Glyph } from "../explainer/components/Icons";
-import { clamp01, ease, lerp, seeded } from "../explainer/lib/anim";
+import { clamp01, ease, lerp, mixColor, seeded } from "../explainer/lib/anim";
 import { BOLD, FONT } from "../explainer/theme";
 import { Bg, GREEN_GRAD, GREEN_INK, Label, Logo, MINT_INK, P, Shape, Txt, io } from "./kit";
 import { blob, mix, morphNamed, shape } from "./morph";
-import { absorbed, Vortex } from "./fx";
+import { absorbed, SERVICES, Vortex } from "./fx";
 import { DROP, F, kw, pEnd, pStart, w } from "./timeline";
 
 const CX = 960;
@@ -328,7 +328,7 @@ export const A5: React.FC = () => {
   const bat = clamp01((frame - (kNerves - 2)) / 6) * (1 - shrinkOf(frame, kAll));
   const level = lerp(0.85, 0.06, ease.inOutCubic(clamp01((frame - kNerves) / 22)));
   const shrink = ease.inOutCubic(clamp01((frame - (kAll - 6)) / 14));
-  const size = 360 * appear * (1 - 0.82 * shrink);
+  const size = 360 * appear * (1 - shrink);
   const clock = 1 - clamp01((frame - (kTools - 12)) / 5);
   const toolA = clamp01((frame - (kTools - 2)) / 6) * (1 - clamp01((frame - (kNerves - 10)) / 5));
   const lines: Array<[number, number, number]> = [
@@ -416,8 +416,8 @@ export const A6: React.FC = () => {
             const col = i % COLS;
             const row = Math.floor(i / COLS);
             if (day < 1 || day > 31) return null;
-            const r = clamp01(reach - day + 1);
-            const e = ease.outCubic(r);
+            const r = clamp01((reach - day + 1.6) / 1.6);
+            const e = ease.inOutCubic(r);
             const isToday = day === count + 1;
             return (
               <div
@@ -429,18 +429,18 @@ export const A6: React.FC = () => {
                   width: CW,
                   height: CH,
                   borderRadius: 34,
-                  background: e > 0 ? `linear-gradient(160deg, rgba(255,90,80,${0.1 + 0.22 * e}), rgba(120,10,10,${0.15 + 0.2 * e}))` : "linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025))",
-                  border: `1.5px solid ${e > 0 ? `rgba(255,110,100,${0.25 + 0.5 * e})` : isToday ? "rgba(185,255,214,0.8)" : "rgba(255,255,255,0.1)"}`,
-                  boxShadow: e > 0 ? `0 0 ${50 * e}px rgba(255,59,48,${0.35 * e})` : undefined,
+                  background: `linear-gradient(160deg, rgba(255,255,255,${0.08 * (1 - e)}), rgba(255,255,255,${0.025 * (1 - e)})), linear-gradient(160deg, rgba(255,69,58,${e}), rgba(215,20,12,${e}))`,
+                  border: `1.5px solid ${e > 0 ? `rgba(255,150,140,${0.2 + 0.6 * e})` : isToday ? "rgba(185,255,214,0.8)" : "rgba(255,255,255,0.1)"}`,
+                  boxShadow: e > 0 ? `0 0 ${60 * e}px rgba(255,59,48,${0.55 * e}), inset 0 1px 0 rgba(255,255,255,${0.35 * e})` : undefined,
                   transform: `translateZ(${e * -18 + (isToday ? 24 : 0)}px)`,
                   fontFamily: FONT,
                   fontWeight: BOLD,
                   overflow: "hidden",
                 }}
               >
-                <div style={{ position: "absolute", left: 22, top: 16, fontSize: 52, letterSpacing: "-0.04em", color: e > 0.5 ? "#ff7a70" : "#fff" }}>{day}</div>
-                <div style={{ position: "absolute", left: 22, bottom: 18, fontSize: 18, fontWeight: 500, color: e > 0.5 ? "rgba(255,150,140,0.9)" : "rgba(255,255,255,0.35)", opacity: e }}>amânat</div>
-                <div style={{ position: "absolute", left: 18, right: 18, top: 50, height: 4, borderRadius: 2, background: "#ff5a50", transformOrigin: "0 50%", transform: `scaleX(${clamp01((r - 0.3) / 0.7)}) rotate(-10deg)` }} />
+                <div style={{ position: "absolute", left: 22, top: 16, fontSize: 52, letterSpacing: "-0.04em", color: "#fff" }}>{day}</div>
+                <div style={{ position: "absolute", left: 22, bottom: 18, fontSize: 18, fontWeight: 500, color: "rgba(255,255,255,0.9)", opacity: e }}>amânat</div>
+                <div style={{ position: "absolute", left: 18, right: 18, top: 50, height: 4, borderRadius: 2, background: "#ffffff", transformOrigin: "0 50%", transform: `scaleX(${ease.inOutCubic(clamp01((r - 0.45) / 0.55))}) rotate(-10deg)` }} />
               </div>
             );
           })}
@@ -452,7 +452,7 @@ export const A6: React.FC = () => {
         <Label size={34} color="rgba(255,150,140,0.85)" weight={500}>
           Amânat de
         </Label>
-        <Label size={96} color="#ff6b61">
+        <Label size={96} color="#ff453a">
           {count}
         </Label>
         <Label size={34} color="rgba(255,150,140,0.85)" weight={500}>
@@ -468,20 +468,52 @@ export const A6: React.FC = () => {
 export const A7: React.FC = () => {
   const frame = useCurrentFrame();
   const t0 = A6_END;
-  // a loader that keeps going round and never finishes
   const a = io(frame, t0 + 2, A7_END, 10, 8);
-  const local = frame - t0;
-  const head = local * 9 + 120 * (1 - Math.cos(local / 9));
-  const len = 0.18 + 0.5 * (0.5 + 0.5 * Math.sin(local / 7));
+  // a loader that keeps going round… until, on "singur", it fails
+  const failAt = w("speri3", 2) - 2;
+  const spin = (f: number) => {
+    const l = f - t0;
+    return { head: l * 9 + 120 * (1 - Math.cos(l / 9)), len: 0.18 + 0.5 * (0.5 + 0.5 * Math.sin(l / 7)) };
+  };
+  const f1 = frame - failAt;
+  const live = f1 < 0;
+  const frozen = spin(Math.min(frame, failAt));
+  const jerk = f1 >= 0 ? Math.exp(-f1 / 3) * Math.sin(f1 * 2.2) * 8 : 0;
+  const red = clamp01(f1 / 6);
+  const col = live ? P.green : mixColor(P.green, "#ff3b30", red);
+  const shakeX = f1 >= 0 && f1 < 14 ? Math.sin(f1 * 3.1) * 6 * (1 - f1 / 14) : 0;
+  const breakT = f1 - 12;
+  const SEG = 6;
   return (
     <AbsoluteFill>
       <Bg kind="black" />
-      <svg width={300} height={300} viewBox="-60 -60 120 120" style={{ position: "absolute", left: CX - 150, top: CY - 250, opacity: a, transform: `scale(${0.8 + 0.2 * a})` }}>
-        <circle r={50} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={6} />
-        <circle r={50} fill="none" stroke={P.green} strokeWidth={7} strokeLinecap="round" pathLength={1} strokeDasharray={`${len} 1`} transform={`rotate(${head - 90})`} style={{ filter: "drop-shadow(0 0 6px rgba(0,191,99,0.6))" }} />
+      <svg width={420} height={600} viewBox="-84 -60 168 240" style={{ position: "absolute", left: CX - 210, top: CY - 250, opacity: a, transform: `translateX(${shakeX}px) scale(${0.8 + 0.2 * a})`, overflow: "visible" }}>
+        <circle r={50} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={6} opacity={1 - clamp01(breakT / 10)} />
+        {breakT < 0 ? (
+          <circle r={50} fill="none" stroke={col} strokeWidth={7} strokeLinecap="round" pathLength={1} strokeDasharray={`${live ? spin(frame).len : frozen.len} 1`} transform={`rotate(${(live ? spin(frame).head : frozen.head + jerk) - 90})`} style={{ filter: `drop-shadow(0 0 8px ${live ? "rgba(0,191,99,0.6)" : "rgba(255,59,48,0.7)"})` }} />
+        ) : (
+          Array.from({ length: SEG }, (_, i) => {
+            const segLen = frozen.len / SEG;
+            const ang = frozen.head - 90 + (i + 0.5) * segLen * 360;
+            const rad = (ang * Math.PI) / 180;
+            const u = breakT / 26;
+            const dx = Math.cos(rad) * 18 * u + (seeded(i, 1) - 0.5) * 30 * u;
+            const dy = Math.sin(rad) * 18 * u + 150 * u * u;
+            return (
+              <g key={i} transform={`translate(${dx} ${dy}) rotate(${(seeded(i, 2) - 0.5) * 120 * u} ${Math.cos(rad) * 50} ${Math.sin(rad) * 50})`} opacity={1 - clamp01((u - 0.6) / 0.4)}>
+                <circle r={50} fill="none" stroke="#ff3b30" strokeWidth={7} strokeLinecap="round" pathLength={1} strokeDasharray={`${segLen * 0.82} 1`} transform={`rotate(${frozen.head - 90 + i * segLen * 360})`} />
+              </g>
+            );
+          })
+        )}
+        {breakT > 2 && (
+          <g opacity={clamp01((breakT - 2) / 6)} transform={`scale(${ease.outBack(clamp01((breakT - 2) / 10))})`}>
+            <path d="M-14 -14 L14 14 M14 -14 L-14 14" stroke="#ff3b30" strokeWidth={7} strokeLinecap="round" />
+          </g>
+        )}
       </svg>
       <Txt words={[...kw("speri1"), ...kw("speri2")]} size={84} on="black" y={CY + 110} out={w("speri3", 0) - 6} />
-      <Txt words={kw("speri3", { color: { 2: MINT_INK } })} size={84} on="black" y={CY + 110} out={A7_END - 6} />
+      <Txt words={kw("speri3", { color: { 2: ["#ff8a80", "#ff3b30"] } })} size={84} on="black" y={CY + 110} out={A7_END - 6} />
     </AbsoluteFill>
   );
 };
@@ -674,12 +706,12 @@ export const A12: React.FC = () => {
   const gather = 1 - 0.12 * ease.inCubic(clamp01((frame - (A12_END - 8)) / 8));
   // every postponed chore gets pulled into the mark
   const VF = A10_END + 2;
-  const VS = 5;
-  const VT = 30;
-  const items = SHEET.slice(0, 15).map((label) => ({ kind: "pill" as const, label }));
+  const VS = 3;
+  const VT = 38;
+  const items = Array.from({ length: 24 }, (_, i) => ({ kind: "bubble" as const, icon: SERVICES[i % SERVICES.length].icon, d: 70 + Math.round(seeded(i, 7) * 110), tone: (i % 3) as 0 | 1 | 2 }));
   const ab = absorbed(frame, items.length, VF, VS, VT);
   const gulp = ab.since >= 0 && ab.since < 8 ? Math.sin((ab.since / 8) * Math.PI) * 0.12 : 0;
-  const size = (lerp(40 + 6 * ab.count, 340, grow) + 6 * Math.sin(frame / 6)) * dotIn * gather * (1 + gulp);
+  const size = (lerp(40 + 3.5 * ab.count, 340, grow) + 6 * Math.sin(frame / 6)) * dotIn * gather * (1 + gulp);
   const pts = frame < hand - 4 ? shape("circle") : morphNamed("circle", "logo", toLogo, 1.2, frame);
   const real = clamp01((frame - (hand + 8)) / 6);
   return (

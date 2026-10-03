@@ -37,7 +37,7 @@ export const Slam: React.FC<{ from: number; offset?: number; ro?: boolean; badge
   const i = (((kNow - k0 + offset) % SLAM.length) + SLAM.length) % SLAM.length;
   const s = SLAM[i];
   const zoomOut = zoomOutAt === undefined ? 0 : ease.inExpo(clamp01((frame - zoomOutAt) / 8));
-  const sc = punch(frame, Math.max(from, bt(kNow)), 0.1, 9) * (1 + 0.04 * clamp01((frame - from) / 60)) * (1 + 3 * zoomOut) * size;
+  const sc = punch(frame, Math.max(from, bt(kNow)), 0.08, 12) * (1 + 0.04 * clamp01((frame - from) / 60)) * (1 + 3 * zoomOut) * size;
   const sh = shakeAt === undefined ? { x: 0, y: 0 } : shake(frame, shakeAt);
   return (
     <AbsoluteFill style={{ transform: `translate(${sh.x}px, ${sh.y}px)` }}>

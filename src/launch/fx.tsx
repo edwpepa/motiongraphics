@@ -57,7 +57,7 @@ export const ServiceTile: React.FC<{ name: ServiceName; size: number; tone?: "gr
 };
 
 // ------------------------------------------------------------------ vortex: things spiral in and get absorbed
-export type VortexItem = { kind: "pill"; label: string } | { kind: "tile"; icon: ServiceName };
+export type VortexItem = { kind: "pill"; label: string } | { kind: "tile"; icon: ServiceName } | { kind: "bubble"; icon: ServiceName; d: number; tone: 0 | 1 | 2 } | { kind: "dot"; d: number };
 
 /**
  * Items fly in from all around on a tightening spiral and vanish into (cx, cy). Item i starts at
@@ -80,7 +80,7 @@ export const Vortex: React.FC<{ items: VortexItem[]; from: number; stagger: numb
         const start = from + i * stagger;
         const p = (frame - start) / travel;
         if (p < 0 || p >= 1) return null;
-        const e = ease.inCubic(p);
+        const e = p * p * (3 - 2 * p) * 0.35 + Math.pow(p, 2.2) * 0.65;
         const a0 = seeded(i, 3) * Math.PI * 2;
         const a = a0 + e * (2.2 + seeded(i, 4));
         const r = radius * (1 - e) * (0.8 + 0.3 * seeded(i, 5));
@@ -91,7 +91,24 @@ export const Vortex: React.FC<{ items: VortexItem[]; from: number; stagger: numb
         const blur = e > 0.6 ? (e - 0.6) * 10 : 0;
         return (
           <div key={i} style={{ position: "absolute", left: x, top: y, transform: `translate(-50%, -50%) scale(${sc}) rotate(${(1 - e) * (seeded(i, 6) - 0.5) * 50}deg)`, opacity: op, filter: blur > 0.3 ? `blur(${blur}px)` : undefined }}>
-            {it.kind === "pill" ? (
+            {it.kind === "bubble" ? (
+              <div
+                style={{
+                  width: it.d,
+                  height: it.d,
+                  borderRadius: "50%",
+                  background: it.tone === 0 ? "radial-gradient(circle at 35% 30%, #8dffc4 0%, #00bf63 55%, #008f49 100%)" : it.tone === 1 ? "radial-gradient(circle at 35% 30%, #ffffff 0%, #e2ebe6 100%)" : "radial-gradient(circle at 35% 30%, rgba(80,110,95,0.9) 0%, rgba(20,30,25,0.9) 100%)",
+                  boxShadow: `0 ${it.d * 0.12}px ${it.d * 0.35}px rgba(0,0,0,0.4), inset 0 ${it.d * 0.03}px 0 rgba(255,255,255,0.5), 0 0 ${it.d * 0.4}px rgba(0,191,99,0.25)`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <ServiceIcon name={it.icon} size={it.d * 0.48} color={it.tone === 1 ? P.green : "#ffffff"} weight={2.3} />
+              </div>
+            ) : it.kind === "dot" ? (
+              <div style={{ width: it.d, height: it.d, borderRadius: "50%", background: "radial-gradient(circle at 35% 30%, #d9ffe9, #2be38a 60%, #00a352)", boxShadow: `0 0 ${it.d}px rgba(0,191,99,0.7)` }} />
+            ) : it.kind === "pill" ? (
               <div style={{ padding: "16px 28px", borderRadius: 999, background: "rgba(30,40,35,0.85)", border: "1.5px solid rgba(185,255,214,0.35)", boxShadow: "0 0 30px rgba(0,191,99,0.25)", display: "flex", alignItems: "center", gap: 12, fontFamily: FONT, fontWeight: BOLD, fontSize: 40, color: "#fff", whiteSpace: "nowrap", letterSpacing: "-0.02em" }}>
                 <div style={{ width: 28, height: 28, borderRadius: 14, border: "3px solid rgba(255,255,255,0.5)" }} />
                 {it.label}

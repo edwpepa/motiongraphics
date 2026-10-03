@@ -611,8 +611,8 @@ const B8: React.FC = () => {
   const at = bt(k0 + i);
   const bg = MBG[i];
   const s = SERVICES[i];
-  const p = ease.outBack(clamp01((frame - at) / 8));
-  const sc = punch(frame, at, 0.14, 10);
+  const p = ease.outBack(clamp01((frame - at) / 12), 1.2);
+  const sc = punch(frame, at, 0.08, 14);
   const ink = bg === "white" ? P.ink : "#ffffff";
   return (
     <AbsoluteFill>

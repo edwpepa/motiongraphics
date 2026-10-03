@@ -13,7 +13,7 @@ import { morphNamed, shape, ShapeName } from "./morph";
 import { Slam } from "./slam";
 import { absorbed, Explosion, ServiceName, ServiceTile, SERVICES, Vortex } from "./fx";
 import { HEARTBEATS, SPLIT } from "./scenes";
-import { BEATS, BREAK, BRIDGE, DROP, END, END_HIT, F, FINAL, kw, pEnd, pStart, w } from "./timeline";
+import { BEATS, BREAK, BRIDGE, DROP, END, END_HIT, F, FINAL, kw, pEnd, pStart, w, words } from "./timeline";
 
 const CX = 960;
 const CY = 540;
@@ -23,19 +23,100 @@ const beatAt = (frame: number) => Math.floor((frame - D0 + 0.5) / BEATS);
 
 // ------------------------------------------------------------------ C1: not only for those who need help
 
+type PW = { text: string; i: number; x: number; y: number; size: number; color: string };
+
+/** lays the line out as a kinetic poster: big "Dar Handly", a huge "doar", the rest underneath */
+const posterLayout = (): { words: PW[]; logo: { x: number; y: number; s: number } } => {
+  const ws = words("dar").map(([t]) => t);
+  const rows: Array<{ idx: number[]; size: number; y: number; lead?: number }> = [
+    { idx: [0, 1], size: 130, y: -230, lead: 150 },
+    { idx: [2, 3, 4], size: 130, y: -20 },
+    { idx: [5, 6, 7, 8, 9, 10, 11], size: 66, y: 250 },
+  ];
+  const out: PW[] = [];
+  let logo = { x: 0, y: 0, s: 130 };
+  rows.forEach((r) => {
+    const sizes = r.idx.map((i) => (i === 4 ? 290 : r.size));
+    const widths = r.idx.map((i, j) => textWidth(ws[i], sizes[j], -0.045));
+    const gaps = sizes.map((z) => 0.27 * z);
+    const total = (r.lead ?? 0) + widths.reduce((a, b) => a + b, 0) + gaps.slice(0, -1).reduce((a, b) => a + b, 0);
+    let x = -total / 2;
+    if (r.lead) {
+      logo = { x: x + 65, y: r.y, s: 130 };
+      x += r.lead;
+    }
+    r.idx.forEach((i, j) => {
+      const color = i === 1 || i === 4 ? P.green : r.size < 100 ? "#3b4440" : P.ink;
+      out.push({ text: ws[i], i, x: x + widths[j] / 2, y: r.y + (i === 4 ? 30 : 0), size: sizes[j], color });
+      x += widths[j] + gaps[j];
+    });
+  });
+  return { words: out, logo };
+};
+
 const C1: React.FC = () => {
   const frame = useCurrentFrame();
-  const enter = ease.outExpo(clamp01((frame - BRIDGE) / 20));
-  const split = ease.inOutCubic(clamp01((frame - (w("dar", 4) - 4)) / 16));
-  const S = 300;
+  const { words: pw, logo } = posterLayout();
+  const at = words("dar").map(([, f]) => f - 3);
+  // the camera rides from word to word, then pulls back to the whole poster
+  const focusAt = (k: number) => (k >= 5 ? { x: 0, y: 10, z: 1.02 } : { x: pw[k].x, y: pw[k].y, z: k === 4 ? 1.05 : 1.45 });
+  let cam = focusAt(0);
+  for (let k = 1; k < pw.length; k++) {
+    const t = ease.inOutCubic(clamp01((frame - at[k] + 2) / 12));
+    if (t <= 0) break;
+    const nx = focusAt(k);
+    cam = { x: lerp(cam.x, nx.x, t), y: lerp(cam.y, nx.y, t), z: lerp(cam.z, nx.z, t) };
+  }
+  const drift = 1 + 0.03 * clamp01((frame - at[5]) / 60);
+  const out = ease.inCubic(clamp01((frame - (C1_END - 8)) / 8));
+  const underline = ease.inOutCubic(clamp01((frame - (at[4] + 8)) / 14));
+  const doar = pw[4];
+  const dw = textWidth(doar.text, doar.size, -0.045);
+  const lp = ease.outBack(clamp01((frame - at[1]) / 14));
   return (
     <AbsoluteFill>
       <Bg kind="white" />
-      <div style={{ position: "absolute", left: CX - S / 2, top: CY - 230 - S / 2, width: S, height: S, transform: `perspective(1200px) rotateY(${split * 360}deg) scale(${(0.8 + 0.2 * enter) * (1 + 0.12 * Math.sin(Math.PI * split))})`, opacity: enter }}>
-        <Logo size={S} />
-      </div>
-      <Txt words={kw("dar", { only: [0, 1, 2, 3, 4], color: { 1: GREEN_INK, 4: GREEN_INK } })} size={104} on="white" y={CY + 70} out={C1_END - 6} />
-      <Txt words={kw("dar", { only: [5, 6, 7, 8, 9, 10, 11] })} size={104} on="white" y={CY + 200} out={C1_END - 6} />
+      <AbsoluteFill style={{ opacity: 1 - out, filter: out > 0 ? `blur(${out * 16}px)` : undefined }}>
+        <div style={{ position: "absolute", left: 0, top: 0, transformOrigin: "0 0", transform: `translate(${CX - cam.x * cam.z * drift}px, ${CY - cam.y * cam.z * drift}px) scale(${cam.z * drift})` }}>
+          {/* brush stroke under "doar" */}
+          <svg width={dw + 120} height={120} style={{ position: "absolute", left: doar.x - dw / 2 - 60, top: doar.y + doar.size * 0.36, overflow: "visible" }}>
+            <path d={`M 30 60 C ${dw * 0.3} 30, ${dw * 0.7} 80, ${dw + 90} 40`} stroke={P.green} strokeOpacity={0.35} strokeWidth={46} fill="none" strokeLinecap="round" pathLength={1} strokeDasharray={`${underline} 1`} />
+          </svg>
+          <div style={{ position: "absolute", left: logo.x - logo.s / 2, top: logo.y - logo.s / 2 - 8, transform: `scale(${lp}) rotate(${(1 - lp) * -30}deg)`, opacity: clamp01(lp * 2) }}>
+            <Logo size={logo.s} />
+          </div>
+          {pw.map((p, k) => {
+            const t = clamp01((frame - at[k]) / 11);
+            if (t <= 0) return null;
+            const e = ease.outCubic(t);
+            const big = p.i === 4;
+            const sc = lerp(big ? 3.2 : 2.2, 1, e) * (big ? punch(frame, at[k] + 11, 0.06, 10) : 1);
+            return (
+              <div
+                key={k}
+                style={{
+                  position: "absolute",
+                  left: p.x,
+                  top: p.y,
+                  transform: `translate(-50%, -50%) scale(${sc}) translateY(${(1 - e) * 30}px)`,
+                  opacity: clamp01(t * 2.5),
+                  filter: e < 0.98 ? `blur(${(1 - e) * 18}px)` : undefined,
+                  fontFamily: FONT,
+                  fontWeight: BOLD,
+                  fontSize: p.size,
+                  letterSpacing: "-0.045em",
+                  lineHeight: 1,
+                  whiteSpace: "nowrap",
+                  color: p.color,
+                  textShadow: big ? "0 20px 50px rgba(0,191,99,0.25)" : undefined,
+                }}
+              >
+                {p.text}
+              </div>
+            );
+          })}
+        </div>
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };
@@ -87,11 +168,11 @@ const C3: React.FC = () => {
   const pts = i === 0 ? shape(s.shape) : morphNamed(prev.shape, s.shape, ease.outBack(t), 1.3, frame);
   const fill = s.bg === "green" ? "#ffffff" : s.bg === "white" ? P.green : s.bg === "deep" ? P.mint : P.green;
   const iconColor = s.bg === "green" ? P.green : s.bg === "deep" ? P.deep : "#ffffff";
-  const pop = ease.outBack(clamp01(local / 10));
+  const pop = ease.outBack(clamp01(local / 14), 1.2);
   return (
     <AbsoluteFill>
       <Bg kind={s.bg} />
-      <div style={{ position: "absolute", left: CX - 135, top: CY - 310, transform: `scale(${pop * punch(frame, cuts[i], 0.1, 9)}) rotate(${(1 - pop) * -20}deg)` }}>
+      <div style={{ position: "absolute", left: CX - 135, top: CY - 310, transform: `scale(${pop * punch(frame, cuts[i], 0.06, 14)}) rotate(${(1 - pop) * -20}deg)` }}>
         <ServiceTile name={s.icon as ServiceName} size={270} tone={s.bg === "green" ? "white" : "green"} />
       </div>
       <Txt key={i} words={kw("skills", { only: s.words, lead: 4 }).map((x) => ({ ...x, at: Math.max(x.at, cuts[i]) }))} size={150} on={s.bg} y={CY + 170} dur={9} />
@@ -263,7 +344,9 @@ const C5: React.FC = () => {
             })}
           </div>
         )}
-        {/* 3: how much — the hours slider */}
+      </div>
+      {/* 3: how much — the hours slider (it carries straight on into the next shot, so it never fades) */}
+      <div>
         {vis(2) > 0 && (
           <div style={{ position: "absolute", left: CX - 450, top: CY + 120, width: 900, opacity: vis(2), transform: `translateY(${(1 - vis(2)) * 40}px)` }}>
             {(() => {
@@ -271,7 +354,7 @@ const C5: React.FC = () => {
               const hours = Math.round(lerp(5, 25, v));
               return (
                 <>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 26 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 26, opacity: 1 - outT }}>
                     <Label size={34} color="rgba(255,255,255,0.6)" weight={500}>
                       Ore pe săptămână
                     </Label>
@@ -296,41 +379,72 @@ const C6: React.FC = () => {
   const frame = useCurrentFrame();
   const a = C5_END;
   const L = BREAK - a;
-  const p = clamp01((frame - a) / L);
-  const enter = ease.outExpo(clamp01((frame - a) / 16));
+  const RUN = Math.round(L * 0.4);
+  const hit = a + RUN;
+  // ---- phase 1: the camera rides the slider line; it shoots right, an arrow growing at its tip
+  const pA = clamp01((frame - a) / RUN);
+  const tipX = lerp(CX - 450 + 0.7 * 900, CX, ease.inOutCubic(pA));
+  const tipY = lerp(CY + 198, CY, ease.inOutCubic(pA));
+  const speed = Math.sin(Math.PI * pA);
+  const arrow = lerp(18, 150, ease.inCubic(pA));
+  // ---- phase 2: it bursts into the charging ring, which fills on a racing heart
+  const pB = clamp01((frame - hit) / (BREAK - hit));
+  const ringIn = ease.outBack(clamp01((frame - hit) / 14));
   const collapse = ease.inExpo(clamp01((frame - (BREAK - 12)) / 12));
-  // heartbeat pulse (shared with the sound)
   let hb = 0;
   for (const h of HEARTBEATS) {
     const d = frame - h;
     if (d >= 0 && d < 14) hb = Math.max(hb, Math.exp(-d / 3) + 0.6 * Math.exp(-Math.max(0, d - 5) / 3) * (d >= 5 ? 1 : 0));
   }
-  const items = Array.from({ length: 26 }, (_, i) => ({ kind: "tile" as const, icon: SERVICES[i % SERVICES.length].icon }));
-  const VS = Math.max(3, Math.floor((L - 44) / items.length));
-  const ab = absorbed(frame, items.length, a + 4, VS, 34);
-  const charge = ab.count / items.length;
-  const core = (90 + 90 * charge) * (1 + 0.1 * hb) * (1 - collapse * 0.92);
+  const charge = ease.inOutCubic(pB);
+  const core = (70 + 110 * charge) * (1 + 0.1 * hb) * (1 - collapse * 0.92) * ringIn;
+  const dots = Array.from({ length: 40 }, (_, i) => ({ kind: "dot" as const, d: 10 + Math.round(seeded(i, 8) * 34) }));
   return (
     <AbsoluteFill>
       <Bg kind="black" />
-      <AbsoluteFill style={{ background: `radial-gradient(circle at 50% 50%, rgba(0,191,99,${0.12 + 0.3 * charge + 0.12 * hb}) 0%, rgba(0,0,0,0) ${35 + 25 * charge}%)` }} />
-      <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.75) 100%)", opacity: 0.6 + 0.4 * hb }} />
-      <Vortex items={items} from={a + 4} stagger={VS} travel={34} cx={CX} cy={CY} radius={860} size={1} />
-      {/* the core */}
-      <div style={{ position: "absolute", left: CX - core / 2, top: CY - core / 2, width: core, height: core, borderRadius: "50%", background: "radial-gradient(circle at 40% 35%, #b9ffd6 0%, #2be38a 40%, #00a352 100%)", boxShadow: `0 0 ${60 + 120 * charge}px rgba(0,191,99,${0.5 + 0.4 * charge})`, opacity: enter }} />
-      {/* charging ring */}
-      <svg width={700} height={700} viewBox="-175 -175 350 350" style={{ position: "absolute", left: CX - 350, top: CY - 350, opacity: enter * (1 - collapse), transform: `scale(${1 + 0.04 * hb})` }}>
-        <circle r={140} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={5} />
-        <circle r={140} fill="none" stroke={P.green} strokeWidth={7} strokeLinecap="round" pathLength={1} strokeDasharray={`${charge} 1`} transform="rotate(-90)" style={{ filter: "drop-shadow(0 0 12px rgba(0,191,99,0.9))" }} />
-        {Array.from({ length: 60 }, (_, j) => {
-          const on = j / 60 < charge;
-          const an = (j / 60) * Math.PI * 2 - Math.PI / 2;
-          return <line key={j} x1={Math.cos(an) * 156} y1={Math.sin(an) * 156} x2={Math.cos(an) * 168} y2={Math.sin(an) * 168} stroke={on ? P.mint : "rgba(255,255,255,0.12)"} strokeWidth={3} strokeLinecap="round" />;
-        })}
-      </svg>
-      <div style={{ position: "absolute", left: CX, top: CY + 200, transform: "translate(-50%, 0)", opacity: enter * (1 - collapse) }}>
-        <Label size={40} color={P.mint}>{`${Math.round(charge * 100)}%`}</Label>
-      </div>
+      {frame < hit + 2 && (
+        <>
+          {/* speed streaks */}
+          {Array.from({ length: 26 }, (_, i) => {
+            const y = 60 + seeded(i, 1) * 960;
+            const len = 80 + 260 * speed * seeded(i, 2);
+            const x = ((seeded(i, 3) * 2400 - (frame - a) * (20 + 60 * speed)) % 2400 + 2400) % 2400 - 240;
+            return <div key={i} style={{ position: "absolute", left: x, top: y, width: len, height: 2, borderRadius: 1, background: "linear-gradient(90deg, rgba(185,255,214,0), rgba(185,255,214,0.35))", opacity: speed }} />;
+          })}
+          <svg width={1920} height={1080} style={{ position: "absolute", inset: 0, overflow: "visible" }}>
+            <defs>
+              <linearGradient id="trail" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#00bf63" stopOpacity={0} />
+                <stop offset="70%" stopColor="#00bf63" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="#b9ffd6" stopOpacity={1} />
+              </linearGradient>
+            </defs>
+            <rect x={-40} y={tipY - 8 - 6 * speed} width={tipX + 40 - arrow * 0.5} height={16 + 12 * speed} rx={10} fill="url(#trail)" style={{ filter: `drop-shadow(0 0 ${10 + 20 * speed}px rgba(0,191,99,0.8))` }} />
+            <path d={`M ${tipX + arrow * 0.6} ${tipY} L ${tipX - arrow * 0.6} ${tipY - arrow * 0.62} L ${tipX - arrow * 0.32} ${tipY} L ${tipX - arrow * 0.6} ${tipY + arrow * 0.62} Z`} fill="#b9ffd6" style={{ filter: `drop-shadow(0 0 ${12 + 30 * pA}px rgba(0,191,99,0.9))` }} />
+          </svg>
+        </>
+      )}
+      {frame >= hit && (
+        <>
+          <AbsoluteFill style={{ background: `radial-gradient(circle at 50% 50%, rgba(0,191,99,${0.12 + 0.3 * charge + 0.12 * hb}) 0%, rgba(0,0,0,0) ${35 + 25 * charge}%)` }} />
+          <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.75) 100%)", opacity: 0.6 + 0.4 * hb }} />
+          <Vortex items={dots} from={hit + 6} stagger={Math.max(2, Math.floor((BREAK - hit - 40) / dots.length))} travel={30} cx={CX} cy={CY} radius={900} />
+          <div style={{ position: "absolute", left: CX - core / 2, top: CY - core / 2, width: core, height: core, borderRadius: "50%", background: "radial-gradient(circle at 40% 35%, #d9ffe9 0%, #2be38a 40%, #00a352 100%)", boxShadow: `0 0 ${60 + 140 * charge}px rgba(0,191,99,${0.5 + 0.4 * charge})` }} />
+          <svg width={700} height={700} viewBox="-175 -175 350 350" style={{ position: "absolute", left: CX - 350, top: CY - 350, opacity: 1 - collapse, transform: `scale(${ringIn * (1 + 0.04 * hb)})` }}>
+            <circle r={140} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={5} />
+            <circle r={140} fill="none" stroke={P.green} strokeWidth={7} strokeLinecap="round" pathLength={1} strokeDasharray={`${charge} 1`} transform="rotate(-90)" style={{ filter: "drop-shadow(0 0 12px rgba(0,191,99,0.9))" }} />
+            {Array.from({ length: 60 }, (_, j) => {
+              const on = j / 60 < charge;
+              const an = (j / 60) * Math.PI * 2 - Math.PI / 2;
+              return <line key={j} x1={Math.cos(an) * 156} y1={Math.sin(an) * 156} x2={Math.cos(an) * 168} y2={Math.sin(an) * 168} stroke={on ? P.mint : "rgba(255,255,255,0.12)"} strokeWidth={3} strokeLinecap="round" />;
+            })}
+          </svg>
+          <div style={{ position: "absolute", left: CX, top: CY + 200, transform: "translate(-50%, 0)", opacity: ringIn * (1 - collapse) }}>
+            <Label size={40} color={P.mint}>{`${Math.round(charge * 100)}%`}</Label>
+          </div>
+          <Explosion at={hit} cx={CX} cy={CY} icons={false} />
+        </>
+      )}
     </AbsoluteFill>
   );
 };

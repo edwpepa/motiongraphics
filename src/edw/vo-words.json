@@ -1,0 +1,871 @@
+{
+ "born": {
+  "start": 1.56,
+  "end": 4.13,
+  "text": "Some people are born with something in their head",
+  "words": [
+   [
+    "Some",
+    1.56
+   ],
+   [
+    "people",
+    1.83
+   ],
+   [
+    "are",
+    2.29
+   ],
+   [
+    "born",
+    2.38
+   ],
+   [
+    "with",
+    2.63
+   ],
+   [
+    "something",
+    2.82
+   ],
+   [
+    "in",
+    3.42
+   ],
+   [
+    "their",
+    3.73
+   ],
+   [
+    "head",
+    3.99
+   ]
+  ]
+ },
+ "rest": {
+  "start": 4.36,
+  "end": 5.81,
+  "text": "that never lets them rest.",
+  "words": [
+   [
+    "that",
+    4.36
+   ],
+   [
+    "never",
+    4.66
+   ],
+   [
+    "lets",
+    5.1
+   ],
+   [
+    "them",
+    5.26
+   ],
+   [
+    "rest.",
+    5.52
+   ]
+  ]
+ },
+ "teaches": {
+  "start": 6.64,
+  "end": 8.06,
+  "text": "Nobody teaches it to them",
+  "words": [
+   [
+    "Nobody",
+    6.64
+   ],
+   [
+    "teaches",
+    7.11
+   ],
+   [
+    "it",
+    7.61
+   ],
+   [
+    "to",
+    7.64
+   ],
+   [
+    "them",
+    7.97
+   ]
+  ]
+ },
+ "away": {
+  "start": 8.34,
+  "end": 9.89,
+  "text": "and nobody can take it away,",
+  "words": [
+   [
+    "and",
+    8.34
+   ],
+   [
+    "nobody",
+    8.53
+   ],
+   [
+    "can",
+    9.0
+   ],
+   [
+    "take",
+    9.18
+   ],
+   [
+    "it",
+    9.36
+   ],
+   [
+    "away,",
+    9.56
+   ]
+  ]
+ },
+ "spark": {
+  "start": 10.51,
+  "end": 13.4,
+  "text": "it's a spark they carry from the very beginning.",
+  "words": [
+   [
+    "it's",
+    10.51
+   ],
+   [
+    "a",
+    10.72
+   ],
+   [
+    "spark",
+    11.04
+   ],
+   [
+    "they",
+    11.12
+   ],
+   [
+    "carry",
+    11.38
+   ],
+   [
+    "from",
+    11.78
+   ],
+   [
+    "the",
+    12.13
+   ],
+   [
+    "very",
+    12.33
+   ],
+   [
+    "beginning.",
+    12.82
+   ]
+  ]
+ },
+ "comfort": {
+  "start": 14.14,
+  "end": 16.17,
+  "text": "While everyone else looks for comfort,",
+  "words": [
+   [
+    "While",
+    14.14
+   ],
+   [
+    "everyone",
+    14.5
+   ],
+   [
+    "else",
+    15.24
+   ],
+   [
+    "looks",
+    15.35
+   ],
+   [
+    "for",
+    15.54
+   ],
+   [
+    "comfort,",
+    15.77
+   ]
+  ]
+ },
+ "calm": {
+  "start": 16.44,
+  "end": 18.19,
+  "text": "they stay calm and keep working,",
+  "words": [
+   [
+    "they",
+    16.44
+   ],
+   [
+    "stay",
+    16.7
+   ],
+   [
+    "calm",
+    16.92
+   ],
+   [
+    "and",
+    17.27
+   ],
+   [
+    "keep",
+    17.52
+   ],
+   [
+    "working,",
+    17.76
+   ]
+  ]
+ },
+ "going": {
+  "start": 18.67,
+  "end": 20.46,
+  "text": "because they already know where they're going.",
+  "words": [
+   [
+    "because",
+    18.67
+   ],
+   [
+    "they",
+    18.97
+   ],
+   [
+    "already",
+    19.14
+   ],
+   [
+    "know",
+    19.83
+   ],
+   [
+    "where",
+    19.93
+   ],
+   [
+    "they're",
+    20.16
+   ],
+   [
+    "going.",
+    20.36
+   ]
+  ]
+ },
+ "applause": {
+  "start": 21.17,
+  "end": 22.89,
+  "text": "They don't need applause along the way,",
+  "words": [
+   [
+    "They",
+    21.17
+   ],
+   [
+    "don't",
+    21.41
+   ],
+   [
+    "need",
+    21.61
+   ],
+   [
+    "applause",
+    21.73
+   ],
+   [
+    "along",
+    22.18
+   ],
+   [
+    "the",
+    22.49
+   ],
+   [
+    "way,",
+    22.64
+   ]
+  ]
+ },
+ "finished": {
+  "start": 23.3,
+  "end": 25.39,
+  "text": "they only need to see the thing finished,",
+  "words": [
+   [
+    "they",
+    23.3
+   ],
+   [
+    "only",
+    23.51
+   ],
+   [
+    "need",
+    23.84
+   ],
+   [
+    "to",
+    24.07
+   ],
+   [
+    "see",
+    24.31
+   ],
+   [
+    "the",
+    24.44
+   ],
+   [
+    "thing",
+    24.59
+   ],
+   [
+    "finished,",
+    24.84
+   ]
+  ]
+ },
+ "history": {
+  "start": 25.78,
+  "end": 29.12,
+  "text": "and that is how the biggest things in history ended up being built.",
+  "words": [
+   [
+    "and",
+    25.78
+   ],
+   [
+    "that",
+    26.0
+   ],
+   [
+    "is",
+    26.21
+   ],
+   [
+    "how",
+    26.37
+   ],
+   [
+    "the",
+    26.52
+   ],
+   [
+    "biggest",
+    26.85
+   ],
+   [
+    "things",
+    27.22
+   ],
+   [
+    "in",
+    27.39
+   ],
+   [
+    "history",
+    27.62
+   ],
+   [
+    "ended",
+    28.13
+   ],
+   [
+    "up",
+    28.55
+   ],
+   [
+    "being",
+    28.78
+   ],
+   [
+    "built.",
+    29.0
+   ]
+  ]
+ },
+ "edw": {
+  "start": 31.81,
+  "end": 33.06,
+  "text": "At EDW ENTERPRISE,",
+  "words": [
+   [
+    "At",
+    31.81
+   ],
+   [
+    "EDW",
+    32.02
+   ],
+   [
+    "ENTERPRISE,",
+    32.59
+   ]
+  ]
+ },
+ "roof": {
+  "start": 33.2,
+  "end": 36.37,
+  "text": "we decided to bring those people together under one roof.",
+  "words": [
+   [
+    "we",
+    33.2
+   ],
+   [
+    "decided",
+    33.39
+   ],
+   [
+    "to",
+    34.04
+   ],
+   [
+    "bring",
+    34.24
+   ],
+   [
+    "those",
+    34.47
+   ],
+   [
+    "people",
+    34.56
+   ],
+   [
+    "together",
+    35.04
+   ],
+   [
+    "under",
+    35.56
+   ],
+   [
+    "one",
+    36.06
+   ],
+   [
+    "roof.",
+    36.24
+   ]
+  ]
+ },
+ "specialists": {
+  "start": 36.85,
+  "end": 39.51,
+  "text": "Software specialists, hardware specialists,",
+  "words": [
+   [
+    "Software",
+    36.85
+   ],
+   [
+    "specialists,",
+    37.23
+   ],
+   [
+    "hardware",
+    38.26
+   ],
+   [
+    "specialists,",
+    38.57
+   ]
+  ]
+ },
+ "technicians": {
+  "start": 39.8,
+  "end": 42.08,
+  "text": "technicians who can make almost anything work,",
+  "words": [
+   [
+    "technicians",
+    39.8
+   ],
+   [
+    "who",
+    40.44
+   ],
+   [
+    "can",
+    40.53
+   ],
+   [
+    "make",
+    40.8
+   ],
+   [
+    "almost",
+    40.88
+   ],
+   [
+    "anything",
+    41.29
+   ],
+   [
+    "work,",
+    41.97
+   ]
+  ]
+ },
+ "dare": {
+  "start": 42.54,
+  "end": 46.13,
+  "text": "all of them with ideas that most companies wouldn't even dare to try.",
+  "words": [
+   [
+    "all",
+    42.54
+   ],
+   [
+    "of",
+    42.82
+   ],
+   [
+    "them",
+    42.94
+   ],
+   [
+    "with",
+    43.21
+   ],
+   [
+    "ideas",
+    43.43
+   ],
+   [
+    "that",
+    43.88
+   ],
+   [
+    "most",
+    44.06
+   ],
+   [
+    "companies",
+    44.24
+   ],
+   [
+    "wouldn't",
+    44.87
+   ],
+   [
+    "even",
+    45.08
+   ],
+   [
+    "dare",
+    45.58
+   ],
+   [
+    "to",
+    45.71
+   ],
+   [
+    "try.",
+    46.0
+   ]
+  ]
+ },
+ "room": {
+  "start": 46.68,
+  "end": 48.98,
+  "text": "When you put minds like that in the same room,",
+  "words": [
+   [
+    "When",
+    46.68
+   ],
+   [
+    "you",
+    46.97
+   ],
+   [
+    "put",
+    47.14
+   ],
+   [
+    "minds",
+    47.45
+   ],
+   [
+    "like",
+    47.68
+   ],
+   [
+    "that",
+    47.78
+   ],
+   [
+    "in",
+    48.12
+   ],
+   [
+    "the",
+    48.31
+   ],
+   [
+    "same",
+    48.58
+   ],
+   [
+    "room,",
+    48.77
+   ]
+  ]
+ },
+ "build": {
+  "start": 49.31,
+  "end": 51.0,
+  "text": "there's very little they can't build,",
+  "words": [
+   [
+    "there's",
+    49.31
+   ],
+   [
+    "very",
+    49.63
+   ],
+   [
+    "little",
+    50.09
+   ],
+   [
+    "they",
+    50.39
+   ],
+   [
+    "can't",
+    50.65
+   ],
+   [
+    "build,",
+    50.9
+   ]
+  ]
+ },
+ "apps": {
+  "start": 51.34,
+  "end": 55.55,
+  "text": "from mobile apps and web platforms to custom hardware made for your project.",
+  "words": [
+   [
+    "from",
+    51.34
+   ],
+   [
+    "mobile",
+    51.5
+   ],
+   [
+    "apps",
+    52.21
+   ],
+   [
+    "and",
+    52.39
+   ],
+   [
+    "web",
+    52.6
+   ],
+   [
+    "platforms",
+    52.89
+   ],
+   [
+    "to",
+    53.34
+   ],
+   [
+    "custom",
+    53.51
+   ],
+   [
+    "hardware",
+    53.95
+   ],
+   [
+    "made",
+    54.53
+   ],
+   [
+    "for",
+    54.61
+   ],
+   [
+    "your",
+    54.82
+   ],
+   [
+    "project.",
+    55.05
+   ]
+  ]
+ },
+ "idea": {
+  "start": 56.99,
+  "end": 59.38,
+  "text": "If you've got an idea you can't get out of your head,",
+  "words": [
+   [
+    "If",
+    56.99
+   ],
+   [
+    "you've",
+    57.11
+   ],
+   [
+    "got",
+    57.35
+   ],
+   [
+    "an",
+    57.51
+   ],
+   [
+    "idea",
+    57.81
+   ],
+   [
+    "you",
+    58.09
+   ],
+   [
+    "can't",
+    58.26
+   ],
+   [
+    "get",
+    58.55
+   ],
+   [
+    "out",
+    58.58
+   ],
+   [
+    "of",
+    58.83
+   ],
+   [
+    "your",
+    59.1
+   ],
+   [
+    "head,",
+    59.14
+   ]
+  ]
+ },
+ "write": {
+  "start": 59.71,
+  "end": 60.39,
+  "text": "write to us.",
+  "words": [
+   [
+    "write",
+    59.71
+   ],
+   [
+    "to",
+    59.97
+   ],
+   [
+    "us.",
+    60.22
+   ]
+  ]
+ },
+ "best": {
+  "start": 60.75,
+  "end": 63.56,
+  "text": "We build the best applications and software out there,",
+  "words": [
+   [
+    "We",
+    60.75
+   ],
+   [
+    "build",
+    61.0
+   ],
+   [
+    "the",
+    61.13
+   ],
+   [
+    "best",
+    61.44
+   ],
+   [
+    "applications",
+    61.69
+   ],
+   [
+    "and",
+    62.51
+   ],
+   [
+    "software",
+    62.64
+   ],
+   [
+    "out",
+    63.09
+   ],
+   [
+    "there,",
+    63.35
+   ]
+  ]
+ },
+ "yours": {
+  "start": 63.81,
+  "end": 65.32,
+  "text": "and we'd love to build yours.",
+  "words": [
+   [
+    "and",
+    63.81
+   ],
+   [
+    "we'd",
+    64.08
+   ],
+   [
+    "love",
+    64.39
+   ],
+   [
+    "to",
+    64.5
+   ],
+   [
+    "build",
+    64.82
+   ],
+   [
+    "yours.",
+    65.14
+   ]
+  ]
+ }
+}

@@ -3,6 +3,7 @@ import { HandlyReel } from "./HandlyReel";
 import { HandlyExplainer } from "./explainer/HandlyExplainer";
 import * as EX from "./explainer/timing";
 import { HandlyLaunch } from "./launch/HandlyLaunch";
+import { EdwEnterprise } from "./edw/EdwEnterprise";
 import { HandlyTimisoara } from "./tm/HandlyTimisoara";
 import { HandlyTimisoaraIso } from "./tm/HandlyTimisoaraIso";
 import { HandlyTimisoaraLaunch } from "./tm/HandlyTimisoaraLaunch";
@@ -40,6 +41,7 @@ export const Root: React.FC = () => {
       <Composition id="HandlyTimisoaraSketch" component={HandlyTimisoara} durationInFrames={TMT.TOTAL} fps={TMT.FPS} width={1920} height={1080} />
       <Composition id="HandlyTimisoara" component={HandlyTimisoaraLaunch} durationInFrames={TMT.TOTAL} fps={TMT.FPS} width={1920} height={1080} />
       <Composition id="HandlyTimisoaraCity" component={HandlyTimisoaraIso} durationInFrames={TMT.TOTAL} fps={TMT.FPS} width={1920} height={1080} />
+      <Composition id="EdwEnterprise" component={EdwEnterprise} durationInFrames={70 * 30} fps={30} width={1920} height={1080} defaultProps={{ audio: false }} />
       <Composition id="HandlyLaunch" component={HandlyLaunch} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
     </>
   );

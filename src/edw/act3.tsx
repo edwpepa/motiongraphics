@@ -41,7 +41,7 @@ export function beam(ctx: CanvasRenderingContext2D, x: number, y: number, ang: n
 }
 
 let SHARDS: { a: number; e: number; v: number; s: number; ph: number }[] | null = null;
-/** the burst behind the logo: a flash, a shockwave ring, embers flung outwards and slowing down */
+/** the burst behind the logo: a flash and embers flung outwards, slowing down */
 export function burst(ctx: CanvasRenderingContext2D, x: number, y: number, T: number, at: number) {
   if (T < at) return;
   const age = T - at;
@@ -54,15 +54,6 @@ export function burst(ctx: CanvasRenderingContext2D, x: number, y: number, T: nu
   const k = Math.exp(-age / 0.45);
   flare(ctx, x, y, k * 0.9, 1500, 120);
   glow(ctx, x, y, 520, 0.22 * Math.exp(-age / 1.2));
-  for (const [d, g] of [[0, 1], [0.12, 0.5]] as const) {
-    const u = ease.outCubic((age - d) / 1.3);
-    if (u <= 0 || u >= 1) continue;
-    ctx.strokeStyle = `rgba(240,244,255,${(1 - u) * 0.55 * g})`;
-    ctx.lineWidth = 1 + 6 * (1 - u);
-    ctx.beginPath();
-    ctx.ellipse(x, y, 60 + 900 * u, (60 + 900 * u) * 0.42, 0, 0, Math.PI * 2);
-    ctx.stroke();
-  }
   for (const p of SHARDS) {
     const dist = p.v * 760 * (1 - Math.exp(-age * 2.4)) + age * 22;
     const px = x + Math.cos(p.a) * dist, py = y + Math.sin(p.a) * dist * 0.55 + p.e * dist * 0.3 + age * age * 18;

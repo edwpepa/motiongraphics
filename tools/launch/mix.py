@@ -83,6 +83,7 @@ def main():
     CUES = json.load(open(os.path.join(ROOT, "tools/launch/cues.json")))
     M = CUES["marks"]
     sfx = np.zeros((2, N))
+    beds = np.zeros((2, N))
     cache = {}
     for cue in CUES["cues"]:
         k = cue["k"]
@@ -90,17 +91,21 @@ def main():
             clip, off = X.charge(M["brk"] - cue["t"]), 0.0
         elif k == "calm":
             clip, off = X.calm(D - cue["t"]), 0.0
+        elif k == "roll":
+            clip, off = X.roll(D - cue["t"]), 0.0
         else:
             if k not in cache or k in ("fall", "bubble", "coin", "drip", "key"):
                 r = X.KINDS[k]()
                 cache[k] = r if isinstance(r, tuple) else (r, 0.0)
             clip, off = cache[k]
-        C.place(sfx, clip, cue["t"] + off, X.GAIN.get(k, 0.5) * cue["g"])
+        C.place(beds if k in ("calm", "roll", "charge") else sfx, clip, cue["t"] + off, X.GAIN.get(k, 0.5) * cue["g"])
 
     # ---- level + duck
     vo *= 10 ** ((-15.5 - C.lufs(vo)) / 20)
     mus *= 10 ** ((-15.0 - C.lufs(mus)) / 20)
-    sfx *= 10 ** ((-21.5 - C.lufs(sfx)) / 20)
+    g_sfx = 10 ** ((-21.5 - C.lufs(sfx)) / 20)
+    sfx *= g_sfx
+    beds *= g_sfx
     env = C.follower(vo[0], 0.03, 0.45)
     env /= np.max(env) + 1e-9
     depth = np.where(t < D, -7.0, -10.0)
@@ -109,7 +114,9 @@ def main():
     # pre-drop bed sits low under the story
     mus *= np.interp(t, [0, D - 0.01, D], [0.62, 0.62, 1.0])[None, :]
 
-    mix = vo + mus + sfx
+    # charge / roll beds tuck under the voice too
+    beds *= (10 ** (np.clip(env * 4.0, 0, 1) * -7.0 / 20))[None, :]
+    mix = vo + mus + sfx + beds
     mix *= 10 ** ((-14.0 - C.lufs(mix)) / 20)
     mix = C.soft_limit(mix, 0.89)
     print(f"vo {C.lufs(vo):.1f} | music {C.lufs(mus):.1f} | sfx {C.lufs(sfx):.1f} | mix {C.lufs(mix):.1f}")

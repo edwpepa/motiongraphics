@@ -237,8 +237,20 @@ def shimmer():
     return verb(norm(out) * 0.5, 0.7)
 
 
+def boom808(dur=2.6):
+    t = T(dur)
+    f = 30 + 70 * np.exp(-t / 0.08)
+    y = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 0.9)
+    return np.tanh(y * 2.2)
+
+
 def drop():
-    out = impact(1.0, 1.0, 2.2)
+    out = impact(1.0, 1.2, 2.2)
+    b = st(boom808()) * 0.9
+    o2 = np.zeros((2, max(out.shape[1], b.shape[1])))
+    o2[:, : out.shape[1]] += out
+    o2[:, : b.shape[1]] += b
+    out = o2
     cr = C.reverb(C.crash(2.8)) * 0.5
     o = np.zeros((2, max(out.shape[1], cr.shape[1])))
     o[:, : out.shape[1]] += out
@@ -402,6 +414,52 @@ def calm(dur):
     return C.stereo_sweep(out, -0.15, 0.15)
 
 
+def heart():
+    out = np.zeros(int(0.5 * SR))
+    for d, g in ((0.0, 1.0), (0.17, 0.7)):
+        t = T(0.3)
+        y = np.sin(2 * np.pi * (48 + 30 * np.exp(-t / 0.03)) * t) * np.exp(-t / 0.09) * g
+        i0 = int(d * SR)
+        out[i0 : i0 + len(y)] += y
+    return st(norm(np.tanh(out * 1.6)) * 0.9)
+
+
+def roll(dur):
+    """Snare roll into the first drop: eighths to thirty-seconds, rising, with a sweep — and a
+    breath of silence right before the hit."""
+    gap = 0.22
+    body = dur - gap
+    out = np.zeros(int(dur * SR))
+    tt = 0.0
+    while tt < body:
+        k = tt / body
+        n = int(0.12 * SR)
+        t = np.arange(n) / SR
+        sn = C.filt(rng.standard_normal(n), "bandpass", (300 + 900 * k, 5000 + 3000 * k), 2) * np.exp(-t / 0.05)
+        sn += np.sin(2 * np.pi * (180 + 160 * k) * t) * np.exp(-t / 0.03) * 0.5
+        i0 = int(tt * SR)
+        out[i0 : i0 + n] += sn[: len(out) - i0] * (0.25 + 0.75 * k ** 1.5)
+        tt += 0.24 * (1 - k) ** 1.4 + 0.03
+    r = C.riser(body, 300, 11000)
+    out[: len(r)] += r * 0.8
+    out[int(body * SR) :] = 0
+    return C.stereo_sweep(norm(out) * 0.9, -0.2, 0.2)
+
+
+def shepard(dur, up=True):
+    """An endlessly rising tone (Shepard): octave-spaced sines gliding up under a fixed bell curve."""
+    t = T(dur)
+    y = np.zeros(len(t))
+    rate = 0.18
+    for o in range(7):
+        pos = (o / 7 + rate * t) % 1.0
+        f = 55 * 2 ** (pos * 7)
+        amp = np.exp(-((pos - 0.5) ** 2) / 0.045)
+        ph = 2 * np.pi * np.cumsum(f) / SR
+        y += np.sin(ph) * amp
+    return y
+
+
 def charge(dur):
     """Power building up until the break: a rising hum with a quickening pulse, ticks that
     accelerate, and a riser on top for the last seconds. Cuts dead at the end."""
@@ -426,12 +484,15 @@ def charge(dur):
     rl = min(3.2, dur)
     r = C.riser(rl, 300, 9000)
     rise[-len(r) :] += r
-    y = norm(hum) * 0.7 + ticks * 0.35 + norm(rise) * 0.55
+    sh = shepard(dur) * (0.3 + 0.7 * x)
+    trem = sum(np.sin(2 * np.pi * C.midi(m) * t + m) for m in (67, 70, 74, 79)) * (0.5 + 0.5 * np.sin(2 * np.pi * 14 * t)) * (0.2 + 0.8 * x ** 2)
+    trem = C.filt(trem, "lowpass", 3000)
+    y = norm(hum) * 0.35 + norm(sh) * 0.55 + norm(trem) * 0.3 + ticks * 0.35 + norm(rise) * 0.55
     y[-int(0.01 * SR) :] *= np.linspace(1, 0, int(0.01 * SR))
     return C.stereo_sweep(y, -0.2, 0.2) + st(C.filt(y, "lowpass", 200)) * 0.0
 
 
-KINDS = {k: v for k, v in globals().items() if callable(v) and k not in ("T", "st", "verb", "norm", "noise", "sweep_tone", "impact", "charge", "calm")}
+KINDS = {k: v for k, v in globals().items() if callable(v) and k not in ("T", "st", "verb", "norm", "noise", "sweep_tone", "impact", "charge", "calm", "roll", "shepard", "boom808")}
 
 GAIN = {
     "bloom": 0.6, "air": 0.5, "wipe": 0.6, "drip": 0.22, "splash": 0.32, "roller": 0.5, "brush": 0.6, "thud": 0.7, "pop": 0.45,
@@ -439,5 +500,5 @@ GAIN = {
     "nope": 0.45, "cut": 0.75, "search": 0.4, "ring": 0.35, "tick": 0.35, "fall": 0.35, "bell": 0.42, "shimmer": 0.5,
     "drop": 1.0, "slam": 0.55, "zoom": 0.5, "tap": 0.45, "success": 0.5, "notif": 0.45, "select": 0.45, "expand": 0.45,
     "bubble": 0.4, "sent": 0.4, "lock": 0.5, "dissolve": 0.55, "step": 0.4, "release": 0.5, "morphhit": 0.55,
-    "spin": 0.5, "sparkle": 0.4, "coin": 0.3, "cash": 0.45, "click": 0.4, "zip": 0.4, "end": 1.0, "charge": 0.75, "calm": 0.7,
+    "spin": 0.5, "sparkle": 0.4, "coin": 0.3, "cash": 0.45, "click": 0.4, "zip": 0.4, "end": 1.0, "charge": 0.6, "calm": 0.6, "heart": 0.45, "roll": 0.8,
 }

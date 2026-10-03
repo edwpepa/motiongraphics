@@ -52,6 +52,7 @@ export const cues = (): Cue[] => {
   add(w("rogi", 11), "glitch", 0.8);
   for (let i = 0; i < 5; i++) add(w("rogi", 11) + 2 + i * 2, "fall", 0.6);
   add(S.A10_END - 6, "calm", 1);
+  add(D0 - 60, "roll");
   add(S.A10_END + 2, "pop", 0.5);
   add(w("aici", 2) - 4, "shimmer");
 
@@ -109,6 +110,7 @@ export const cues = (): Cue[] => {
   add(w("muncesti", 2) - 4, "tick");
   add(w("muncesti", 2) + 2, "zip");
   add(S.C5_END, "charge");
+  S.HEARTBEATS.forEach((f) => add(f, "heart"));
   add(BREAK - 12, "suck");
   add(w("handly", 0) - 4, "shimmer");
   add(FINAL, "drop");

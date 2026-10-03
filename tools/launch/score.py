@@ -124,6 +124,30 @@ def bigclap():
     return c + snare + tone
 
 
+def hard_kick():
+    n = int(0.5 * SR)
+    t = np.arange(n) / SR
+    f = 45 + 160 * np.exp(-t / 0.025)
+    body = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 0.28)
+    click = C.filt(rng.standard_normal(n), "bandpass", (2000, 8000), 2) * np.exp(-t / 0.003) * 0.5
+    return np.tanh((body * 1.3 + click) * 1.8) * 0.9
+
+
+def hey():
+    """A crowd shouting "hey!": a few detuned voices through 'e' formants, short and punchy."""
+    n = int(0.45 * SR)
+    t = np.arange(n) / SR
+    y = np.zeros(n)
+    for v in range(6):
+        f0 = 190 * (1 + (rng.random() - 0.5) * 0.12) * (1 - 0.15 * t / 0.45)
+        src = fsaw(f0, n, rng.random()) + 0.3 * rng.standard_normal(n)
+        d = int(rng.uniform(0, 0.02) * SR)
+        y[d:] += src[: n - d]
+    form = C.filt(y, "bandpass", (480, 760), 2) + 0.8 * C.filt(y, "bandpass", (1700, 2300), 2) + 0.3 * C.filt(y, "bandpass", (2600, 3200), 2)
+    env = np.clip(t / 0.01, 0, 1) * np.exp(-t / 0.12)
+    return np.tanh(form * env * 3) * 0.8
+
+
 def tom(m):
     n = int(0.7 * SR)
     t = np.arange(n) / SR
@@ -181,40 +205,59 @@ def build():
             for s in range(8):
                 place("drums", C.shaker(), t0 + s * BEAT / 2, 0.08 + 0.05 * (s % 2), pan=0.3)
 
-    # ---------------------------------------------------------- choruses
+    # ---------------------------------------------------------- choruses: four on the floor, pumping, huge
+    kick_s = hard_kick()
+    hey_s = hey()
+
     def chorus(t_start, bars, choir_from, intensity=1.0):
         for k in range(bars):
             t0 = t_start + k * BAR
             name, root, tones = PROG[k % 4]
-            # drums: stomp on 1 and 3 (+ 2.5 every other bar), big claps on 2 and 4
-            for b in (0, 2) + ((1.5,) if k % 2 else ()):
-                place("drums", stomp_s, t0 + b * BEAT, 0.95)
-                duck(t0 + b * BEAT)
+            last_of_8 = k % 8 == 7
+            # drums: kick on every beat, stomp layered on 1 and 3, claps + snare on 2 and 4
+            for b in range(4):
+                if last_of_8 and b == 3:
+                    continue
+                place("drums", kick_s, t0 + b * BEAT, 1.0)
+                duck(t0 + b * BEAT, 0.85, 0.12)
+            for b in (0, 2):
+                place("drums", stomp_s, t0 + b * BEAT, 0.5)
             for b in (1, 3):
-                place("drums", clap_s, t0 + b * BEAT, 0.8)
+                if last_of_8 and b == 3:
+                    continue
+                place("drums", clap_s, t0 + b * BEAT, 0.9)
             for s in range(8):
-                place("drums", C.hat(open_=(s % 4 == 3)), t0 + s * BEAT / 2, 0.16 if s % 2 else 0.1, pan=0.25)
+                place("drums", C.hat(open_=(s % 2 == 1)), t0 + s * BEAT / 2, 0.22 if s % 2 else 0.1, pan=0.25)
             for s in range(16):
-                place("drums", C.shaker(), t0 + s * BEAT / 4, 0.06 + 0.04 * (s % 2), pan=-0.3)
-            if k % 4 == 3:
-                for j, m in enumerate((50, 47, 43)):
-                    place("drums", tom(m), t0 + (3 + j / 3) * BEAT, 0.55, pan=(-0.4, 0.0, 0.4)[j])
-            # driving bass: eighths with an octave lift on the last
-            for s in range(8):
-                m = root + (12 if s == 7 else 0)
-                place("bass", dbass(m, BEAT / 2 - 0.04), t0 + s * BEAT / 2, 0.75)
-            # chords
-            place("pad", pad([n + 12 for n in tones], BAR, attack=0.02, release=0.25, cutoff=3200), t0, 0.5 * intensity)
-            # hook
+                place("drums", C.hat(), t0 + s * BEAT / 4, 0.05 + 0.04 * (s % 2), pan=-0.25)
+            if k % 2 == 1 and not last_of_8:
+                place("drums", hey_s, t0 + 3 * BEAT, 0.55)
+            if last_of_8:
+                # one-beat snare fill into the next phrase
+                for j in range(8):
+                    place("drums", clap_s, t0 + (3 + j / 8) * BEAT, 0.2 + 0.08 * j)
+                place("fx", C.reverse_swell(BEAT * 1.2), t0 + 4 * BEAT - BEAT * 1.2, 0.5)
+            if k % 4 == 0:
+                place("fx", C.crash(2.6), t0, 0.45)
+            # rolling bass: offbeat-pumped sixteenths with an octave kick on the "and"
+            for s in range(16):
+                m = root + (12 if s % 4 == 2 else 0)
+                place("bass", dbass(m, BEAT / 4 - 0.02), t0 + s * BEAT / 4, 0.7 if s % 4 else 0.45)
+            # supersaw chords: a long pad plus off-beat stabs
+            place("pad", pad([n + 12 for n in tones], BAR, attack=0.01, release=0.2, cutoff=5200), t0, 0.55 * intensity)
+            for s in range(4):
+                place("pad", pad([n + 24 for n in tones[:3]], BEAT * 0.38, attack=0.003, release=0.08, cutoff=7000), t0 + (s + 0.5) * BEAT, 0.35 * intensity)
+            # the hook, doubled an octave up, plus a choir
             for b, m, L in HOOK[k % 4]:
-                place("lead", lead(m, L * BEAT * 0.92), t0 + b * BEAT, 0.6)
-                place("lead", lead(m + 12, L * BEAT * 0.92), t0 + b * BEAT, 0.12 * (k >= choir_from))
+                place("lead", lead(m, L * BEAT * 0.92), t0 + b * BEAT, 0.7)
+                place("lead", lead(m + 12, L * BEAT * 0.92), t0 + b * BEAT, 0.28)
             if k >= choir_from:
-                place("choir", choir([tones[0] + 12, tones[1] + 12, tones[2] + 12], BAR), t0, 0.7)
+                place("choir", choir([tones[0] + 12, tones[1] + 12, tones[2] + 12, tones[0] + 24], BAR), t0, 0.8)
+        # a white-noise sweep up into each 8-bar phrase end
+        for k in range(7, bars, 8):
+            place("fx", C.riser(BAR, 500, 12000), t_start + k * BAR, 0.35)
 
-    chorus(bar(0), 16, 8)
-    place("fx", C.crash(3.0), bar(0), 0.5)
-    place("fx", C.crash(2.4), bar(8), 0.35)
+    chorus(bar(0), 16, 4, intensity=1.0)
 
     # ---------------------------------------------------------- bridge: the breakdown (boxed in the mix)
     for k in range(16, 34):
@@ -235,8 +278,15 @@ def build():
                 place("drums", C.hat(), t0 + s * BEAT / 2, 0.08, pan=0.25)
 
     # ---------------------------------------------------------- chorus B: the final drop to the last hit
-    nb = int(round((END_HIT - FINAL) / BAR))
-    chorus(FINAL, nb, 0, intensity=1.1)
+    nb = int((END_HIT - FINAL) / BAR)
+    # the beats left before the last hit: a snare roll and a riser, then the hit
+    t_roll = FINAL + nb * BAR
+    span = END_HIT - t_roll
+    steps = int(span / (BEAT / 4))
+    for j in range(steps):
+        place("drums", bigclap(), t_roll + j * BEAT / 4, 0.25 + 0.55 * j / max(1, steps))
+    place("fx", C.riser(span, 400, 12000), t_roll, 0.6)
+    chorus(FINAL, nb, 0, intensity=1.15)
     place("fx", C.crash(3.0), FINAL, 0.5)
     # last hit: one big G minor chord ringing out
     tones = [55, 58, 62, 67, 70, 74]

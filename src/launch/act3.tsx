@@ -11,7 +11,8 @@ import { BOLD, FONT } from "../explainer/theme";
 import { Bg, BgKind, GREEN_INK, Label, Logo, MINT_INK, P, Shape, Txt, Win, Wordmark, punch } from "./kit";
 import { morphNamed, shape, ShapeName } from "./morph";
 import { Slam } from "./slam";
-import { SPLIT } from "./scenes";
+import { absorbed, Explosion, ServiceName, ServiceTile, SERVICES, Vortex } from "./fx";
+import { HEARTBEATS, SPLIT } from "./scenes";
 import { BEATS, BREAK, BRIDGE, DROP, END, END_HIT, F, FINAL, kw, pEnd, pStart, w } from "./timeline";
 
 const CX = 960;
@@ -90,9 +91,8 @@ const C3: React.FC = () => {
   return (
     <AbsoluteFill>
       <Bg kind={s.bg} />
-      <Shape pts={pts} x={CX} y={CY - 170} size={270 * punch(frame, cuts[i], 0.12, 9)} rot={(frame - cuts[0]) * 0.8} fill={fill} shadow="drop-shadow(0 30px 60px rgba(0,0,0,0.2))" />
-      <div style={{ position: "absolute", left: CX - 70, top: CY - 240, transform: `scale(${pop}) rotate(${(1 - pop) * -25}deg)` }}>
-        <Icon name={s.icon} size={140} color={iconColor} />
+      <div style={{ position: "absolute", left: CX - 135, top: CY - 310, transform: `scale(${pop * punch(frame, cuts[i], 0.1, 9)}) rotate(${(1 - pop) * -20}deg)` }}>
+        <ServiceTile name={s.icon as ServiceName} size={270} tone={s.bg === "green" ? "white" : "green"} />
       </div>
       <Txt key={i} words={kw("skills", { only: s.words, lead: 4 }).map((x) => ({ ...x, at: Math.max(x.at, cuts[i]) }))} size={150} on={s.bg} y={CY + 170} dur={9} />
     </AbsoluteFill>
@@ -292,8 +292,6 @@ const C5: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ C6: the build — every shape spirals in
-const ORBIT: ShapeName[] = ["circle", "drop", "square", "star", "bubble", "heart", "flower", "shield", "badge", "pill", "house", "spiky"];
-
 const C6: React.FC = () => {
   const frame = useCurrentFrame();
   const a = C5_END;
@@ -301,37 +299,37 @@ const C6: React.FC = () => {
   const p = clamp01((frame - a) / L);
   const enter = ease.outExpo(clamp01((frame - a) / 16));
   const collapse = ease.inExpo(clamp01((frame - (BREAK - 12)) / 12));
-  const k = beatAt(frame);
-  const beatPunch = punch(frame, bt(k), 0.04 + 0.12 * p, 8);
-  const spin = Math.pow(p, 2.2) * 14 + p * 2;
-  const R = lerp(430, 120, Math.pow(p, 1.6)) * (1 - collapse) * enter;
-  const flash = p > 0.6 ? Math.max(0, 1 - (frame - bt(k)) / 6) * (p - 0.6) * 0.5 : 0;
+  // heartbeat pulse (shared with the sound)
+  let hb = 0;
+  for (const h of HEARTBEATS) {
+    const d = frame - h;
+    if (d >= 0 && d < 14) hb = Math.max(hb, Math.exp(-d / 3) + 0.6 * Math.exp(-Math.max(0, d - 5) / 3) * (d >= 5 ? 1 : 0));
+  }
+  const items = Array.from({ length: 26 }, (_, i) => ({ kind: "tile" as const, icon: SERVICES[i % SERVICES.length].icon }));
+  const VS = Math.max(3, Math.floor((L - 44) / items.length));
+  const ab = absorbed(frame, items.length, a + 4, VS, 34);
+  const charge = ab.count / items.length;
+  const core = (90 + 90 * charge) * (1 + 0.1 * hb) * (1 - collapse * 0.92);
   return (
     <AbsoluteFill>
       <Bg kind="black" />
-      <AbsoluteFill style={{ background: `radial-gradient(circle at 50% 50%, rgba(0,191,99,${0.15 + 0.35 * p}) 0%, rgba(0,0,0,0) ${40 + 20 * p}%)`, transform: `scale(${beatPunch})` }} />
-      <AbsoluteFill style={{ background: P.green, opacity: flash }} />
-      {ORBIT.map((s, i) => {
-        const th = (i / ORBIT.length) * Math.PI * 2 + spin;
-        const x = CX + Math.cos(th) * R * 1.35;
-        const y = CY + Math.sin(th) * R;
-        const size = (70 + 30 * seeded(i, 2)) * beatPunch * (1 - collapse);
-        const fill = [P.green, P.mint, "#ffffff"][i % 3];
-        return <Shape key={i} pts={shape(s)} x={x} y={y} size={size} rot={th * 57 + frame * 4} fill={fill} opacity={enter} />;
-      })}
-      <Shape pts={shape("circle")} x={CX} y={CY} size={(40 + 60 * p) * beatPunch * (1 - collapse * 0.9)} fill={P.green} />
-      {/* charging */}
-      <svg width={600} height={600} viewBox="-150 -150 300 300" style={{ position: "absolute", left: CX - 300, top: CY - 300, opacity: enter * (1 - collapse) }}>
-        <circle r={110} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={5} />
-        <circle r={110} fill="none" stroke={P.green} strokeWidth={6} strokeLinecap="round" pathLength={1} strokeDasharray={`${ease.inOutCubic(p)} 1`} transform="rotate(-90)" style={{ filter: "drop-shadow(0 0 10px rgba(0,191,99,0.8))" }} />
-        {Array.from({ length: 48 }, (_, j) => {
-          const on = j / 48 < p;
-          const a = (j / 48) * Math.PI * 2 - Math.PI / 2;
-          return <line key={j} x1={Math.cos(a) * 124} y1={Math.sin(a) * 124} x2={Math.cos(a) * 134} y2={Math.sin(a) * 134} stroke={on ? P.mint : "rgba(255,255,255,0.12)"} strokeWidth={3} strokeLinecap="round" />;
+      <AbsoluteFill style={{ background: `radial-gradient(circle at 50% 50%, rgba(0,191,99,${0.12 + 0.3 * charge + 0.12 * hb}) 0%, rgba(0,0,0,0) ${35 + 25 * charge}%)` }} />
+      <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.75) 100%)", opacity: 0.6 + 0.4 * hb }} />
+      <Vortex items={items} from={a + 4} stagger={VS} travel={34} cx={CX} cy={CY} radius={860} size={1} />
+      {/* the core */}
+      <div style={{ position: "absolute", left: CX - core / 2, top: CY - core / 2, width: core, height: core, borderRadius: "50%", background: "radial-gradient(circle at 40% 35%, #b9ffd6 0%, #2be38a 40%, #00a352 100%)", boxShadow: `0 0 ${60 + 120 * charge}px rgba(0,191,99,${0.5 + 0.4 * charge})`, opacity: enter }} />
+      {/* charging ring */}
+      <svg width={700} height={700} viewBox="-175 -175 350 350" style={{ position: "absolute", left: CX - 350, top: CY - 350, opacity: enter * (1 - collapse), transform: `scale(${1 + 0.04 * hb})` }}>
+        <circle r={140} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={5} />
+        <circle r={140} fill="none" stroke={P.green} strokeWidth={7} strokeLinecap="round" pathLength={1} strokeDasharray={`${charge} 1`} transform="rotate(-90)" style={{ filter: "drop-shadow(0 0 12px rgba(0,191,99,0.9))" }} />
+        {Array.from({ length: 60 }, (_, j) => {
+          const on = j / 60 < charge;
+          const an = (j / 60) * Math.PI * 2 - Math.PI / 2;
+          return <line key={j} x1={Math.cos(an) * 156} y1={Math.sin(an) * 156} x2={Math.cos(an) * 168} y2={Math.sin(an) * 168} stroke={on ? P.mint : "rgba(255,255,255,0.12)"} strokeWidth={3} strokeLinecap="round" />;
         })}
       </svg>
-      <div style={{ position: "absolute", left: CX, top: CY + 190, transform: "translate(-50%, 0)", opacity: enter * (1 - collapse) }}>
-        <Label size={34} color={P.mint}>{`${Math.round(ease.inOutCubic(p) * 100)}%`}</Label>
+      <div style={{ position: "absolute", left: CX, top: CY + 200, transform: "translate(-50%, 0)", opacity: enter * (1 - collapse) }}>
+        <Label size={40} color={P.mint}>{`${Math.round(charge * 100)}%`}</Label>
       </div>
     </AbsoluteFill>
   );
@@ -485,7 +483,8 @@ export const ACT3: React.FC = () => (
       <C7 />
     </Win>
     <Win from={FINAL} to={SPLIT}>
-      <Slam from={FINAL} />
+      <Slam from={FINAL} shakeAt={FINAL} />
+      <Explosion at={FINAL} cx={960} cy={540} />
     </Win>
     <Win from={SPLIT} to={C8_END}>
       <C8 />

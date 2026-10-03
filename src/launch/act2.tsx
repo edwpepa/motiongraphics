@@ -10,6 +10,7 @@ import { BOLD, FONT } from "../explainer/theme";
 import { Bg, BgKind, GREEN_GRAD, GREEN_INK, Label, Logo, MINT_INK, P, Shape, Txt, Win, Wordmark, io, punch } from "./kit";
 import { morphNamed, shape, ShapeName } from "./morph";
 import { Slam } from "./slam";
+import { Explosion, ServiceTile, SERVICES } from "./fx";
 import { BEATS, BRIDGE, DROP, F, kw, pEnd, pStart, w } from "./timeline";
 
 const CX = 960;
@@ -28,20 +29,7 @@ const SLAM: Array<{ bg: BgKind; logo: "white" | "green"; word: string }> = [
   { bg: "deep", logo: "green", word: "#ffffff" },
 ];
 
-const B1: React.FC = () => {
-  const frame = useCurrentFrame();
-  const t = frame - D0;
-  const flood = ease.inCubic(clamp01(t / 7));
-  if (t < 7) {
-    return (
-      <AbsoluteFill>
-        <Bg kind="black" />
-        <Shape pts={shape("logo")} x={CX} y={CY + 30} size={300 + 5200 * flood} fill={P.green} />
-      </AbsoluteFill>
-    );
-  }
-  return <Slam from={D0} zoomOutAt={B1_END - 8} />;
-};
+const B1: React.FC = () => <Slam from={D0} zoomOutAt={B1_END - 8} shakeAt={D0} />;
 
 // ------------------------------------------------------------------ B2: post it in under a minute
 
@@ -580,55 +568,69 @@ const B7: React.FC = () => {
       </AbsoluteFill>
     );
   }
-  const shake = (1 - calm) * Math.sin(frame * 2.7) * 6;
+  // a stress chart: jagged spikes that calm into a smooth, slow wave
+  const W = 1100;
+  const pts: string[] = [];
+  for (let i = 0; i <= 220; i++) {
+    const x = (i / 220) * W;
+    const ph = i * 0.35 - frame * 0.5;
+    const spiky = (Math.sin(ph * 3.1) * 0.6 + Math.sin(ph * 7.3) * 0.4) * (i % 9 === 0 ? 2.2 : 1) * 70;
+    const smooth = Math.sin(i * 0.06 - frame * 0.08) * 26;
+    pts.push(`${x.toFixed(1)},${lerp(spiky, smooth, calm).toFixed(1)}`);
+  }
+  const drawIn = ease.outCubic(clamp01((frame - cut) / 12));
   return (
     <AbsoluteFill>
       <Bg kind="green" />
-      <Shape pts={morphNamed("spiky", "circle", calm, 1.2, frame)} x={CX + shake} y={CY - 220} size={250} rot={(1 - calm) * frame * 4} fill="#fff" shadow="drop-shadow(0 20px 40px rgba(0,60,30,0.25))" />
-      <Txt words={kw("fara2", { color: { 0: ["#06301f", "#021a10"] } })} size={190} on="green" y={CY + 120} />
+      <svg width={W} height={300} viewBox={`0 -150 ${W} 300`} style={{ position: "absolute", left: CX - W / 2, top: CY - 380, overflow: "visible" }}>
+        <polyline points={pts.join(" ")} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth={22} strokeLinejoin="round" strokeLinecap="round" pathLength={1} strokeDasharray={`${drawIn} 1`} style={{ filter: "blur(6px)" }} />
+        <polyline points={pts.join(" ")} fill="none" stroke="#ffffff" strokeWidth={7} strokeLinejoin="round" strokeLinecap="round" pathLength={1} strokeDasharray={`${drawIn} 1`} />
+        <circle cx={W * drawIn} cy={0} r={12 + 4 * Math.sin(frame / 3)} fill="#fff" opacity={drawIn < 1 ? 1 : 0} />
+      </svg>
+      <div style={{ position: "absolute", left: CX + 470, top: CY - 420, display: "flex", alignItems: "center", gap: 10, padding: "10px 20px", borderRadius: 999, background: "rgba(6,48,31,0.25)", opacity: drawIn }}>
+        <div style={{ width: 12, height: 12, borderRadius: 6, background: calm > 0.5 ? "#fff" : "#ff5a50" }} />
+        <Label size={26} color="#fff" weight={500}>
+          {calm > 0.5 ? "Calm" : "Stres"}
+        </Label>
+      </div>
+      <Txt words={kw("fara2", { color: { 0: ["#06301f", "#021a10"] } })} size={190} on="green" y={CY + 150} />
     </AbsoluteFill>
   );
 };
 
-// ------------------------------------------------------------------ B8: the beat montage — shapes and colour, landing on the mark
-const MONTAGE: ShapeName[] = ["circle", "drop", "square", "star", "heart"];
+// ------------------------------------------------------------------ B8: the beat montage — every kind of help, one per beat, landing on the mark
 const MBG: BgKind[] = ["white", "black", "green", "deep", "white"];
+const MONTAGE_N = 5;
 
 const B8: React.FC = () => {
   const frame = useCurrentFrame();
   const k0 = Math.ceil((B7_END - D0) / BEATS);
-  if (frame >= bt(k0 + MONTAGE.length)) return <Slam from={bt(k0 + MONTAGE.length)} />;
+  if (frame >= bt(k0 + MONTAGE_N)) return <Slam from={bt(k0 + MONTAGE_N)} />;
   const k = beatAt(frame) - k0;
-  const i = Math.max(0, Math.min(MONTAGE.length - 1, k));
+  const i = Math.max(0, Math.min(MONTAGE_N - 1, k));
   const at = bt(k0 + i);
-  const prev = MONTAGE[Math.max(0, i - 1)];
-  const cur = MONTAGE[i];
-  const t = clamp01((frame - at) / 7);
-  const pts = i === 0 ? shape(cur) : morphNamed(prev, cur, ease.outBack(t), 1.4, frame);
   const bg = MBG[i];
-  const fill = bg === "green" ? "#ffffff" : bg === "deep" ? P.mint : P.green;
+  const s = SERVICES[i];
+  const p = ease.outBack(clamp01((frame - at) / 8));
   const sc = punch(frame, at, 0.14, 10);
-  const rot = (frame - B7_END) * 1.2 + (i % 2 ? -1 : 1) * 10 * (1 - t);
-  const last = false;
-  const wordA = 0;
+  const ink = bg === "white" ? P.ink : "#ffffff";
   return (
     <AbsoluteFill>
       <Bg kind={bg} />
-      {(() => {
-        const real = cur === "logo" ? clamp01((frame - at - 4) / 5) : 0;
-        const S = 520 * sc * (1 - 0.35 * wordA);
-        return (
-          <>
-            <Shape pts={pts} x={CX - 260 * wordA} y={CY} size={S} rot={last ? 0 : rot} fill={fill} opacity={1 - real} shadow="drop-shadow(0 40px 80px rgba(0,0,0,0.2))" />
-            {real > 0 && <Logo size={S * 1.2} tone="white" style={{ position: "absolute", left: CX - 260 * wordA - S * 0.6, top: CY - S * 0.58, opacity: real }} />}
-          </>
-        );
-      })()}
-      {wordA > 0 && (
-        <div style={{ position: "absolute", left: CX - 40, top: CY, transform: `translate(${(1 - wordA) * 60}px, -54%)`, opacity: wordA }}>
-          <Wordmark size={230} color="#fff" />
+      {/* the previous ones stack up behind, faded */}
+      {SERVICES.slice(0, i).map((q, j) => (
+        <div key={j} style={{ position: "absolute", left: CX + (j - i) * 230 - 90, top: CY - 210, opacity: 0.25, transform: `scale(${0.7})` }}>
+          <ServiceTile name={q.icon} size={180} tone={bg === "green" ? "white" : "green"} />
         </div>
-      )}
+      ))}
+      <div style={{ position: "absolute", left: CX - 150, top: CY - 260, transform: `scale(${p * sc}) rotate(${(1 - p) * -18}deg)` }}>
+        <ServiceTile name={s.icon} size={300} tone={bg === "green" ? "white" : bg === "white" ? "green" : "green"} />
+      </div>
+      <div style={{ position: "absolute", left: CX, top: CY + 180, transform: `translate(-50%, -50%) translateY(${(1 - p) * 40}px)`, opacity: clamp01(p * 1.5) }}>
+        <Label size={110} color={ink}>
+          {s.label}
+        </Label>
+      </div>
     </AbsoluteFill>
   );
 };
@@ -637,6 +639,7 @@ export const ACT2: React.FC = () => (
   <>
     <Win from={D0} to={B1_END}>
       <B1 />
+      <Explosion at={D0} cx={960} cy={570} />
     </Win>
     <Win from={B1_END} to={B2_END}>
       <B2 />

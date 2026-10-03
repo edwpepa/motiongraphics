@@ -90,6 +90,7 @@ const SHAPES: Record<string, () => Pt[]> = {
       return [2.9 * 16 * Math.pow(Math.sin(t), 3), -2.9 * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) - 4] as Pt;
     }),
   square: () => roundRect(84, 84, 22),
+  battery: () => roundRect(52, 92, 14),
   pill: () => roundRect(98, 40, 20),
   card: () => roundRect(70, 92, 12),
   note: () => roundRect(98, 52, 8),

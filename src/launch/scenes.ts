@@ -1,4 +1,4 @@
-import { BEATS, DROP, F, FINAL, pEnd, pStart, w } from "./timeline";
+import { BEATS, BREAK, DROP, F, FINAL, pEnd, pStart, w } from "./timeline";
 
 // Scene boundaries (frames), shared by the picture and the sound design.
 export const A1_END = pStart("robinet") - 4;
@@ -32,3 +32,17 @@ export const SPLIT = Math.round(FINAL + 4 * BEATS);
 export const MONTAGE_SHAPES = 5;
 export const C9_START = C8_END;
 export const C10_START = C9_END;
+
+/** suspense heartbeats (frames): slow to racing, from the end of "Tu alegi" to the break */
+export const HEARTBEATS = (() => {
+  const out: number[] = [];
+  const a = C5_END + 4;
+  const b = BREAK - 14;
+  let f = a;
+  while (f < b) {
+    out.push(Math.round(f));
+    const k = (f - a) / (b - a);
+    f += 30 * (0.95 - 0.68 * k);
+  }
+  return out;
+})();

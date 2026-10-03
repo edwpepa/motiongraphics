@@ -4,6 +4,7 @@ import { StoreBadge } from "../explainer/components/StoreBadge";
 import { clamp01, ease } from "../explainer/lib/anim";
 import { Bg, BgKind, Logo, P, Wordmark, punch } from "./kit";
 import { BEATS, DROP, F } from "./timeline";
+import { shake } from "./fx";
 
 const D0 = F(DROP);
 export const bt = (k: number) => Math.round(D0 + k * BEATS);
@@ -20,7 +21,7 @@ export const SLAM: Array<{ bg: BgKind; logo: "white" | "green"; word: string }> 
  * The brand switch: logo + wordmark, the whole set flipping colour on every beat with a punch.
  * `from` is the frame the switching starts at; `offset` picks the first colour.
  */
-export const Slam: React.FC<{ from: number; offset?: number; ro?: boolean; badges?: boolean; zoomOutAt?: number; size?: number; hold?: number }> = ({
+export const Slam: React.FC<{ from: number; offset?: number; ro?: boolean; badges?: boolean; zoomOutAt?: number; size?: number; hold?: number; shakeAt?: number }> = ({
   from,
   offset = 0,
   ro = false,
@@ -28,6 +29,7 @@ export const Slam: React.FC<{ from: number; offset?: number; ro?: boolean; badge
   zoomOutAt,
   size = 1,
   hold,
+  shakeAt,
 }) => {
   const frame = useCurrentFrame();
   const k0 = beatAt(from);
@@ -36,8 +38,9 @@ export const Slam: React.FC<{ from: number; offset?: number; ro?: boolean; badge
   const s = SLAM[i];
   const zoomOut = zoomOutAt === undefined ? 0 : ease.inExpo(clamp01((frame - zoomOutAt) / 8));
   const sc = punch(frame, Math.max(from, bt(kNow)), 0.1, 9) * (1 + 0.04 * clamp01((frame - from) / 60)) * (1 + 3 * zoomOut) * size;
+  const sh = shakeAt === undefined ? { x: 0, y: 0 } : shake(frame, shakeAt);
   return (
-    <AbsoluteFill>
+    <AbsoluteFill style={{ transform: `translate(${sh.x}px, ${sh.y}px)` }}>
       <Bg kind={s.bg} />
       <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", flexDirection: "column", gap: 70, transform: `scale(${sc})`, opacity: 1 - zoomOut, filter: zoomOut > 0 ? `blur(${zoomOut * 20}px)` : undefined }}>
         <div style={{ display: "flex", alignItems: "center", gap: ro ? 36 : 44 }}>

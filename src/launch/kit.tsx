@@ -25,16 +25,41 @@ const BG: Record<BgKind, string> = {
 export const isDark = (k: BgKind) => k !== "white";
 
 /** full-bleed colour set with a whisper of grain */
-export const Bg: React.FC<{ kind: BgKind; style?: React.CSSProperties }> = ({ kind, style }) => (
-  <AbsoluteFill style={{ background: BG[kind], ...style }}>
-    <AbsoluteFill style={{ backgroundImage: `url(${staticFile("images/grain.png")})`, backgroundSize: "512px 512px", opacity: kind === "white" ? 0.035 : 0.06, mixBlendMode: "overlay" }} />
-  </AbsoluteFill>
-);
+const GLOW: Record<BgKind, string> = {
+  white: "rgba(0,191,99,0.10)",
+  black: "rgba(0,191,99,0.16)",
+  green: "rgba(255,255,255,0.20)",
+  deep: "rgba(62,230,153,0.16)",
+};
+
+/** full-bleed colour set with a living light that drifts across it, and a whisper of grain */
+export const Bg: React.FC<{ kind: BgKind; style?: React.CSSProperties }> = ({ kind, style }) => {
+  const frame = useCurrentFrame();
+  const s = frame / 30;
+  const x1 = 50 + 30 * Math.sin(s * 0.7) + 8 * Math.sin(s * 1.9);
+  const y1 = 45 + 22 * Math.cos(s * 0.55 + 1);
+  const x2 = 50 - 34 * Math.sin(s * 0.5 + 2);
+  const y2 = 60 + 20 * Math.sin(s * 0.8);
+  return (
+    <AbsoluteFill style={{ background: BG[kind], overflow: "hidden", ...style }}>
+      <AbsoluteFill style={{ background: `radial-gradient(ellipse 45% 55% at ${x1}% ${y1}%, ${GLOW[kind]} 0%, rgba(0,0,0,0) 70%), radial-gradient(ellipse 35% 45% at ${x2}% ${y2}%, ${GLOW[kind]} 0%, rgba(0,0,0,0) 70%)` }} />
+      <AbsoluteFill style={{ backgroundImage: `url(${staticFile("images/grain.png")})`, backgroundSize: "512px 512px", opacity: kind === "white" ? 0.035 : 0.06, mixBlendMode: "overlay" }} />
+    </AbsoluteFill>
+  );
+};
 
 /** Mounts children only inside [from, to). */
-export const Win: React.FC<{ from: number; to: number; children: React.ReactNode }> = ({ from, to, children }) => {
+export const Win: React.FC<{ from: number; to: number; children: React.ReactNode; still?: boolean }> = ({ from, to, children, still }) => {
   const frame = useCurrentFrame();
-  return frame >= from && frame < to ? <>{children}</> : null;
+  if (frame < from || frame >= to) return null;
+  if (still) return <>{children}</>;
+  // the camera never stops: a slow push-in with a gentle drift across every scene
+  const p = (frame - from) / Math.max(1, to - from);
+  const sc = 1.012 + 0.05 * ease.inOutCubic(p);
+  const dx = Math.sin(frame / 47 + from) * 10;
+  const dy = Math.cos(frame / 59 + from) * 7;
+  const rot = Math.sin(frame / 83 + from) * 0.35;
+  return <AbsoluteFill style={{ transform: `translate(${dx}px, ${dy}px) scale(${sc}) rotate(${rot}deg)` }}>{children}</AbsoluteFill>;
 };
 
 /** an outline drawn as a filled SVG shape, centred at (x, y), `size` px for the 100-unit box */

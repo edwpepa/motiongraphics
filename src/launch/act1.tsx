@@ -8,6 +8,7 @@ import { clamp01, ease, lerp, seeded } from "../explainer/lib/anim";
 import { BOLD, FONT } from "../explainer/theme";
 import { Bg, GREEN_GRAD, GREEN_INK, Label, Logo, MINT_INK, P, Shape, Txt, io } from "./kit";
 import { blob, mix, morphNamed, shape } from "./morph";
+import { absorbed, Vortex } from "./fx";
 import { DROP, F, kw, pEnd, pStart, w } from "./timeline";
 
 const CX = 960;
@@ -309,6 +310,7 @@ export const A4: React.FC = () => (
 );
 
 // ------------------------------------------------------------------ A5: no time, no tools, no nerve
+const shrinkOf = (frame: number, kAll: number) => ease.inOutCubic(clamp01((frame - (kAll - 6)) / 14));
 
 export const A5: React.FC = () => {
   const frame = useCurrentFrame();
@@ -320,9 +322,11 @@ export const A5: React.FC = () => {
   const SY = CY;
   let pts = shape("circle");
   if (frame >= kTools - 10 && frame < kNerves - 10) pts = morphNamed("circle", "square", ease.outBack(clamp01((frame - (kTools - 10)) / 12)), 1, frame);
-  else if (frame >= kNerves - 10) pts = morphNamed("square", "spiky", ease.outBack(clamp01((frame - (kNerves - 10)) / 12)), 1, frame);
+  else if (frame >= kNerves - 10) pts = morphNamed("square", "battery", ease.outBack(clamp01((frame - (kNerves - 10)) / 12)), 1, frame);
   const appear = ease.outBack(clamp01((frame - (kTime - 12)) / 14));
-  const jitter = frame >= kNerves - 2 ? Math.sin(frame * 2.3) * 4 : 0;
+  const jitter = 0;
+  const bat = clamp01((frame - (kNerves - 2)) / 6) * (1 - shrinkOf(frame, kAll));
+  const level = lerp(0.85, 0.06, ease.inOutCubic(clamp01((frame - kNerves) / 22)));
   const shrink = ease.inOutCubic(clamp01((frame - (kAll - 6)) / 14));
   const size = 360 * appear * (1 - 0.82 * shrink);
   const clock = 1 - clamp01((frame - (kTools - 12)) / 5);
@@ -346,7 +350,15 @@ export const A5: React.FC = () => {
           </div>
         );
       })}
-      <Shape pts={pts} x={SX + jitter} y={SY} size={size} rot={frame >= kNerves ? frame * 3 : 0} fill={P.green} gradient={GREEN_GRAD} id="a5" shadow="drop-shadow(0 30px 70px rgba(0,191,99,0.25))" />
+      <Shape pts={pts} x={SX + jitter} y={SY} size={size} fill={bat > 0 ? "#1c2420" : P.green} gradient={bat > 0 ? ["#2a3631", "#141a17"] : GREEN_GRAD} id={bat > 0 ? "a5b" : "a5"} shadow="drop-shadow(0 30px 70px rgba(0,191,99,0.25))" />
+      {/* nerves: a battery draining into the red */}
+      {bat > 0 && (
+        <svg width={size} height={size} viewBox="-50 -50 100 100" style={{ position: "absolute", left: SX - size / 2, top: SY - size / 2, opacity: bat, overflow: "visible" }}>
+          <rect x={-10} y={-53} width={20} height={6} rx={2} fill="#2a3631" />
+          <rect x={-21} y={-41 + 82 * (1 - level)} width={42} height={82 * level} rx={7} fill={level > 0.3 ? P.green : "#ff4d42"} style={{ filter: `drop-shadow(0 0 6px ${level > 0.3 ? "rgba(0,191,99,0.7)" : "rgba(255,77,66,0.8)"})` }} />
+          {level < 0.3 && <path d="M3 -18 L-7 2 L1 2 L-3 20 L9 -4 L1 -4 Z" fill="#fff" opacity={0.5 + 0.5 * Math.sin(frame / 2)} />}
+        </svg>
+      )}
       {/* clock hands */}
       {clock > 0 && appear > 0.3 && (
         <svg width={400} height={400} viewBox="-50 -50 100 100" style={{ position: "absolute", left: SX - 200, top: SY - 200, opacity: clock }}>
@@ -371,55 +383,82 @@ const DAYS = ["Lun", "Mar", "Mie", "Joi", "Vin", "Sâm", "Dum", "Lun", "Mar", "M
 export const A6: React.FC = () => {
   const frame = useCurrentFrame();
   const t0 = A5_END;
-  const cellW = 250;
-  const scroll = (frame - t0) * 9;
-  const x0 = 520;
+  const L = A6_END - t0;
+  const p = clamp01((frame - t0) / L);
+  const CW = 210;
+  const CH = 176;
+  const G = 18;
+  const COLS = 7;
+  const ROWS = 5;
+  const GW = COLS * CW + (COLS - 1) * G;
+  const GH = ROWS * CH + (ROWS - 1) * G;
+  const FIRST = 3; // October starts on a Thursday
+  // the postponing spreads day by day across the month
+  const reach = lerp(2, 24, ease.inOutCubic(clamp01((frame - (t0 + 3)) / (L - 6))));
+  const count = Math.max(0, Math.floor(reach));
   return (
     <AbsoluteFill>
-      <Bg kind="deep" />
-      {/* "today" marker */}
-      <div style={{ position: "absolute", left: CX - 2, top: CY + 80, width: 4, height: 270, borderRadius: 2, background: "rgba(255,255,255,0.5)" }} />
-      <div style={{ position: "absolute", left: CX, top: CY + 64, transform: "translate(-50%, -100%)" }}>
-        <Label size={26} color="rgba(255,255,255,0.7)" weight={500}>
-          azi
+      <Bg kind="black" />
+      <AbsoluteFill style={{ perspective: 1700 }}>
+        <div
+          style={{
+            position: "absolute",
+            left: CX - GW / 2,
+            top: CY - GH / 2 + 90,
+            width: GW,
+            height: GH,
+            transformStyle: "preserve-3d",
+            transform: `rotateX(${lerp(54, 46, p)}deg) rotateZ(${lerp(-14, -8, p)}deg) translate3d(${lerp(160, -120, p)}px, ${lerp(60, -40, p)}px, ${lerp(-80, 60, p)}px)`,
+          }}
+        >
+          {Array.from({ length: COLS * ROWS }, (_, i) => {
+            const day = i - FIRST + 1;
+            const col = i % COLS;
+            const row = Math.floor(i / COLS);
+            if (day < 1 || day > 31) return null;
+            const r = clamp01(reach - day + 1);
+            const e = ease.outCubic(r);
+            const isToday = day === count + 1;
+            return (
+              <div
+                key={i}
+                style={{
+                  position: "absolute",
+                  left: col * (CW + G),
+                  top: row * (CH + G),
+                  width: CW,
+                  height: CH,
+                  borderRadius: 34,
+                  background: e > 0 ? `linear-gradient(160deg, rgba(255,90,80,${0.1 + 0.22 * e}), rgba(120,10,10,${0.15 + 0.2 * e}))` : "linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025))",
+                  border: `1.5px solid ${e > 0 ? `rgba(255,110,100,${0.25 + 0.5 * e})` : isToday ? "rgba(185,255,214,0.8)" : "rgba(255,255,255,0.1)"}`,
+                  boxShadow: e > 0 ? `0 0 ${50 * e}px rgba(255,59,48,${0.35 * e})` : undefined,
+                  transform: `translateZ(${e * -18 + (isToday ? 24 : 0)}px)`,
+                  fontFamily: FONT,
+                  fontWeight: BOLD,
+                  overflow: "hidden",
+                }}
+              >
+                <div style={{ position: "absolute", left: 22, top: 16, fontSize: 52, letterSpacing: "-0.04em", color: e > 0.5 ? "#ff7a70" : "#fff" }}>{day}</div>
+                <div style={{ position: "absolute", left: 22, bottom: 18, fontSize: 18, fontWeight: 500, color: e > 0.5 ? "rgba(255,150,140,0.9)" : "rgba(255,255,255,0.35)", opacity: e }}>amânat</div>
+                <div style={{ position: "absolute", left: 18, right: 18, top: 50, height: 4, borderRadius: 2, background: "#ff5a50", transformOrigin: "0 50%", transform: `scaleX(${clamp01((r - 0.3) / 0.7)}) rotate(-10deg)` }} />
+              </div>
+            );
+          })}
+        </div>
+      </AbsoluteFill>
+      <AbsoluteFill style={{ background: "linear-gradient(180deg, #060807 0%, rgba(6,8,7,0.85) 26%, rgba(6,8,7,0) 50%)" }} />
+      <Txt words={kw("amani", { color: { 2: ["#ff8a80", "#ff4d42"] } })} size={120} on="black" y={150} out={A6_END - 5} />
+      <div style={{ position: "absolute", right: 120, bottom: 90, display: "flex", alignItems: "baseline", gap: 14, opacity: clamp01((frame - t0 - 4) / 6) * (1 - clamp01((frame - (A6_END - 5)) / 5)) }}>
+        <Label size={34} color="rgba(255,150,140,0.85)" weight={500}>
+          Amânat de
+        </Label>
+        <Label size={96} color="#ff6b61">
+          {count}
+        </Label>
+        <Label size={34} color="rgba(255,150,140,0.85)" weight={500}>
+          zile
         </Label>
       </div>
-      <div style={{ position: "absolute", left: x0 - scroll, top: CY + 120, display: "flex" }}>
-        {[...DAYS, ...DAYS].map((d, i) => {
-          const cx = x0 - scroll + i * cellW + (cellW - 18) / 2;
-          const late = clamp01((CX - 30 - cx) / 90);
-          const strike = clamp01((CX - 60 - cx) / 60);
-          return (
-            <div
-              key={i}
-              style={{
-                width: cellW - 18,
-                marginRight: 18,
-                height: 190,
-                borderRadius: 36,
-                background: late > 0 ? `rgba(255,59,48,${0.08 + 0.14 * late})` : "rgba(185,255,214,0.06)",
-                border: `1.5px solid ${late > 0 ? `rgba(255,90,80,${0.2 + 0.5 * late})` : "rgba(185,255,214,0.14)"}`,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                position: "relative",
-                transform: `scale(${1 - 0.04 * late})`,
-              }}
-            >
-              <Label size={34} color={late > 0.5 ? "rgba(255,140,130,0.85)" : "rgba(185,255,214,0.6)"} weight={500}>
-                {d}
-              </Label>
-              <Label size={68} color={late > 0.5 ? "#ff6b61" : "#fff"}>
-                {12 + (i % 31)}
-              </Label>
-              <div style={{ position: "absolute", left: "22%", right: "22%", top: "62%", height: 5, borderRadius: 3, background: "#ff5a50", transformOrigin: "0 50%", transform: `scaleX(${strike}) rotate(-8deg)` }} />
-            </div>
-          );
-        })}
-      </div>
-      <Txt words={kw("amani", { color: { 2: ["#ff8a80", "#ff4d42"] } })} size={120} on="deep" y={CY - 220} out={A6_END - 5} />
     </AbsoluteFill>
   );
 };
@@ -633,12 +672,21 @@ export const A12: React.FC = () => {
   const toLogo = ease.outBack(clamp01((frame - (hand - 4)) / 14));
   const tremble = frame > hand + 8 ? Math.sin(frame * 3.1) * 3 * clamp01((frame - (hand + 8)) / 8) : 0;
   const gather = 1 - 0.12 * ease.inCubic(clamp01((frame - (A12_END - 8)) / 8));
-  const size = (lerp(40, 340, grow) + 6 * Math.sin(frame / 6)) * dotIn * gather;
+  // every postponed chore gets pulled into the mark
+  const VF = A10_END + 2;
+  const VS = 5;
+  const VT = 30;
+  const items = SHEET.slice(0, 15).map((label) => ({ kind: "pill" as const, label }));
+  const ab = absorbed(frame, items.length, VF, VS, VT);
+  const gulp = ab.since >= 0 && ab.since < 8 ? Math.sin((ab.since / 8) * Math.PI) * 0.12 : 0;
+  const size = (lerp(40 + 6 * ab.count, 340, grow) + 6 * Math.sin(frame / 6)) * dotIn * gather * (1 + gulp);
   const pts = frame < hand - 4 ? shape("circle") : morphNamed("circle", "logo", toLogo, 1.2, frame);
   const real = clamp01((frame - (hand + 8)) / 6);
   return (
     <AbsoluteFill>
       <Bg kind="black" />
+      <Vortex items={items} from={VF} stagger={VS} travel={VT} cx={CX} cy={CY + 30} radius={820} />
+      <AbsoluteFill style={{ background: `radial-gradient(circle at ${CX}px ${CY + 30}px, rgba(0,191,99,${0.08 + 0.02 * ab.count}) 0%, rgba(0,0,0,0) 40%)` }} />
       <Shape pts={pts} x={CX + tremble} y={CY + 30} size={size} fill={P.green} gradient={GREEN_GRAD} id="a12" opacity={1 - real} shadow={`drop-shadow(0 0 ${40 * grow}px rgba(0,191,99,0.35))`} />
       {real > 0 && <Logo size={size * 1.2} style={{ position: "absolute", left: CX + tremble - size * 0.6, top: CY + 30 - size * 0.58, opacity: real }} />}
       <Txt words={kw("aici", { only: [0, 1] })} size={64} on="black" y={CY - 300} />

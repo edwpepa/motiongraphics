@@ -136,8 +136,10 @@ export const Grade: React.FC<{ bars?: number }> = ({ bars = 1 }) => {
 
 // ------------------------------------------------------------------ subtitles: small, centred above the lower bar, word by word
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-export const Captions: React.FC<{ hide?: string[] }> = ({ hide = [] }) => {
+export const Captions: React.FC<{ hide?: string[]; mute?: [number, number][] }> = ({ hide = [], mute = [] }) => {
   const t = useT();
+  const quiet = mute.reduce((m, [a, b]) => Math.max(m, clamp01((t - a) / 0.15) * clamp01((b - t) / 0.2)), 0);
+  if (quiet >= 1) return null;
   let cur: string | null = null;
   for (let i = 0; i < ORDER.length; i++) {
     const k = ORDER[i];
@@ -151,12 +153,12 @@ export const Captions: React.FC<{ hide?: string[] }> = ({ hide = [] }) => {
   const outAt = Math.min(next ? VO[next].start - 0.12 : 99, p.end + 0.7);
   const o = clamp01((t - (p.start - 0.12)) / 0.15) * clamp01((outAt - t) / 0.15);
   return (
-    <div style={{ position: "absolute", left: 0, right: 0, bottom: BAR_H + 46, display: "flex", justifyContent: "center", opacity: o }}>
-      <div style={{ fontFamily: FONT, fontWeight: 500, fontSize: 30, letterSpacing: "0.01em", color: "#f2f2f2", textShadow: "0 2px 14px rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>
+    <div style={{ position: "absolute", left: 0, right: 0, bottom: BAR_H + 46, display: "flex", justifyContent: "center", opacity: o * (1 - quiet) }}>
+      <div style={{ fontFamily: FONT, fontWeight: 500, fontSize: 36, letterSpacing: "0.01em", color: "#f2f2f2", textShadow: "0 2px 14px rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>
         {p.words.map(([word, at], i) => {
           const a = clamp01((t - at + 0.06) / 0.16);
           return (
-            <span key={i} style={{ opacity: 0.22 + 0.78 * a, display: "inline-block", marginRight: 9, filter: `blur(${(1 - a) * 3}px)` }}>
+            <span key={i} style={{ opacity: 0.22 + 0.78 * a, display: "inline-block", marginRight: 11, filter: `blur(${(1 - a) * 3}px)` }}>
               {i === 0 ? cap(word) : word}
             </span>
           );

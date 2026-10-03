@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
 import { BrainCam, drawBrain } from "./act1";
-import { beam, fog } from "./act3";
+import { beam, burst, fog } from "./act3";
 import { CanvasScene, FONT, H, Logo, V3, W, clamp01, ease, flare, glow, lerp, rng01, useT, w } from "./kit";
 
 const ideaAt = (T: number): V3 => [0.55 * Math.sin(T * 2.3), 0.3 * Math.sin(T * 3.1 + 1) + 0.1, 0.38 * Math.sin(T * 1.7 + 2)];
@@ -141,8 +141,6 @@ export const EndScene: React.FC<{ from: number }> = ({ from }) => {
   const sweep = rng01(T, R + 0.2, R + 1.8, ease.inOut);
   const out = rng01(T, 68.9, 69.9, ease.inOut);
   const scale = lerp(1.1, 1.0, ease.outCubic((T - R) / 3)) * lerp(1, 0.97, (T - R) / 6);
-  const tag = "We'd love to build yours.";
-  const tagAt = w("yours", 1);
   return (
     <AbsoluteFill style={{ opacity: 1 - out }}>
       <CanvasScene
@@ -150,7 +148,9 @@ export const EndScene: React.FC<{ from: number }> = ({ from }) => {
           const t = T - from;
           ctx.globalCompositeOperation = "lighter";
           fog(ctx, T, 0.9 * reveal, H * 0.66);
-          for (const s of [-1, 1]) beam(ctx, W / 2 + s * 560, H + 20, s * (0.1 + 0.03 * Math.sin(T * 0.7)), 1500, 0.08, 0.25 * reveal);
+          const outw = ease.inOutSine(clamp01((T - R) / 3.0));
+          for (const s of [-1, 1]) beam(ctx, W / 2 + s * lerp(560, 780, outw), H + 20, s * (0.08 + 0.7 * outw), 1700, 0.08, 0.4 * reveal * (1 - outw));
+          burst(ctx, W / 2, H / 2 - 30, T, R);
           const k = Math.exp(-Math.max(0, T - R) / 0.4);
           if (T >= R - 0.1) flare(ctx, W / 2, H / 2 - 30, clamp01(k + (1 - reveal) * 0.5) * 0.45, 800, 50);
           glow(ctx, W / 2, H / 2 - 30, 500, 0.05 * reveal);
@@ -163,16 +163,6 @@ export const EndScene: React.FC<{ from: number }> = ({ from }) => {
       />
       <div style={{ position: "absolute", left: W / 2, top: H / 2 - 30, transform: `translate(-50%, -50%) scale(${scale})`, opacity: reveal, filter: `blur(${(1 - reveal) * 10}px)` }}>
         <Logo width={400} sweep={sweep} />
-      </div>
-      <div style={{ position: "absolute", left: 0, right: 0, top: H / 2 + 95, display: "flex", justifyContent: "center", fontFamily: FONT, fontWeight: 500, fontSize: 26, color: "#cfd2d8", letterSpacing: "0.06em" }}>
-        {tag.split("").map((ch, i) => {
-          const a = ease.outCubic((T - tagAt - i * 0.03) / 0.5);
-          return (
-            <span key={i} style={{ opacity: clamp01(a), filter: `blur(${(1 - clamp01(a)) * 10}px)`, whiteSpace: "pre", display: "inline-block", transform: `translateY(${(1 - clamp01(a)) * 10}px)` }}>
-              {ch}
-            </span>
-          );
-        })}
       </div>
     </AbsoluteFill>
   );

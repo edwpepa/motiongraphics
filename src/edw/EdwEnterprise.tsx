@@ -66,7 +66,7 @@ export const EdwEnterprise: React.FC<{ audio?: boolean }> = ({ audio = true }) =
       </Shot>
       <Grade />
       <CornerLogo />
-      <Captions hide={["edw", "yours"]} />
+      <Captions hide={["edw", "yours"]} mute={[[w("edw", 0) - 0.15, w("roof", 0) + 0.5], [FIN - 0.15, 71]]} />
       {audio && (
         <Sequence>
           <Audio src={staticFile("audio/edw-mix.mp3")} />

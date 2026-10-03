@@ -40,6 +40,39 @@ export function beam(ctx: CanvasRenderingContext2D, x: number, y: number, ang: n
   ctx.restore();
 }
 
+let SHARDS: { a: number; e: number; v: number; s: number; ph: number }[] | null = null;
+/** the burst behind the logo: a flash, a shockwave ring, embers flung outwards and slowing down */
+export function burst(ctx: CanvasRenderingContext2D, x: number, y: number, T: number, at: number) {
+  if (T < at) return;
+  const age = T - at;
+  SHARDS ??= (() => {
+    const r = mulberry(77);
+    return Array.from({ length: 260 }, () => ({ a: r() * Math.PI * 2, e: (r() - 0.5) * 0.9, v: 0.35 + r() * 1.0, s: 0.6 + r() * 1.8, ph: r() * 10 }));
+  })();
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  const k = Math.exp(-age / 0.45);
+  flare(ctx, x, y, k * 0.9, 1500, 120);
+  glow(ctx, x, y, 520, 0.22 * Math.exp(-age / 1.2));
+  for (const [d, g] of [[0, 1], [0.12, 0.5]] as const) {
+    const u = ease.outCubic((age - d) / 1.3);
+    if (u <= 0 || u >= 1) continue;
+    ctx.strokeStyle = `rgba(240,244,255,${(1 - u) * 0.55 * g})`;
+    ctx.lineWidth = 1 + 6 * (1 - u);
+    ctx.beginPath();
+    ctx.ellipse(x, y, 60 + 900 * u, (60 + 900 * u) * 0.42, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  for (const p of SHARDS) {
+    const dist = p.v * 760 * (1 - Math.exp(-age * 2.4)) + age * 22;
+    const px = x + Math.cos(p.a) * dist, py = y + Math.sin(p.a) * dist * 0.55 + p.e * dist * 0.3 + age * age * 18;
+    const fl = 0.55 + 0.45 * Math.sin(T * 11 + p.ph * 5);
+    const a = fl * Math.exp(-age / 1.6) * clamp01(age * 10);
+    glow(ctx, px, py, 6 * p.s, a);
+  }
+  ctx.restore();
+}
+
 let PEOPLE: { sx: number; sy: number; tx: number; ty: number; d: number }[] | null = null;
 const ROOF = { cx: W / 2, base: 700, half: 330, peak: 395, eave: 525 };
 function people() {
@@ -61,7 +94,7 @@ export const LogoScene: React.FC<{ from: number; to: number }> = ({ from, to }) 
   const T = useT();
   const R = w("edw", 0) - 0.02;
   const reveal = rng01(T, R, R + 0.55, ease.outCubic);
-  const up = rng01(T, w("roof", 0) - 0.2, w("roof", 0) + 1.0, ease.inOut);
+  const up = rng01(T, w("roof", 0) - 0.35, w("roof", 0) + 0.45, ease.inOut);
   const sweep = rng01(T, R + 0.1, R + 1.5, ease.inOut);
   const out = rng01(T, to - 0.3, to, ease.inCubic);
   const scale = lerp(1.06, 1.0, ease.outCubic((T - R) / 3));
@@ -77,7 +110,8 @@ export const LogoScene: React.FC<{ from: number; to: number }> = ({ from, to }) 
           fog(ctx, T, 0.6 + 0.8 * post, H * 0.62);
           for (const s of [-1, 1]) {
             const ang = s * (0.42 - 0.3 * ease.inOut(t / 2.4)) + Math.sin(T * 0.9 + s) * 0.06;
-            beam(ctx, W / 2 + s * 520, H + 20, ang * (1 - reveal) + s * 0.08 * reveal, 1500, 0.09, pre * 0.9 + post * 0.3);
+            const outw = ease.inOutSine(clamp01((T - R) / 2.6));
+            beam(ctx, W / 2 + s * lerp(520, 760, outw), H + 20, ang * (1 - reveal) + s * (0.08 + 0.72 * outw) * reveal, 1700, 0.09, pre * 0.9 + post * 0.45 * (1 - outw));
           }
           // the slit of light that opens into the logo
           const slit = rng01(T, R - 0.55, R, ease.inCubic) * (1 - reveal);
@@ -88,7 +122,7 @@ export const LogoScene: React.FC<{ from: number; to: number }> = ({ from, to }) 
           }
           if (T >= R) {
             const k = Math.exp(-(T - R) / 0.35);
-            flare(ctx, W / 2, H / 2, k * 0.45, 800, 50);
+            burst(ctx, W / 2, H / 2 - 10, T, R);
             ctx.fillStyle = `rgba(255,255,255,${0.08 * Math.exp(-(T - R) / 0.2)})`;
             ctx.fillRect(0, 0, W, H);
           }

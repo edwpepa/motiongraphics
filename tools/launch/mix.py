@@ -45,7 +45,6 @@ def at_of(spec):
 
 def main():
     vo_src = load(os.path.join(ROOT, "public/audio/launch-vo.mp3"))
-    song = load(os.path.join(ROOT, "public/audio", TL["songFile"]))
 
     # ---- voice
     vo = np.zeros((2, N))
@@ -58,20 +57,8 @@ def main():
         place_clip(vo, fade(vo_src[:, int(a * SR):int(b * SR)], 0.01, 0.08), D + r - 0.1)
 
     # ---- song edit
-    mus = np.zeros((2, N))
-    for s in TL["song"]:
-        at = at_of(s["at"])
-        clip = song[:, int(s["from"] * SR):int(s["to"] * SR)].copy()
-        if s.get("muffle"):
-            n = clip.shape[1]
-            nb = int(math.ceil(n / 256))
-            k = np.linspace(0, 1, nb)
-            fcs = 420 * (1000 / 420) ** (k ** 2)
-            clip = np.stack([C.swept(clip[ch], "lowpass", fcs, order=2) for ch in range(2)]) * 1.25
-            clip = fade(clip, 1.2, 0.8)
-        else:
-            clip = fade(clip, 0.004, 0.02)
-        place_clip(mus, clip, at)
+    import score
+    mus = score.build()
     # tail of the song fades out by END
     t = np.arange(N) / SR
     mus *= np.interp(t, [END - 2.5, END - 0.05], [1, 0])[None, :]
@@ -96,13 +83,13 @@ def main():
     CUES = json.load(open(os.path.join(ROOT, "tools/launch/cues.json")))
     M = CUES["marks"]
     sfx = np.zeros((2, N))
-    C.place(sfx, C.reverse_swell(2.2), D - 2.2, 0.45)
-    C.place(sfx, C.riser(2.4, 300, 7000), D - 2.4, 0.2)
     cache = {}
     for cue in CUES["cues"]:
         k = cue["k"]
         if k == "charge":
             clip, off = X.charge(M["brk"] - cue["t"]), 0.0
+        elif k == "calm":
+            clip, off = X.calm(D - cue["t"]), 0.0
         else:
             if k not in cache or k in ("fall", "bubble", "coin", "drip", "key"):
                 r = X.KINDS[k]()

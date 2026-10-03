@@ -85,6 +85,23 @@ def drip():
     return verb(norm(y + splash) * 0.8, 0.45, C.IR_ROOM)
 
 
+def splash():
+    dur = 0.9
+    t = T(dur)
+    body = C.filt(noise(dur), "bandpass", (400, 3500), 2) * np.exp(-t / 0.07)
+    hiss = C.filt(noise(dur), "highpass", 3000, 2) * np.exp(-t / 0.15) * 0.35
+    y = body + hiss
+    for _ in range(9):
+        at = rng.uniform(0.02, 0.45)
+        f0 = rng.uniform(500, 1400)
+        n = int(0.06 * SR)
+        tt = np.arange(n) / SR
+        b = np.sin(2 * np.pi * np.cumsum(f0 * (1 + 1.8 * tt / 0.06)) / SR) * np.exp(-tt / 0.02) * rng.uniform(0.2, 0.5)
+        i0 = int(at * SR)
+        y[i0 : i0 + n] += b[: len(y) - i0]
+    return verb(norm(y) * 0.8, 0.35, C.IR_ROOM)
+
+
 def roller():
     t = T(0.42)
     n = C.filt(noise(0.42), "bandpass", (250, 2600), 2)
@@ -213,8 +230,8 @@ def bell():
 
 def shimmer():
     out = np.zeros(int(2.2 * SR))
-    for i, m in enumerate((84, 88, 91, 96, 100)):
-        b = C.bell(m, 1.4, ratio=2.0, index=0.7, tau=0.6) * (0.9 - 0.1 * i)
+    for i, m in enumerate((67, 70, 74, 79, 82)):
+        b = C.bell(m, 1.6, ratio=1.0, index=0.25, tau=0.7) * (0.9 - 0.1 * i)
         i0 = int(i * 0.045 * SR)
         out[i0 : i0 + len(b)] += b[: len(out) - i0]
     return verb(norm(out) * 0.5, 0.7)
@@ -249,11 +266,11 @@ def tap():
 
 
 def success():
-    return verb(st(norm(C.chime([76, 83, 88, 95], gap=0.07, tau=0.5)) * 0.6), 0.4)
+    return verb(st(norm(C.chime([67, 74, 79, 82], gap=0.07, tau=0.5)) * 0.6), 0.4)
 
 
 def notif():
-    return verb(st(norm(C.chime([88, 93], gap=0.09, tau=0.35)) * 0.5, 0.2), 0.3)
+    return verb(st(norm(C.chime([79, 86], gap=0.09, tau=0.35)) * 0.5, 0.2), 0.3)
 
 
 def select():
@@ -334,8 +351,8 @@ def spin():
 
 def sparkle():
     out = np.zeros(int(1.2 * SR))
-    for i, m in enumerate((96, 100, 103)):
-        b = C.bell(m, 0.8, ratio=2.0, index=0.5, tau=0.3)
+    for i, m in enumerate((79, 82, 86)):
+        b = C.bell(m, 0.8, ratio=1.0, index=0.3, tau=0.3)
         i0 = int(i * 0.04 * SR)
         out[i0 : i0 + len(b)] += b[: len(out) - i0]
     return verb(st(norm(out) * 0.35), 0.6)
@@ -346,7 +363,7 @@ def coin():
 
 
 def cash():
-    return verb(st(norm(C.chime([96, 100, 103], gap=0.05, tau=0.4)) * 0.5), 0.4)
+    return verb(st(norm(C.chime([79, 82, 86], gap=0.05, tau=0.4)) * 0.5), 0.4)
 
 
 def click():
@@ -362,12 +379,27 @@ def zip():
 
 
 def end():
-    o = drop()
-    b = bell() * 0.5
-    out = np.zeros((2, max(o.shape[1], b.shape[1])))
-    out[:, : o.shape[1]] += o
-    out[:, : b.shape[1]] += b
-    return out
+    return drop()
+
+
+def calm(dur):
+    """A calm, warm charge into the drop: a soft chord swelling up as its filter opens,
+    a gentle pulse that quickens, air rising on top — then the drop takes over."""
+    t = T(dur)
+    x = t / dur
+    y = np.zeros(len(t))
+    for m, g in ((43, 0.9), (55, 0.6), (62, 0.45), (67, 0.35), (70, 0.25)):
+        f = C.midi(m)
+        y += g * (np.sin(2 * np.pi * f * t) + 0.3 * np.sin(2 * np.pi * 2 * f * t + 0.5))
+    nb = int(math.ceil(len(t) / 256))
+    y = C.swept(y, "lowpass", 300 + 3500 * np.linspace(0, 1, nb) ** 2.2)
+    rate = 2.08 * (1 + 3 * x ** 2)
+    pulse = 0.65 + 0.35 * np.cos(2 * np.pi * np.cumsum(rate) / SR)
+    y *= pulse * (0.15 + 0.85 * x ** 1.8)
+    air = C.swept(noise(dur), "bandpass", [(800 + 5000 * k ** 2, 2400 + 9000 * k ** 2) for k in np.linspace(0, 1, nb)]) * x ** 3 * 0.25
+    out = norm(y + air) * 0.8
+    out[-int(0.02 * SR) :] *= np.linspace(1, 0, int(0.02 * SR))
+    return C.stereo_sweep(out, -0.15, 0.15)
 
 
 def charge(dur):
@@ -399,13 +431,13 @@ def charge(dur):
     return C.stereo_sweep(y, -0.2, 0.2) + st(C.filt(y, "lowpass", 200)) * 0.0
 
 
-KINDS = {k: v for k, v in globals().items() if callable(v) and k not in ("T", "st", "verb", "norm", "noise", "sweep_tone", "impact", "charge")}
+KINDS = {k: v for k, v in globals().items() if callable(v) and k not in ("T", "st", "verb", "norm", "noise", "sweep_tone", "impact", "charge", "calm")}
 
 GAIN = {
-    "bloom": 0.6, "air": 0.5, "wipe": 0.6, "drip": 0.2, "roller": 0.5, "brush": 0.6, "thud": 0.7, "pop": 0.45,
+    "bloom": 0.6, "air": 0.5, "wipe": 0.6, "drip": 0.22, "splash": 0.32, "roller": 0.5, "brush": 0.6, "thud": 0.7, "pop": 0.45,
     "morph": 0.5, "glitch": 0.35, "suck": 0.5, "late": 0.5, "hope": 0.45, "fail": 0.45, "whoosh": 0.5, "key": 0.35,
     "nope": 0.45, "cut": 0.75, "search": 0.4, "ring": 0.35, "tick": 0.35, "fall": 0.35, "bell": 0.42, "shimmer": 0.5,
     "drop": 1.0, "slam": 0.55, "zoom": 0.5, "tap": 0.45, "success": 0.5, "notif": 0.45, "select": 0.45, "expand": 0.45,
     "bubble": 0.4, "sent": 0.4, "lock": 0.5, "dissolve": 0.55, "step": 0.4, "release": 0.5, "morphhit": 0.55,
-    "spin": 0.5, "sparkle": 0.4, "coin": 0.3, "cash": 0.45, "click": 0.4, "zip": 0.4, "end": 1.0, "charge": 0.75,
+    "spin": 0.5, "sparkle": 0.4, "coin": 0.3, "cash": 0.45, "click": 0.4, "zip": 0.4, "end": 1.0, "charge": 0.75, "calm": 0.7,
 }

@@ -23,10 +23,9 @@ export const cues = (): Cue[] => {
   add(2, "bloom", 0.8);
   add(w("cap", 0) - 12, "air", 0.7);
   add(S.A1_END - 16, "wipe");
-  for (let i = 0; i < 6; i++) {
-    const at = S.A1_END + 6 + Math.round(i * BEAT_PRE * 1.5) + 11;
-    if (at < S.A2_END) add(at, "drip");
-  }
+  add(S.A1_END + 22, "drip", 0.8);
+  add(S.A1_END + 46, "splash");
+  add(S.A1_END + 46 + 30, "drip", 0.45);
   for (let i = 0; i < 3; i++) add(S.A2_END - 2 + i * 3, "roller", 0.8);
   add(w("perete", 4) - 6, "brush");
   add(S.A3_END, "thud", 0.9);
@@ -52,7 +51,7 @@ export const cues = (): Cue[] => {
   add(S.A9_END + 4, "whoosh");
   add(w("rogi", 11), "glitch", 0.8);
   for (let i = 0; i < 5; i++) add(w("rogi", 11) + 2 + i * 2, "fall", 0.6);
-  add(S.A10_END - 4, "bell", 1);
+  add(S.A10_END - 6, "calm", 1);
   add(S.A10_END + 2, "pop", 0.5);
   add(w("aici", 2) - 4, "shimmer");
 

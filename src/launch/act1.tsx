@@ -111,86 +111,113 @@ export const A1: React.FC = () => {
 
 // ------------------------------------------------------------------ A2: the dripping tap
 
+// one drop, followed by the camera from the tap to the puddle
+export const DROP_FORM = 22;
+export const DROP_IMPACT = 46;
+const FALL = 1150;
+
 export const A2: React.FC = () => {
   const frame = useCurrentFrame();
-  const DX = CX + 430;
-  const DY = CY + 10;
-  const R = 300;
-  const FLOOR = CY + 330;
-  const t0 = A1_END;
-  const drips = Array.from({ length: 6 }, (_, i) => t0 + 6 + Math.round(i * BEAT_PRE * 1.5));
-  // springy body: it swells and stretches as each drip gathers at the tip, then wobbles back
-  let sy = 1;
-  let sx = 1;
-  for (const at of drips) {
-    const pre = clamp01((frame - (at - 8)) / 8);
-    if (frame < at) {
-      const e = ease.inOutCubic(pre);
-      sy += 0.1 * e;
-      sx -= 0.06 * e;
-    } else {
-      const t = frame - at;
-      const k = Math.exp(-t / 7) * Math.cos(t * 0.62);
-      sy += 0.1 * k;
-      sx -= 0.07 * k;
-    }
-  }
-  const pop = frame < t0 ? 0 : 1 - Math.exp(-(frame - t0) / 5) * Math.cos((frame - t0) * 0.45);
-  const bob = Math.sin(frame / 16) * 8;
+  const t = frame - A1_END;
+  const DX = CX + 400;
+  const R = 92;
+  // drop position in the world (y down, 0 = tap)
+  const forming = clamp01(t / DROP_FORM);
+  const fallT = clamp01((t - DROP_FORM) / (DROP_IMPACT - DROP_FORM));
+  const dropY = t < DROP_FORM ? 40 + 50 * ease.inOutCubic(forming) : 90 + (FALL - 90) * fallT * fallT;
+  // camera: holds on the tap, then tracks the falling drop with a little lag, then settles on the puddle
+  const camTarget = t < DROP_FORM ? 0 : t < DROP_IMPACT ? dropY - 260 : FALL - 470;
+  const lag = t < DROP_FORM ? 0 : t < DROP_IMPACT ? 40 * (1 - fallT) : 0;
+  const settle = ease.outCubic(clamp01((t - DROP_IMPACT) / 26));
+  const camY = t < DROP_IMPACT ? Math.max(0, camTarget - lag) : lerp(FALL - 300, FALL - 470, settle);
+  const zoom = t < DROP_IMPACT ? lerp(1.15, 1.0, fallT) : lerp(1.0, 0.92, settle);
+  const toScreen = (wy: number) => 300 + (wy - camY);
+  // shape of the drop
+  const hang = t < DROP_FORM ? Math.sin(forming * Math.PI * 0.5) : 0;
+  const wob = t >= DROP_FORM ? Math.exp(-(t - DROP_FORM) / 5) * Math.cos((t - DROP_FORM) * 0.9) : 0;
+  const speed = t >= DROP_FORM && t < DROP_IMPACT ? fallT : 0;
+  const sy = 1 + 0.35 * hang + 0.12 * wob + 0.25 * speed;
+  const sx = 1 - 0.15 * hang - 0.08 * wob - 0.12 * speed;
+  const imp = t - DROP_IMPACT;
   const days = Math.round(lerp(1, 14, ease.inOutCubic(clamp01((frame - (w("robinet", 4) - 10)) / 30))));
   const outT = ease.inCubic(clamp01((frame - (A2_END - 8)) / 8));
-  const tipY = DY + bob + R * 0.62 * sy;
+  const puddleY = FALL + 30;
   return (
     <AbsoluteFill>
       <Bg kind="deep" />
-      {/* soft light pool on the floor */}
-      <div style={{ position: "absolute", left: DX - 300, top: FLOOR - 60, width: 600, height: 120, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(0,191,99,0.18), rgba(0,0,0,0) 70%)" }} />
-      {/* ripples + splash where each drip lands */}
-      <svg width={1920} height={1080} style={{ position: "absolute", inset: 0 }}>
-        {drips.map((at, i) => {
-          const land = at + 11;
-          const t = (frame - land) / 34;
-          if (t < 0 || t > 1) return null;
-          const e = ease.outQuint(t);
-          return (
-            <g key={i} opacity={(1 - t) * 0.85}>
-              <ellipse cx={DX} cy={FLOOR} rx={24 + 250 * e} ry={(24 + 250 * e) * 0.16} fill="none" stroke={P.mint} strokeWidth={3 * (1 - t) + 0.8} />
-              <ellipse cx={DX} cy={FLOOR} rx={10 + 140 * ease.outQuint(clamp01(t * 1.3))} ry={(10 + 140 * ease.outQuint(clamp01(t * 1.3))) * 0.16} fill="none" stroke={P.green} strokeWidth={2} />
-              {[-1, 1, -0.4, 0.5].map((d, j) => {
-                const u = clamp01((frame - land) / 14);
-                if (u >= 1) return null;
-                const x = DX + d * 70 * u;
-                const y = FLOOR - Math.sin(Math.PI * u) * (40 + 20 * j);
-                return <circle key={j} cx={x} cy={y} r={5 - 3 * u} fill={P.mint} />;
-              })}
-            </g>
-          );
-        })}
-      </svg>
-      {/* drips: bead at the tip, let go, fall, land */}
-      {drips.map((at, i) => {
-        const grow = ease.outBack(clamp01((frame - (at - 8)) / 8));
-        const t = (frame - at) / 11;
-        if (frame < at - 8 || t > 1) return null;
-        const falling = t > 0;
-        const y = falling ? lerp(tipY + 14, FLOOR - 14, t * t) : tipY + 10 * grow;
-        return <Shape key={i} pts={shape("drop")} x={DX} y={y} size={44 * (falling ? 1 : grow)} sy={falling ? 1 + 0.35 * t : 1 + 0.2 * grow} sx={falling ? 1 - 0.12 * t : 1} fill={P.mint} />;
-      })}
-      <Shape
-        pts={mix(shape("drop"), blob(frame / 18, 0.3), 0.08)}
-        x={DX}
-        y={DY + bob}
-        size={R * pop}
-        sx={sx}
-        sy={sy}
-        fill={P.green}
-        gradient={GREEN_GRAD}
-        id="a2"
-        opacity={1 - outT}
-        shadow="drop-shadow(0 30px 70px rgba(0,0,0,0.35))"
-      >
-        <ellipse cx={-R * 0.12} cy={-R * 0.02} rx={R * 0.06} ry={R * 0.13} fill="rgba(255,255,255,0.55)" transform={`rotate(20 ${-R * 0.12} ${-R * 0.02})`} />
-      </Shape>
+      <AbsoluteFill style={{ transform: `scale(${zoom})`, transformOrigin: `${DX}px 540px`, opacity: 1 - outT }}>
+        {/* the tap: a sleek chrome spout */}
+        <div style={{ position: "absolute", left: DX - 70, top: toScreen(-420), width: 140, height: 430, borderRadius: "0 0 40px 40px", background: "linear-gradient(90deg, #2c3833 0%, #93a59d 22%, #e8f1ec 34%, #6f827a 55%, #26302c 100%)", boxShadow: "0 30px 60px rgba(0,0,0,0.4)" }} />
+        <div style={{ position: "absolute", left: DX - 46, top: toScreen(-6), width: 92, height: 18, borderRadius: "0 0 30px 30px", background: "linear-gradient(90deg, #1d2724, #5d6f68, #1d2724)" }} />
+        {/* residual bead left on the tap */}
+        {t >= DROP_FORM && <Shape pts={shape("circle")} x={DX} y={toScreen(18)} size={R * 0.4 * (1 + 0.2 * wob)} fill={P.mint} gradient={["#d9ffe9", "#3ee699"]} id="bead" />}
+        {/* the puddle */}
+        <svg width={1920} height={1080} style={{ position: "absolute", left: 0, top: 0, overflow: "visible" }}>
+          <defs>
+            <radialGradient id="pud" cx="50%" cy="40%" r="60%">
+              <stop offset="0%" stopColor="#1fd17c" stopOpacity={0.55} />
+              <stop offset="70%" stopColor="#0a7a45" stopOpacity={0.35} />
+              <stop offset="100%" stopColor="#0a7a45" stopOpacity={0} />
+            </radialGradient>
+          </defs>
+          <ellipse cx={DX} cy={toScreen(puddleY)} rx={420} ry={70} fill="url(#pud)" />
+          <ellipse cx={DX} cy={toScreen(puddleY) - 4} rx={300} ry={40} fill="none" stroke="rgba(185,255,214,0.25)" strokeWidth={2} />
+          {/* ripples */}
+          {imp >= 0 &&
+            [0, 7, 15].map((d, i) => {
+              const u = clamp01((imp - d) / 40);
+              if (u <= 0 || u >= 1) return null;
+              const e = ease.outQuint(u);
+              return <ellipse key={i} cx={DX} cy={toScreen(puddleY)} rx={20 + 400 * e} ry={(20 + 400 * e) * 0.16} fill="none" stroke={i ? P.green : P.mint} strokeWidth={3.5 * (1 - u) + 0.6} opacity={(1 - u) * 0.9} />;
+            })}
+          {/* crown splash */}
+          {imp >= 0 && imp < 16 && (
+            <path
+              d={(() => {
+                const u = imp / 16;
+                const h = Math.sin(Math.PI * u) * 150;
+                const rx = 60 + 130 * ease.outCubic(u);
+                const y0 = toScreen(puddleY);
+                return `M ${DX - rx} ${y0} Q ${DX - rx * 0.9} ${y0 - h}, ${DX - rx * 0.7} ${y0 - h * 1.05} L ${DX + rx * 0.7} ${y0 - h * 1.05} Q ${DX + rx * 0.9} ${y0 - h}, ${DX + rx} ${y0} Z`;
+              })()}
+              fill="rgba(62,230,153,0.55)"
+            />
+          )}
+          {imp >= 0 &&
+            Array.from({ length: 18 }, (_, i) => {
+              const u = imp / 24;
+              if (u >= 1) return null;
+              const a = (i / 12) * Math.PI * 2;
+              const vx = Math.cos(a) * (200 + 90 * seeded(i, 1));
+              const vz = Math.sin(a) * 0.18;
+              const up = 300 + 140 * seeded(i, 2);
+              const x = DX + vx * u;
+              const y = toScreen(puddleY) + vz * 200 * u - up * u + 420 * u * u;
+              return <circle key={i} cx={x} cy={y} r={11 * (1 - u) + 3} fill={P.mint} />;
+            })}
+          {/* the jet that kicks back up and drops a bead */}
+          {imp >= 8 && imp < 34 && (() => {
+            const u = (imp - 8) / 26;
+            const h = Math.sin(Math.PI * Math.min(1, u * 1.4)) * 220;
+            const bead = u > 0.55 ? (u - 0.55) / 0.45 : 0;
+            const y0 = toScreen(puddleY);
+            return (
+              <g>
+                <path d={`M ${DX - 22} ${y0} Q ${DX} ${y0 - h * 1.1}, ${DX + 22} ${y0} Z`} fill="rgba(62,230,153,0.7)" />
+                {bead > 0 && <circle cx={DX} cy={y0 - 220 * (1 - bead) - 40 + 260 * bead * bead} r={15} fill={P.mint} />}
+              </g>
+            );
+          })()}
+        </svg>
+        {/* the drop */}
+        {t < DROP_IMPACT && (
+          <Shape pts={shape("drop")} x={DX} y={toScreen(dropY)} size={R * 2} sx={sx} sy={sy} fill={P.green} gradient={["#8dffc4", "#00b35c"]} id="a2d" shadow="drop-shadow(0 20px 30px rgba(0,0,0,0.35))">
+            <ellipse cx={-R * 0.22} cy={R * 0.2} rx={R * 0.1} ry={R * 0.22} fill="rgba(255,255,255,0.6)" transform={`rotate(18 ${-R * 0.22} ${R * 0.2})`} />
+          </Shape>
+        )}
+        {/* motion streak while falling */}
+        {speed > 0.3 && <div style={{ position: "absolute", left: DX - 3, top: toScreen(dropY) - 260 * speed, width: 6, height: 220 * speed, borderRadius: 3, background: "linear-gradient(180deg, rgba(185,255,214,0), rgba(185,255,214,0.35))" }} />}
+      </AbsoluteFill>
       <Txt words={kw("robinet", { only: [0, 1, 2] })} size={100} on="deep" x={150} y={CY - 70} align="left" out={A2_END - 6} />
       <Txt words={kw("robinet", { only: [3, 4, 5], color: { 4: MINT_INK, 5: MINT_INK } })} size={100} on="deep" x={150} y={CY + 50} align="left" out={A2_END - 6} />
       {frame >= w("robinet", 4) - 10 && (

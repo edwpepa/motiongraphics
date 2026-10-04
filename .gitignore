@@ -8,3 +8,4 @@ __pycache__/
 .lstills.mjs
 tools/launch/cues.json
 public/audio/edw-vo.wav
+public/video/edw-clean.mp4

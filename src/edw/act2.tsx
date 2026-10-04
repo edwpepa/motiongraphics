@@ -17,6 +17,7 @@ import {
   rotX,
   rotY,
   w,
+  LAYOUT,
 } from "./kit";
 
 // ------------------------------------------------------------------ Gotham at night: the city goes to sleep, one window stays lit
@@ -670,8 +671,8 @@ export const BuildScene: React.FC<{ from: number; to: number }> = ({
         ctx.font = `500 20px ${MONO}`;
         ctx.fillStyle = "rgba(200,204,212,0.8)";
         ctx.textAlign = "left";
-        const lx = W / 2 + 380,
-          ly = H / 2 + 150;
+        const lx = LAYOUT.reel ? W / 2 - 150 : W / 2 + 380,
+          ly = LAYOUT.reel ? H / 2 + 410 : H / 2 + 150;
         ctx.fillText(
           done > 0.5 ? "STATUS  COMPLETE" : "STATUS  BUILDING",
           lx,

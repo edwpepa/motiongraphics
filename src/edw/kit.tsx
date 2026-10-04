@@ -2,6 +2,9 @@ import React, { useLayoutEffect, useRef } from "react";
 import { AbsoluteFill, Img, staticFile, useCurrentFrame } from "remotion";
 import WORDS from "./vo-words.json";
 
+/** layout switch: set by the film before its scenes render (the reel re-frames some elements to sit in the middle) */
+export const LAYOUT = { reel: false };
+
 export const FPS = 30;
 export const W = 1920;
 export const H = 1080;
@@ -180,6 +183,7 @@ export const Hero: React.FC<{ text: string; at: number; out: number; size?: numb
   tracking = 0.18,
 }) => {
   const t = useT();
+  if (LAYOUT.reel) size *= 0.62;
   if (t < at - 0.1 || t > out + 0.5) return null;
   const o = clamp01((out + 0.4 - t) / 0.4);
   const settle = ease.outExpo((t - at) / 1.6);

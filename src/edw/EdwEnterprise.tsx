@@ -8,7 +8,7 @@ import { LogoClip } from "./logoClip";
 import { END, END_FRAMES, MID, MID_END, MID_FRAMES, R, REVEAL } from "./logoShots";
 import { IdeaScene, MessageScene } from "./act5";
 import { DareScene, DevicesScene, NetworkScene, ScopeScene, SplitScene } from "./act4";
-import { Captions, CornerLogo, FPS, Grade, w } from "./kit";
+import { Captions, CornerLogo, FPS, Grade, LAYOUT, w } from "./kit";
 
 /** mounts children for [from, to) seconds */
 export const Shot: React.FC<{ from: number; to: number; children: React.ReactNode }> = ({ from, to, children }) => {
@@ -19,8 +19,10 @@ export const Shot: React.FC<{ from: number; to: number; children: React.ReactNod
 
 const MSG = w("write", 0) + 0.25;
 const FIN = w("yours", 0) - 0.05;
+export const CAPTION_MUTE: [number, number][] = [[29.35, w("roof", 0) + 0.5], [FIN - 0.15, 71]];
 
-export const EdwEnterprise: React.FC<{ audio?: boolean }> = ({ audio = true }) => {
+export const EdwEnterprise: React.FC<{ audio?: boolean; reel?: boolean }> = ({ audio = true, reel = false }) => {
+  LAYOUT.reel = reel;
   useExplainerFonts();
   return (
     <AbsoluteFill style={{ background: "#000" }}>
@@ -65,9 +67,9 @@ export const EdwEnterprise: React.FC<{ audio?: boolean }> = ({ audio = true }) =
         <MessageScene from={MSG} to={FIN} />
       </Shot>
       <LogoClip src="video/edw-logo-end.mp4" frames={END_FRAMES} shots={END} hit={REVEAL} fade={[FIN, FIN + 0.05, 69.0, 69.9]} />
-      <Grade />
-      <CornerLogo />
-      <Captions hide={["edw", "yours"]} mute={[[29.35, w("roof", 0) + 0.5], [FIN - 0.15, 71]]} />
+      {!reel && <Grade />}
+      {!reel && <CornerLogo />}
+      {!reel && <Captions hide={["edw", "yours"]} mute={CAPTION_MUTE} />}
       {audio && (
         <Sequence>
           <Audio src={staticFile("audio/edw-mix.mp3")} />

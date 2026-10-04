@@ -3,18 +3,23 @@ import { ThreeCanvas } from "@remotion/three";
 import React, { useMemo } from "react";
 import { AbsoluteFill } from "remotion";
 import * as THREE from "three";
-import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { CanvasScene, H, W, clamp01, ease, flare, glow, lerp, mulberry, useT } from "./kit";
+import { H, W, clamp01, ease, lerp, mulberry, useT } from "./kit";
 import SHAPES from "./logo-shapes.json";
 
-// ------------------------------------------------------------------ geometry: the cleaned outlines, extruded, on a brushed metal plate
+/**
+ * The EDW mark as a real object: mirror chrome with brushed tops, lying on a black lacquered floor,
+ * lit by long studio strip lights that slide across it. Rendered once to video by tools/edw/render_logo.sh
+ * (composition "EdwLogoFilm") and composited into the film, so the main render stays fast.
+ */
+
+// ------------------------------------------------------------------ geometry
 type Poly = number[][];
-const areaOf = (p: Poly) => p.reduce((s, [x, y], i) => {
-  const [x2, y2] = p[(i + 1) % p.length];
-  return s + x * y2 - x2 * y;
-}, 0) / 2;
+const areaOf = (p: Poly) =>
+  p.reduce((s, [x, y], i) => {
+    const [x2, y2] = p[(i + 1) % p.length];
+    return s + x * y2 - x2 * y;
+  }, 0) / 2;
 const inside = (pt: number[], poly: Poly) => {
   let c = false;
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
@@ -23,9 +28,10 @@ const inside = (pt: number[], poly: Poly) => {
   }
   return c;
 };
-const U = 100; // svg px per scene unit
+const U = 100;
 const CX = 927, CY = 343;
 const v2 = ([x, y]: number[]) => new THREE.Vector2((x - CX) / U, -(y - CY) / U);
+const S = SHAPES as unknown as Record<string, Poly[]>;
 
 function shapes(polys: Poly[]): THREE.Shape[] {
   const good = polys.filter((p) => Math.abs(areaOf(p)) > 30);
@@ -38,125 +44,203 @@ function shapes(polys: Poly[]): THREE.Shape[] {
   });
 }
 
-let GEO: { mark: THREE.BufferGeometry; word: THREE.BufferGeometry; plate: THREE.BufferGeometry } | null = null;
+let GEO: { mark: THREE.BufferGeometry; word: THREE.BufferGeometry } | null = null;
 function geometry() {
   if (GEO) return GEO;
-  const S = SHAPES as unknown as Record<string, Poly[]>;
-  const mark = new THREE.ExtrudeGeometry(shapes(S["edw-symbol"]), { depth: 0.34, bevelEnabled: true, bevelThickness: 0.035, bevelSize: 0.014, bevelSegments: 3, curveSegments: 4 });
-  const word = new THREE.ExtrudeGeometry(shapes(S["enterprise"]), { depth: 0.12, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.008, bevelSegments: 3, curveSegments: 4 });
-  const plate = new RoundedBoxGeometry(23.5, 10.4, 0.5, 8, 0.2);
-  // smooth the curved walls, keep every real corner crisp
-  GEO = { mark: toCreasedNormals(mark, 0.3), word: toCreasedNormals(word, 0.3), plate };
+  const mark = new THREE.ExtrudeGeometry(shapes(S["edw-symbol"]), { depth: 0.62, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.024, bevelSegments: 4, curveSegments: 4 });
+  const word = new THREE.ExtrudeGeometry(shapes(S["enterprise"]), { depth: 0.2, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.01, bevelSegments: 3, curveSegments: 4 });
+  GEO = { mark: toCreasedNormals(mark, 0.3), word: toCreasedNormals(word, 0.3) };
   return GEO;
 }
 
-/** fine horizontal brushing: used for colour and roughness of the plate */
-let BRUSH: THREE.CanvasTexture | null = null;
-function brush() {
-  if (BRUSH) return BRUSH;
+// ------------------------------------------------------------------ textures (made once)
+const canvasTex = (w: number, h: number, paint: (g: CanvasRenderingContext2D) => void, srgb = false) => {
   const c = document.createElement("canvas");
-  c.width = 2048;
-  c.height = 1024;
-  const g = c.getContext("2d")!;
-  g.fillStyle = "#808080";
-  g.fillRect(0, 0, c.width, c.height);
-  const r = mulberry(3);
-  for (let i = 0; i < 9000; i++) {
-    const y = r() * c.height, x = r() * c.width - 200, len = 200 + r() * 1400;
-    const v = Math.floor(90 + r() * 90);
-    g.strokeStyle = `rgba(${v},${v},${v},${0.08 + r() * 0.2})`;
-    g.lineWidth = 0.5 + r() * 1.2;
-    g.beginPath();
-    g.moveTo(x, y);
-    g.lineTo(x + len, y + (r() - 0.5) * 2);
-    g.stroke();
-  }
-  BRUSH = new THREE.CanvasTexture(c);
-  BRUSH.wrapS = BRUSH.wrapT = THREE.RepeatWrapping;
-  BRUSH.repeat.set(2, 2);
-  BRUSH.colorSpace = THREE.SRGBColorSpace;
-  BRUSH.anisotropy = 8;
-  return BRUSH;
+  c.width = w;
+  c.height = h;
+  paint(c.getContext("2d")!);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = 8;
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+};
+let TEX: { brushed: THREE.CanvasTexture; floorRough: THREE.CanvasTexture; shadow: THREE.CanvasTexture } | null = null;
+function textures() {
+  if (TEX) return TEX;
+  const r = mulberry(9);
+  // fine linear brushing for the tops of the letters (roughness: mid grey with lighter/darker streaks)
+  const brushed = canvasTex(1024, 1024, (g) => {
+    g.fillStyle = "rgb(70,70,70)";
+    g.fillRect(0, 0, 1024, 1024);
+    for (let i = 0; i < 14000; i++) {
+      const y = r() * 1024, x = r() * 1024 - 300, len = 120 + r() * 900, v = Math.floor(30 + r() * 110);
+      g.strokeStyle = `rgba(${v},${v},${v},${0.15 + r() * 0.35})`;
+      g.lineWidth = 0.4 + r() * 0.9;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + len, y);
+      g.stroke();
+    }
+  });
+  brushed.repeat.set(0.35, 0.35);
+  // the lacquered floor: almost a mirror, with faint wipes and specks so it reads as a real surface
+  const floorRough = canvasTex(1024, 1024, (g) => {
+    g.fillStyle = "rgb(28,28,28)";
+    g.fillRect(0, 0, 1024, 1024);
+    for (let i = 0; i < 260; i++) {
+      const x = r() * 1024, y = r() * 1024, rad = 30 + r() * 160;
+      const gr = g.createRadialGradient(x, y, 0, x, y, rad);
+      gr.addColorStop(0, `rgba(80,80,80,${0.08 + r() * 0.1})`);
+      gr.addColorStop(1, "rgba(80,80,80,0)");
+      g.fillStyle = gr;
+      g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+    }
+    for (let i = 0; i < 2500; i++) {
+      const v = Math.floor(90 + r() * 120);
+      g.fillStyle = `rgba(${v},${v},${v},${0.3 + r() * 0.5})`;
+      g.fillRect(r() * 1024, r() * 1024, 1 + r() * 1.5, 1 + r() * 1.5);
+    }
+  });
+  floorRough.repeat.set(6, 6);
+  // soft contact shadow: the logo silhouette, blurred (alpha)
+  const shadow = canvasTex(
+    2048,
+    760,
+    (g) => {
+      g.fillStyle = "#000";
+      g.fillRect(0, 0, 2048, 760);
+      g.filter = "blur(14px)";
+      g.fillStyle = "#fff";
+      g.translate(97, 37);
+      for (const key of ["edw-symbol", "enterprise"]) {
+        g.beginPath();
+        for (const p of S[key]) {
+          if (Math.abs(areaOf(p)) <= 30) continue;
+          p.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+          g.closePath();
+        }
+        g.fill("evenodd");
+      }
+    },
+    false,
+  );
+  shadow.wrapS = shadow.wrapT = THREE.ClampToEdgeWrapping;
+  TEX = { brushed, floorRough, shadow };
+  return TEX;
+}
+
+/** studio environment: black, with long strip softboxes and one broad panel (HDR, so chrome gets real highlights) */
+function studio(gl: THREE.WebGLRenderer) {
+  const env = new THREE.Scene();
+  env.background = new THREE.Color(0.012, 0.012, 0.014);
+  // soft-edged lights: bright in the middle, falling off to the edges (no hard cut lines in the chrome)
+  const soft = canvasTex(256, 256, (g) => {
+    const gx = g.createLinearGradient(0, 0, 256, 0);
+    gx.addColorStop(0, "rgba(0,0,0,1)");
+    gx.addColorStop(0.3, "rgba(255,255,255,1)");
+    gx.addColorStop(0.7, "rgba(255,255,255,1)");
+    gx.addColorStop(1, "rgba(0,0,0,1)");
+    g.fillStyle = gx;
+    g.fillRect(0, 0, 256, 256);
+    const gy = g.createLinearGradient(0, 0, 0, 256);
+    gy.addColorStop(0, "rgba(0,0,0,1)");
+    gy.addColorStop(0.18, "rgba(0,0,0,0)");
+    gy.addColorStop(0.82, "rgba(0,0,0,0)");
+    gy.addColorStop(1, "rgba(0,0,0,1)");
+    g.fillStyle = gy;
+    g.fillRect(0, 0, 256, 256);
+  }, true);
+  soft.wrapS = soft.wrapT = THREE.ClampToEdgeWrapping;
+  const strip = (w: number, h: number, pos: [number, number, number], rot: [number, number, number], k: number) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(1, 1, 1).multiplyScalar(k), map: soft, side: THREE.DoubleSide }));
+    m.position.set(...pos);
+    m.rotation.set(...rot);
+    env.add(m);
+  };
+  strip(18, 9, [0, 9, -2], [-Math.PI / 2, 0, 0], 1.6); // a big overhead softbox: the brushed tops glow with it
+  strip(1.2, 20, [-4, 7, 0], [-Math.PI / 2, 0, 0], 4.0); // long strips: the hard lines running along the chrome
+  strip(1.2, 20, [4, 7, 0], [-Math.PI / 2, 0, 0], 4.0);
+  strip(12, 2.5, [0, 2.2, -9], [0, 0, 0], 1.8); // horizon panel behind
+  strip(16, 1.6, [0, 1.4, 11], [0, Math.PI, 0], 1.3); // a low band in front: the walls facing us pick up a soft line
+  strip(0.6, 6, [-9, 2, 3], [0, Math.PI / 2, 0], 3.5); // side kickers
+  strip(0.6, 6, [9, 2, -3], [0, -Math.PI / 2, 0], 2.5);
+  const pm = new THREE.PMREMGenerator(gl);
+  const tex = pm.fromScene(env, 0.0).texture;
+  pm.dispose();
+  return tex;
 }
 
 // ------------------------------------------------------------------ camera moves
 export type V = [number, number, number];
-export type Shot = { from: number; to: number; cam: [V, V]; look: [V, V]; light: [V, V]; fov?: number; exposure?: number };
+export type Shot = { from: number; to: number; cam: [V, V]; look: [V, V]; env: [number, number]; fov?: number; exposure?: number; dof?: number };
 const mix3 = (a: V, b: V, u: number): V => [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)];
+export const shotAt = (shots: Shot[], t: number) => shots.find((x) => t >= x.from && t < x.to) ?? shots[shots.length - 1];
 
-const Stage: React.FC<{ shots: Shot[]; t: number; fade: number }> = ({ shots, t, fade }) => {
+const Stage: React.FC<{ shots: Shot[]; t: number }> = ({ shots, t }) => {
   const { camera, gl, scene } = useThree();
-  const env = useMemo(() => {
-    const pm = new THREE.PMREMGenerator(gl);
-    const e = pm.fromScene(new RoomEnvironment(), 0.03).texture;
-    pm.dispose();
-    return e;
-  }, [gl]);
+  const env = useMemo(() => studio(gl), [gl]);
   const G = geometry();
   const mats = useMemo(() => {
-    const b = brush();
-    return {
-      chrome: new THREE.MeshPhysicalMaterial({ color: 0xe4e6ea, metalness: 1, roughness: 0.14, clearcoat: 0.8, clearcoatRoughness: 0.08 }),
-      satin: new THREE.MeshPhysicalMaterial({ color: 0xa9adb5, metalness: 1, roughness: 0.3 }),
-      plate: new THREE.MeshPhysicalMaterial({ color: 0x7d8088, metalness: 0.9, roughness: 0.4, map: b, roughnessMap: b, clearcoat: 0.3, clearcoatRoughness: 0.3 }),
-    };
-  }, []);
-  scene.environment = env;
-  scene.environmentIntensity = 0.45;
+    const T = textures();
+    const top = new THREE.MeshPhysicalMaterial({ color: 0xf4f5f8, metalness: 1, roughness: 0.16, roughnessMap: T.brushed, anisotropy: 0.85, anisotropyRotation: 0, clearcoat: 0.4, clearcoatRoughness: 0.05 });
+    const side = new THREE.MeshPhysicalMaterial({ color: 0xf6f7fa, metalness: 1, roughness: 0.035 });
+    const wordTop = new THREE.MeshPhysicalMaterial({ color: 0xc9ccd3, metalness: 1, roughness: 0.22, roughnessMap: T.brushed, anisotropy: 0.7 });
+    const floor = new THREE.MeshPhysicalMaterial({ color: 0x020203, metalness: 0.0, roughness: 0.55, roughnessMap: T.floorRough, envMapIntensity: 0.06, transparent: true, opacity: 0.9 });
+    const shadow = new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: T.shadow, transparent: true, opacity: 0.95, depthWrite: false });
+    // scene.environment ignores envMapIntensity, so the floor gets the map itself to stay a dark lacquer
+    floor.envMap = env;
+    return { mark: [top, side], word: [wordTop, side], floor, shadow };
+  }, [env]);
   scene.background = new THREE.Color(0x000000);
+  scene.environment = env;
+  scene.environmentIntensity = 1.0;
   gl.toneMapping = THREE.ACESFilmicToneMapping;
-  const s = shots.find((x) => t >= x.from && t < x.to) ?? shots[shots.length - 1];
+  const s = shotAt(shots, t);
   const u = ease.inOutSine(clamp01((t - s.from) / (s.to - s.from)));
+  scene.environmentRotation.set(0, lerp(s.env[0], s.env[1], u), 0);
   const cam = camera as THREE.PerspectiveCamera;
   cam.fov = s.fov ?? 30;
-  cam.near = 0.05;
-  cam.far = 200;
+  cam.near = 0.03;
+  cam.far = 400;
   cam.position.set(...mix3(s.cam[0], s.cam[1], u));
+  cam.up.set(0, 1, 0);
   cam.lookAt(new THREE.Vector3(...mix3(s.look[0], s.look[1], u)));
   cam.updateProjectionMatrix();
-  gl.toneMappingExposure = (s.exposure ?? 1.0) * fade;
-  const lp = mix3(s.light[0], s.light[1], ease.inOutSine(clamp01((t - s.from) / (s.to - s.from))));
+  gl.toneMappingExposure = s.exposure ?? 1.0;
+  // the shadow texture covers the svg box (1854 x 686 px + margin) → scene units
+  const sw = 2048 / U, sh = 760 / U;
   return (
     <>
-      <ambientLight intensity={0.02} />
-      {/* the travelling light that draws along the edges */}
-      <pointLight position={lp} intensity={160} distance={40} decay={2} color={0xf2f4ff} />
-      {/* cool rim from above and behind */}
-      <directionalLight position={[-6, 10, 4]} intensity={0.6} color={0xdfe6ff} />
-      <directionalLight position={[8, -6, 6]} intensity={0.25} color={0xffffff} />
-      <mesh geometry={G.plate} material={mats.plate} position={[0, -0.1, -0.25]} />
-      <mesh geometry={G.mark} material={mats.chrome} />
-      <mesh geometry={G.word} material={mats.satin} />
+      <group rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh geometry={G.mark} material={mats.mark} />
+        <mesh geometry={G.word} material={mats.word} />
+      </group>
+      {/* the reflection in the lacquer: the same object mirrored under the floor */}
+      <group scale={[1, -1, 1]}>
+        <group rotation={[-Math.PI / 2, 0, 0]}>
+          <mesh geometry={G.mark} material={mats.mark} />
+          <mesh geometry={G.word} material={mats.word} />
+        </group>
+      </group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} material={mats.floor}>
+        <planeGeometry args={[400, 400]} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(2048 / 2 - 97 - CX) / U, 0.003, (760 / 2 - 37 - CY) / U]} material={mats.shadow}>
+        <planeGeometry args={[sw, sh]} />
+      </mesh>
     </>
   );
 };
 
-/** the 3D logo film: macro shots along the edges, then the whole mark; flashes on the cuts */
-export const Logo3D: React.FC<{ shots: Shot[]; hit: number; fadeIn: number; fadeOut: [number, number] }> = ({ shots, hit, fadeIn, fadeOut }) => {
+/** just the 3D picture (black where no shot is running) */
+export const Logo3D: React.FC<{ shots: Shot[] }> = ({ shots }) => {
   const t = useT();
-  const fade = clamp01((t - fadeIn) / 0.4) * (1 - clamp01((t - fadeOut[0]) / (fadeOut[1] - fadeOut[0])));
-  const cuts = shots.slice(1).map((s) => s.from);
   return (
-    <AbsoluteFill>
+    <AbsoluteFill style={{ background: "#000" }}>
       <ThreeCanvas width={W} height={H} gl={{ antialias: true, preserveDrawingBuffer: true }} dpr={1}>
-        <Stage shots={shots} t={t} fade={Math.max(0.0001, fade)} />
+        <Stage shots={shots} t={t} />
       </ThreeCanvas>
-      <CanvasScene
-        style={{ mixBlendMode: "screen" }}
-        draw={(ctx, T) => {
-          ctx.globalCompositeOperation = "lighter";
-          for (const c of cuts) {
-            const k = T >= c ? Math.exp(-(T - c) / (c === hit ? 0.45 : 0.18)) : 0;
-            if (k > 0.01) flare(ctx, W / 2, H / 2, k * (c === hit ? 0.9 : 0.35), c === hit ? 1600 : 900, c === hit ? 120 : 50);
-          }
-          // a few motes of dust drifting in the light
-          const r = mulberry(5);
-          for (let i = 0; i < 60; i++) {
-            const x = (r() * W + T * (r() - 0.5) * 40 + W) % W, y = (r() * H - T * 10 * r() + H * 4) % H;
-            glow(ctx, x, y, 2 + 3 * r(), 0.18 * fade * (0.5 + 0.5 * Math.sin(T * 2 + i)));
-          }
-        }}
-      />
     </AbsoluteFill>
   );
 };

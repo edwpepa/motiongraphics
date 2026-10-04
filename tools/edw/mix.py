@@ -300,6 +300,41 @@ def shing():
     return X.verb(C.stereo_sweep(norm(ring * 0.5 + air) * 0.5, -0.5, 0.5), 0.6)
 
 
+def glide_pass(d, pan):
+    """A deep, slow pass of air with weight under it: the camera skimming the metal."""
+    w0 = C.whoosh(d, 110, 1600, 0.55, pan, air=0.8, low=0.9)
+    t = tt(w0.shape[1] / SR)
+    sub = np.sin(2 * np.pi * np.cumsum(38 + 14 * np.sin(np.pi * t / t[-1])) / SR) * np.sin(np.pi * t / t[-1]) ** 2 * 0.35
+    return w0 + np.stack([sub, sub])
+
+
+def suck_in(d):
+    """Reversed air and cymbal, rising into the cut."""
+    x = C.filt(C.reverse_swell(d), "lowpass", 6000)
+    return X.st(norm(x) * 0.7)
+
+
+def thud():
+    """A heavy, dark hit: sub drop, a deep drum body and a short burst of low noise, in a big room."""
+    d = 1.8
+    t = tt(d)
+    sub = C.sub_drop(d)[: len(t)]
+    body = np.sin(2 * np.pi * np.cumsum(70 * (1 + 0.8 * np.exp(-t / 0.03))) / SR) * np.exp(-t / 0.25)
+    grit = C.filt(rng.standard_normal(len(t)), "lowpass", 900) * np.exp(-t / 0.06) * 0.5
+    return X.verb(norm(np.tanh((sub + body * 0.8 + grit) * 1.5)) * 0.9, 0.35)
+
+
+def trailer_hit():
+    """The full reveal: a huge impact with a long dark tail."""
+    d = 4.0
+    t = tt(d)
+    sub = C.sub_drop(d)[: len(t)] * 1.2
+    body = np.sin(2 * np.pi * np.cumsum(55 * (1 + 1.2 * np.exp(-t / 0.04))) / SR) * np.exp(-t / 0.6)
+    crack = C.filt(rng.standard_normal(len(t)), "bandpass", (400, 5000), 2) * np.exp(-t / 0.05) * 0.6
+    tail = C.filt(rng.standard_normal(len(t)), "lowpass", 400) * np.exp(-t / 1.2) * 0.25
+    return X.verb(norm(np.tanh((sub + body + crack + tail) * 1.4)) * 0.95, 0.55)
+
+
 # ------------------------------------------------------------------ sound design over the picture
 def build_sfx():
     s = np.zeros((2, N))
@@ -351,21 +386,21 @@ def build_sfx():
             P(X.key(), t0 + (t1 - t0) * i / len(msg), 0.25)
     P(X.click(), T("best", 8) + 0.2, 0.7)
     P(X.sent(), T("best", 8) + 0.25, 0.7)
-    # the 3D logo: a glint on every macro pass, a hit on every cut, the big one on the full reveal
-    R2 = T("edw", 0) - 0.02
-    for at in (29.4, 30.25, 31.05):
-        P(shing(), at, 0.8)
+    # the 3D logo: a deep pass of air as the camera glides over each edge, the air sucked back into a heavy
+    # sub hit on every cut, and a trailer-size impact on the full reveal
+    for at, pan in ((29.4, (-0.7, 0.5)), (30.25, (0.7, -0.4)), (31.05, (-0.6, 0.6))):
+        P(glide_pass(0.95, pan), at - 0.05, 0.9)
     for at in (30.25, 31.05):
-        clip, off = X.cut()
-        P(clip, at + off, 0.6)
+        P(suck_in(0.32), at - 0.32, 0.7)
+        P(thud(), at, 0.9)
     fin = T("yours", 0) - 0.05
-    for at in (fin, fin + 0.63, fin + 1.23):
-        P(shing(), at, 0.7)
+    for at, pan in ((fin, (0.6, -0.6)), (fin + 0.63, (-0.6, 0.6)), (fin + 1.23, (-0.8, 0.8))):
+        P(glide_pass(0.7, pan), at - 0.03, 0.8)
     for at in (fin + 0.63, fin + 1.23):
-        clip, off = X.cut()
-        P(clip, at + off, 0.7)
-    P(X.impact(1.2, 1.0, 2.4), fin + 1.83, 0.9)
-    P(shing(), fin + 1.9, 0.6)
+        P(suck_in(0.28), at - 0.28, 0.7)
+        P(thud(), at, 0.9)
+    P(suck_in(0.55), fin + 1.83 - 0.55, 0.9)
+    P(trailer_hit(), fin + 1.83, 1.0)
     # the radio voice: keyed in before each transmission, keyed out after (each pair a little different)
     P(tx_in(1250, 1850, 0.22), T("born", 0) - 0.5, 1.0)
     P(tx_out(1500, 1000, 0.3), W["spark"]["end"] + 0.12, 1.0)

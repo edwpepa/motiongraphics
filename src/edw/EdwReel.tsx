@@ -111,12 +111,12 @@ const ReelCaptions: React.FC = () => {
   const outAt = Math.min(next ? VO[next].start - 0.12 : 99, p.end + 0.7);
   const o = clamp01((t - (p.start - 0.12)) / 0.15) * clamp01((outAt - t) / 0.15) * (1 - quiet);
   return (
-    <div style={{ position: "absolute", left: 90, right: 90, top: 1580, display: "flex", justifyContent: "center", opacity: o }}>
-      <div style={{ fontFamily: FONT, fontWeight: 600, fontSize: 50, lineHeight: 1.28, letterSpacing: "0.005em", color: "#f2f2f2", textAlign: "center", textShadow: "0 2px 18px rgba(0,0,0,0.9)" }}>
+    <div style={{ position: "absolute", left: 56, right: 56, top: 1590, display: "flex", justifyContent: "center", opacity: o }}>
+      <div style={{ fontFamily: FONT, fontWeight: 600, fontSize: 40, lineHeight: 1.3, letterSpacing: "0.005em", color: "#f2f2f2", textAlign: "center", textShadow: "0 2px 18px rgba(0,0,0,0.9)" }}>
         {p.words.map(([word, at], i) => {
           const a = clamp01((t - at + 0.06) / 0.16);
           return (
-            <span key={i} style={{ opacity: 0.25 + 0.75 * a, filter: `blur(${(1 - a) * 3}px)`, display: "inline-block", marginRight: 14 }}>
+            <span key={i} style={{ opacity: 0.25 + 0.75 * a, filter: `blur(${(1 - a) * 3}px)`, display: "inline-block", marginRight: 11 }}>
               {i === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word}
             </span>
           );
@@ -132,8 +132,8 @@ const ReelMark: React.FC = () => {
   const o = clamp01((t - 1.2) / 1.2) * (1 - clamp01((t - 28.9) / 0.5)) + clamp01((t - (w("roof", 0) + 0.5)) / 0.8) * (1 - clamp01((t - (FIN - 1.0)) / 0.7));
   if (o <= 0.001) return null;
   return (
-    <div style={{ position: "absolute", left: RW / 2 - 85, top: 150, opacity: o }}>
-      <Logo width={170} white />
+    <div style={{ position: "absolute", left: RW / 2 - 58, top: 160, opacity: o * 0.95 }}>
+      <Logo width={116} white />
     </div>
   );
 };

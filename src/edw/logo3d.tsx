@@ -65,7 +65,7 @@ const canvasTex = (w: number, h: number, paint: (g: CanvasRenderingContext2D) =>
   if (srgb) t.colorSpace = THREE.SRGBColorSpace;
   return t;
 };
-let TEX: { brushed: THREE.CanvasTexture; floorRough: THREE.CanvasTexture; shadow: THREE.CanvasTexture } | null = null;
+let TEX: { brushed: THREE.CanvasTexture; rough: THREE.CanvasTexture; bump: THREE.CanvasTexture; albedo: THREE.CanvasTexture; sideRough: THREE.CanvasTexture; floorRough: THREE.CanvasTexture; shadow: THREE.CanvasTexture } | null = null;
 function textures() {
   if (TEX) return TEX;
   const r = mulberry(9);
@@ -126,7 +126,50 @@ function textures() {
     false,
   );
   shadow.wrapS = shadow.wrapT = THREE.ClampToEdgeWrapping;
-  TEX = { brushed, floorRough, shadow };
+  // worked metal: linear brushing, a web of fine scratches, finger smudges and tiny pits — a surface that has lived
+  const wear = (g: CanvasRenderingContext2D, base: number, seed: number, strong: number) => {
+    const q = mulberry(seed);
+    g.fillStyle = `rgb(${base},${base},${base})`;
+    g.fillRect(0, 0, 2048, 2048);
+    for (let i = 0; i < 26000; i++) {
+      const y = q() * 2048, x = q() * 2048 - 400, len = 200 + q() * 1600, v = Math.floor(base + (q() - 0.5) * 120 * strong);
+      g.strokeStyle = `rgba(${v},${v},${v},${0.1 + q() * 0.3})`;
+      g.lineWidth = 0.4 + q() * 1.1;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + len, y + (q() - 0.5) * 3);
+      g.stroke();
+    }
+    for (let i = 0; i < 90; i++) {
+      const x = q() * 2048, y = q() * 2048, rad = 60 + q() * 260, v = Math.floor(base + (q() < 0.5 ? -1 : 1) * 60 * strong);
+      const gr = g.createRadialGradient(x, y, 0, x, y, rad);
+      gr.addColorStop(0, `rgba(${v},${v},${v},${0.18 + q() * 0.22})`);
+      gr.addColorStop(1, `rgba(${v},${v},${v},0)`);
+      g.fillStyle = gr;
+      g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+    }
+    for (let i = 0; i < 1400; i++) {
+      const x = q() * 2048, y = q() * 2048, a = q() * Math.PI, len = 20 + q() * (q() < 0.1 ? 600 : 160), v = q() < 0.5 ? 20 : 235;
+      g.strokeStyle = `rgba(${v},${v},${v},${0.25 + q() * 0.45})`;
+      g.lineWidth = 0.5 + q() * 1.2;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.quadraticCurveTo(x + Math.cos(a) * len * 0.5 + (q() - 0.5) * 30, y + Math.sin(a) * len * 0.5 + (q() - 0.5) * 30, x + Math.cos(a) * len, y + Math.sin(a) * len);
+      g.stroke();
+    }
+    for (let i = 0; i < 9000; i++) {
+      const v = q() < 0.5 ? 15 : 240;
+      g.fillStyle = `rgba(${v},${v},${v},${0.2 + q() * 0.5})`;
+      const sz = 0.8 + q() * 2.2;
+      g.fillRect(q() * 2048, q() * 2048, sz, sz);
+    }
+  };
+  const rough = canvasTex(2048, 2048, (g) => wear(g, 105, 21, 1.0));
+  const bump = canvasTex(2048, 2048, (g) => wear(g, 128, 21, 1.4));
+  const albedo = canvasTex(2048, 2048, (g) => wear(g, 214, 33, 0.35), true);
+  const sideRough = canvasTex(2048, 2048, (g) => wear(g, 95, 47, 1.1));
+  for (const t of [rough, bump, albedo, sideRough]) t.repeat.set(0.16, 0.16);
+  TEX = { brushed, rough, bump, albedo, sideRough, floorRough, shadow };
   return TEX;
 }
 
@@ -183,10 +226,10 @@ const Stage: React.FC<{ shots: Shot[]; t: number }> = ({ shots, t }) => {
   const G = geometry();
   const mats = useMemo(() => {
     const T = textures();
-    const top = new THREE.MeshPhysicalMaterial({ color: 0xf4f5f8, metalness: 1, roughness: 0.16, roughnessMap: T.brushed, anisotropy: 0.85, anisotropyRotation: 0, clearcoat: 0.4, clearcoatRoughness: 0.05 });
-    const side = new THREE.MeshPhysicalMaterial({ color: 0xf6f7fa, metalness: 1, roughness: 0.035 });
-    const wordTop = new THREE.MeshPhysicalMaterial({ color: 0xc9ccd3, metalness: 1, roughness: 0.22, roughnessMap: T.brushed, anisotropy: 0.7 });
-    const floor = new THREE.MeshPhysicalMaterial({ color: 0x020203, metalness: 0.0, roughness: 0.55, roughnessMap: T.floorRough, envMapIntensity: 0.06, transparent: true, opacity: 0.9 });
+    const top = new THREE.MeshStandardMaterial({ color: 0xe9ebef, map: T.albedo, metalness: 1, roughness: 1, roughnessMap: T.rough, bumpMap: T.bump, bumpScale: 1.6 });
+    const side = new THREE.MeshStandardMaterial({ color: 0xdcdee3, map: T.albedo, metalness: 1, roughness: 0.85, roughnessMap: T.sideRough, bumpMap: T.bump, bumpScale: 1.2 });
+    const wordTop = new THREE.MeshStandardMaterial({ color: 0xc4c7ce, map: T.albedo, metalness: 1, roughness: 1, roughnessMap: T.rough, bumpMap: T.bump, bumpScale: 1.4 });
+    const floor = new THREE.MeshStandardMaterial({ color: 0x020203, metalness: 0.0, roughness: 0.55, roughnessMap: T.floorRough, envMapIntensity: 0.06, });
     const shadow = new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: T.shadow, transparent: true, opacity: 0.95, depthWrite: false });
     // scene.environment ignores envMapIntensity, so the floor gets the map itself to stay a dark lacquer
     floor.envMap = env;
@@ -215,13 +258,6 @@ const Stage: React.FC<{ shots: Shot[]; t: number }> = ({ shots, t }) => {
       <group rotation={[-Math.PI / 2, 0, 0]}>
         <mesh geometry={G.mark} material={mats.mark} />
         <mesh geometry={G.word} material={mats.word} />
-      </group>
-      {/* the reflection in the lacquer: the same object mirrored under the floor */}
-      <group scale={[1, -1, 1]}>
-        <group rotation={[-Math.PI / 2, 0, 0]}>
-          <mesh geometry={G.mark} material={mats.mark} />
-          <mesh geometry={G.word} material={mats.word} />
-        </group>
       </group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} material={mats.floor}>
         <planeGeometry args={[400, 400]} />

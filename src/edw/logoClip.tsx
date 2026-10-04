@@ -36,6 +36,38 @@ export const LogoClip: React.FC<{ src: string; frames: [number, number]; shots: 
               const k = T >= c ? Math.exp(-(T - c) / (c === hit ? 0.5 : 0.16)) : 0;
               if (k > 0.01) flare(ctx, W / 2, H / 2, k * (c === hit ? 0.85 : 0.3), c === hit ? 1700 : 900, c === hit ? 110 : 40);
             }
+            // god rays: shafts of light cutting down through the haze over the edge shots
+            const sh = shotAt(shots, T);
+            const ra = (sh.dof ?? 0) * clamp01((T - sh.from) / 0.25) * clamp01((sh.to - T) / 0.2) + (sh.dof ? 0 : 0.35 * clamp01((T - sh.from) / 0.8));
+            if (ra > 0.01) {
+              const idx = shots.indexOf(sh);
+              const sx = idx % 2 ? W * 0.85 : W * 0.15, sy = -260;
+              const q = mulberry(11 + idx);
+              for (let i = 0; i < 11; i++) {
+                const base = (idx % 2 ? -1 : 1) * (0.2 + q() * 0.75) + Math.sin(T * 0.4 + i) * 0.03;
+                const ang = Math.PI / 2 - base;
+                const len = 1500 + q() * 600, wid = 30 + q() * 140;
+                const fl = 0.55 + 0.45 * Math.sin(T * (0.6 + q()) + i * 2.1);
+                ctx.save();
+                ctx.translate(sx, sy);
+                ctx.rotate(ang - Math.PI / 2);
+                const g = ctx.createLinearGradient(0, 0, 0, len);
+                const al = 0.07 * ra * fl;
+                g.addColorStop(0, `rgba(235,240,255,${al * 1.6})`);
+                g.addColorStop(0.5, `rgba(235,240,255,${al})`);
+                g.addColorStop(1, "rgba(235,240,255,0)");
+                ctx.fillStyle = g;
+                ctx.beginPath();
+                ctx.moveTo(-wid * 0.15, 0);
+                ctx.lineTo(wid * 0.15, 0);
+                ctx.lineTo(wid, len);
+                ctx.lineTo(-wid, len);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+              }
+              glow(ctx, sx, 0, 700, 0.12 * ra);
+            }
             const r = mulberry(5);
             for (let i = 0; i < 70; i++) {
               const x = (r() * W + T * (r() - 0.5) * 50 + W) % W, y = (r() * H - T * 14 * r() + H * 4) % H;

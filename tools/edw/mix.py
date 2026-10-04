@@ -335,6 +335,42 @@ def trailer_hit():
     return X.verb(norm(np.tanh((sub + body + crack + tail) * 1.4)) * 0.95, 0.55)
 
 
+def air_swell(d):
+    """A long, smooth rise of air and a low hum under it: opens slowly, never cuts off (it hands over to the bloom)."""
+    n = int(d * SR)
+    t = np.arange(n) / SR
+    x = t / d
+    nb = int(math.ceil(n / 256))
+    xb = np.linspace(0, 1, nb)
+    air = C.swept(rng.standard_normal(n), "bandpass", [(250 + 1600 * k ** 1.6, 900 + 5200 * k ** 1.6) for k in xb])
+    hum = np.sin(2 * np.pi * 55 * t) * 0.5 + np.sin(2 * np.pi * 82.4 * t + 0.3) * 0.25
+    env = np.clip(x / 0.25, 0, 1) ** 2 * (0.35 + 0.65 * x ** 1.5)
+    y = (norm(air) * 0.6 + hum * 0.35) * env
+    y[-int(0.12 * SR):] *= np.linspace(1, 0.6, int(0.12 * SR))
+    return C.stereo_sweep(norm(y) * 0.7, -0.25, 0.25)
+
+
+def soft_pass(d, pan):
+    """A gentle, symmetric whoosh: swells in and out around the cut, no attack click."""
+    w0 = C.whoosh(d, 220, 2600, 0.5, pan, air=0.7, low=0.4)
+    t = np.arange(w0.shape[1]) / SR
+    return w0 * (np.sin(np.pi * t / t[-1]) ** 1.5)[None, :]
+
+
+def bloom_hit(d):
+    """A warm bloom for the full logo: a deep, rounded swell and a soft chord that rings out into the hall."""
+    n = int(d * SR)
+    t = np.arange(n) / SR
+    env = np.clip(t / 0.06, 0, 1) ** 1.5 * np.exp(-t / (d * 0.35))
+    sub = np.sin(2 * np.pi * np.cumsum(40 + 12 * np.exp(-t / 0.3)) / SR) * env
+    chord = sum(np.sin(2 * np.pi * C.midi(m) * t + rng.uniform(0, 6)) * g for m, g in ((50, 0.5), (57, 0.4), (62, 0.35), (69, 0.2), (74, 0.12)))
+    chord *= np.clip(t / 0.25, 0, 1) * np.exp(-t / (d * 0.45))
+    air = C.filt(rng.standard_normal(n), "bandpass", (1500, 9000), 2) * np.clip(t / 0.1, 0, 1) * np.exp(-t / 0.9) * 0.15
+    y = norm(sub * 0.9 + chord * 0.5 + air)
+    y[-int(0.3 * SR):] *= np.linspace(1, 0, int(0.3 * SR))
+    return X.verb(X.st(y * 0.85), 0.6)
+
+
 # ------------------------------------------------------------------ sound design over the picture
 def build_sfx():
     s = np.zeros((2, N))
@@ -386,21 +422,18 @@ def build_sfx():
             P(X.key(), t0 + (t1 - t0) * i / len(msg), 0.25)
     P(X.click(), T("best", 8) + 0.2, 0.7)
     P(X.sent(), T("best", 8) + 0.25, 0.7)
-    # the 3D logo: a deep pass of air as the camera glides over each edge, the air sucked back into a heavy
-    # sub hit on every cut, and a trailer-size impact on the full reveal
-    for at, pan in ((29.4, (-0.7, 0.5)), (30.25, (0.7, -0.4)), (31.05, (-0.6, 0.6))):
-        P(glide_pass(0.95, pan), at - 0.05, 0.9)
-    for at in (30.25, 31.05):
-        P(suck_in(0.32), at - 0.32, 0.7)
-        P(thud(), at, 0.9)
+    # the 3D logo: one continuous swell of air carrying the edge shots, soft symmetric passes over each cut
+    # (no transients, nothing that stops dead), and a warm bloom with a long tail when the whole mark appears
+    R2 = T("edw", 0) - 0.02
+    P(air_swell(R2 + 0.15 - 29.25), 29.25, 0.9)
+    for at, pan in ((30.25, (0.6, -0.6)), (31.05, (-0.6, 0.6))):
+        P(soft_pass(1.0, pan), at - 0.5, 0.7)
+    P(bloom_hit(4.5), R2 - 0.02, 0.9)
     fin = T("yours", 0) - 0.05
-    for at, pan in ((fin, (0.6, -0.6)), (fin + 0.63, (-0.6, 0.6)), (fin + 1.23, (-0.8, 0.8))):
-        P(glide_pass(0.7, pan), at - 0.03, 0.8)
-    for at in (fin + 0.63, fin + 1.23):
-        P(suck_in(0.28), at - 0.28, 0.7)
-        P(thud(), at, 0.9)
-    P(suck_in(0.55), fin + 1.83 - 0.55, 0.9)
-    P(trailer_hit(), fin + 1.83, 1.0)
+    P(air_swell(1.83 + 0.15), fin, 0.85)
+    for at, pan in ((fin + 0.63, (-0.6, 0.6)), (fin + 1.23, (0.6, -0.6))):
+        P(soft_pass(0.8, pan), at - 0.4, 0.65)
+    P(bloom_hit(END - (fin + 1.83)), fin + 1.83 - 0.02, 1.0)
     # the radio voice: keyed in before each transmission, keyed out after (each pair a little different)
     P(tx_in(1250, 1850, 0.22), T("born", 0) - 0.5, 1.0)
     P(tx_out(1500, 1000, 0.3), W["spark"]["end"] + 0.12, 1.0)

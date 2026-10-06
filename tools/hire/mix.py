@@ -11,12 +11,12 @@ import mix as M  # noqa: E402  (the brand film's instruments and sound design)
 
 C, S, X = M.C, M.S, M.X
 ROOT, SR = C.ROOT, C.SR
-END = 50.2
+END = 49.5
 N = int(END * SR)
 W = json.load(open(os.path.join(ROOT, "src/hire/vo-words.json")))
 T = lambda key, i=0: W[key]["words"][min(i, len(W[key]["words"]) - 1)][1]  # noqa: E731
 HIT = 34.3
-FINAL = 43.95 + 1.83  # the 3D mark's full reveal
+FINAL = 44.8  # the signal lights up in the clouds
 BEAT, BAR = 0.6, 2.4
 PROG = M.PROG
 tt, norm, rng = M.tt, M.norm, M.rng
@@ -123,33 +123,45 @@ def score():
 def sfx():
     s = np.zeros((2, N))
     P = lambda x, at, g=1.0: C.place(s, x if x.ndim == 2 else C.stereo(x), at, g)  # noqa: E731
+    bang = T("growing", 0)
     # the transmission opens and closes
-    P(M.tx_in(1250, 1850, 0.22), T("growing", 0) - 0.55, 1.0)
+    P(M.tx_in(1250, 1850, 0.22), bang - 0.6, 0.9)
     P(M.tx_out(1500, 1000, 0.3), 16.62, 1.0)
-    # the team gathering: a ping for each mind, the lattice locking with three places left open
-    for i in range(18):
-        P(M.ping(int(rng.choice([84, 86, 89, 91, 93, 96]))), 0.6 + i * 0.25, 0.22)
-    P(X.lock(), T("growing", 7), 0.5)
-    # the brain: synapses, a flare on "sharp"
-    for i in range(12):
-        P(M.ping(int(rng.choice([88, 91, 93, 96]))), T("many", 0) + 0.2 + i * 0.32, 0.18)
-    P(M.soft_pass(0.9, (-0.5, 0.5)), T("sharp", 6) - 0.45, 0.6)
-    P(X.shimmer(), T("sharp", 7), 0.4)
-    # the city: thunder and rain, the push towards the window
-    P(M.thunder(), 13.65, 0.8)
-    P(M.rain(3.3) * np.clip(tt(3.3) / 0.3, 0, 1)[None, :] * np.clip((3.3 - tt(3.3)) / 0.6, 0, 1)[None, :], 13.65, 0.8)
-    # the build: edges joining, the lock when it is complete, the world
-    for i in range(30):
-        P(X.click(), 17.7 + i * (23.2 - 17.7) / 30, 0.15)
-    P(X.lock(), 23.25, 0.5)
-    P(M.soft_pass(1.2, (0.6, -0.6)), T("anywhere", 0) - 0.4, 0.6)
-    P(X.shimmer(), 29.1, 0.4)
-    # devices
-    for at in (30.0, 30.75, 31.4):
-        P(X.select(), at, 0.4)
-    # the minimal mark
-    P(M.air_swell(HIT - 33.45 + 0.1), 33.45, 0.6)
-    P(M.bloom_hit(3.5), HIT - 0.02, 0.8)
+    # a world is born: the inhale, the bang, the long tail
+    P(C.reverse_swell(1.0), bang - 1.0, 0.8)
+    P(M.trailer_hit(), bang, 0.9)
+    P(X.shimmer(), bang + 0.3, 0.4)
+    # the team: three lights switching on over the empty places
+    P(M.soft_pass(0.8, (-0.4, 0.4)), 3.3, 0.5)
+    for k in range(3):
+        P(M.thud(), T("growing", 7) + k * 0.16, 0.45)
+    # the crowd murmurs; one lights up; the mind turns sharp
+    P(M.rumble(2.0) * 0.6, 5.9, 0.6)
+    P(M.bloom_hit(2.5), T("sharp", 0) - 0.02, 0.55)
+    P(X.shimmer(), T("sharp", 7), 0.5)
+    # the maze solves itself
+    P(C.whoosh(1.2, 400, 6000, 0.7, (-0.6, 0.6), air=0.8), T("sharp", 9) - 0.1, 0.5)
+    P(X.success(), T("sharp", 13), 0.35)
+    # the roof: thunder and rain
+    P(M.thunder(), 13.55 + 0.45, 0.85)
+    P(M.rain(3.3) * np.clip(tt(3.3) / 0.3, 0, 1)[None, :] * np.clip((3.3 - tt(3.3)) / 0.6, 0, 1)[None, :], 13.55, 0.8)
+    # the city rises; one tower is yours
+    P(M.rumble(5.5) * 0.7, 17.6, 0.6)
+    for i in range(24):
+        P(X.click(), 17.9 + i * 0.22, 0.12)
+    P(M.bloom_hit(2.5), T("yours", 2) - 0.02, 0.6)
+    # sunrise over the world
+    P(M.air_swell(1.6), T("anywhere", 4) - 1.4, 0.5)
+    P(X.shimmer(), T("anywhere", 4) + 0.1, 0.45)
+    # the blueprint, the chair blown to dust
+    P(M.soft_pass(1.0, (-0.5, 0.5)), 29.6, 0.45)
+    P(C.whoosh(0.9, 300, 3000, 0.6, (-0.3, 0.8), air=0.9), T("sit", 5) - 0.05, 0.6)
+    # the storm; the searchlight bangs on
+    P(M.thunder(), 33.5, 0.9)
+    P(M.thud(), 34.3, 1.0)
+    hum = np.sin(2 * np.pi * 60 * tt(9.4)) * 0.25 + C.filt(rng.standard_normal(int(9.4 * SR)), "bandpass", (100, 300)) * 0.25
+    hum *= np.clip(tt(9.4) / 0.05, 0, 1) * np.clip((9.4 - tt(9.4)) / 1.0, 0, 1)
+    P(hum, 34.3, 0.25)
     # the website
     P(M.soft_pass(0.8, (0.4, -0.4)), 36.4, 0.5)
     P(X.click(), T("hiring", 2), 0.8)
@@ -159,13 +171,9 @@ def sfx():
             if ch != " ":
                 P(X.key(), a + (b - a) * i / len(txt), 0.18)
     P(X.click(), T("there", 0) - 0.05, 0.8)
-    P(X.sent(), T("there", 0), 0.6)
-    # the 3D mark: one smooth swell through the edge shots, soft passes on the cuts, a warm bloom
-    fin = 43.95
-    P(M.air_swell(1.83 + 0.15), fin, 0.85)
-    for at, pan in ((fin + 0.63, (-0.6, 0.6)), (fin + 1.23, (0.6, -0.6))):
-        P(M.soft_pass(0.8, pan), at - 0.4, 0.65)
-    P(M.bloom_hit(END - FINAL), FINAL - 0.02, 1.0)
+    # sent: up the beam, and the signal answers
+    P(M.air_swell(FINAL - T("there", 0)), T("there", 0), 0.7)
+    P(M.bloom_hit(END - FINAL), FINAL - 0.02, 0.9)
     return s
 
 

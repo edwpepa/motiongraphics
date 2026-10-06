@@ -21,7 +21,7 @@ PHRASES = [
     ("sharp", 0, 6.56, 12.08, "only for the ones who are seriously sharp technically and who solve problems the way other people breathe,"),
     ("calm", 0, 12.46, 15.22, "calmly and without needing anyone to push them."),
     ("share", 1, 0.07, 3.73, "Everyone who joins gets a percentage of the projects we build together,"),
-    ("create", 1, 4.05, 5.29, "so what we create"),
+    ("create", 1, 4.05, 5.29, "so what you create"),
     ("yours", 1, 5.52, 6.50, "is partly yours."),
     ("anywhere", 1, 6.92, 8.87, "You can work from anywhere in the world,"),
     ("remote", 1, 9.09, 10.47, "remotely or in person,"),

@@ -16,8 +16,13 @@ export const MONO = "'Liberation Mono', 'DejaVu Sans Mono', monospace";
 type Phrase = { start: number; end: number; text: string; words: [string, number][] };
 export const VO = WORDS as unknown as Record<string, Phrase>;
 export const ORDER = Object.keys(VO);
+/** another film can re-time the brand film's scenes: it maps a cue (phrase key, word) to its own clock */
+export const CUES: { remap: null | ((key: string, i: number, t: number) => number) } = { remap: null };
 /** onset (s) of word i of phrase `key` */
-export const w = (key: string, i = 0) => VO[key].words[Math.min(i, VO[key].words.length - 1)][1];
+export const w = (key: string, i = 0) => {
+  const t = VO[key].words[Math.min(i, VO[key].words.length - 1)][1];
+  return CUES.remap ? CUES.remap(key, i, t) : t;
+};
 export const ph = (key: string) => VO[key];
 
 export const clamp01 = (v: number) => Math.min(1, Math.max(0, v));

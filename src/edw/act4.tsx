@@ -424,7 +424,7 @@ function nodes(from: number, until: number) {
 }
 
 /** 46.6 – 51.25 s: "When you put minds like that in the same room, there's very little they can't build," */
-export const NetworkScene: React.FC<{ from: number; to: number }> = ({ from, to }) => (
+export const NetworkScene: React.FC<{ from: number; to: number; holes?: number }> = ({ from, to, holes = 0 }) => (
   <CanvasScene
     draw={(ctx, T) => {
       const t = T - from;
@@ -481,6 +481,19 @@ export const NetworkScene: React.FC<{ from: number; to: number }> = ({ from, to 
       ctx.globalCompositeOperation = "lighter";
       pos.forEach((p, i) => {
         if (vis[i] <= 0) return;
+        if (i >= N.length - holes) {
+          // an open spot: an empty ring waiting to be filled
+          const pulse = 0.75 + 0.25 * Math.sin(T * 4 + i);
+          ctx.strokeStyle = `rgba(245,247,252,${0.9 * vis[i] * pulse})`;
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 17 * p.k, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          glow(ctx, p.x, p.y, 40 * p.k, 0.15 * vis[i] * pulse);
+          return;
+        }
         glow(ctx, p.x, p.y, 34 * p.k, 0.45 * vis[i]);
         glow(ctx, p.x, p.y, 7 * p.k, vis[i]);
       });

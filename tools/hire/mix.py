@@ -11,12 +11,12 @@ import mix as M  # noqa: E402  (the brand film's instruments and sound design)
 
 C, S, X = M.C, M.S, M.X
 ROOT, SR = C.ROOT, C.SR
-END = 49.0
+END = 50.2
 N = int(END * SR)
 W = json.load(open(os.path.join(ROOT, "src/hire/vo-words.json")))
 T = lambda key, i=0: W[key]["words"][min(i, len(W[key]["words"]) - 1)][1]  # noqa: E731
 HIT = 34.3
-FINAL = 43.95 + 1.0
+FINAL = 43.95 + 1.83  # the 3D mark's full reveal
 BEAT, BAR = 0.6, 2.4
 PROG = M.PROG
 tt, norm, rng = M.tt, M.norm, M.rng
@@ -126,26 +126,29 @@ def sfx():
     # the transmission opens and closes
     P(M.tx_in(1250, 1850, 0.22), T("growing", 0) - 0.55, 1.0)
     P(M.tx_out(1500, 1000, 0.3), 16.62, 1.0)
-    # every morph of the mark: a soft pass of air; slots lock open
-    P(M.air_swell(1.0), 0.4, 0.5)
-    P(M.soft_pass(1.1, (-0.6, 0.6)), T("growing", 0) - 0.15, 0.7)
-    P(M.soft_pass(0.9, (0.5, -0.5)), T("growing", 7) - 0.4, 0.7)
-    for i in range(3):
-        P(X.lock(), T("growing", 7) + 0.6 + i * 0.12, 0.35)
-    P(X.shimmer(), 6.05, 0.35)
-    P(M.ping(91), T("sharp", 0), 0.6)
-    for at in (T("sharp", 7), T("growing", 8), T("share", 6), T("yours", 2), T("build", 7)):
-        P(X.select(), at - 0.02, 0.35)
-    P(M.soft_pass(0.8, (-0.7, 0.2)), T("calm", 4) - 0.2, 0.55)
-    # equity: the outline is traced, the mark fills
-    P(M.soft_pass(1.2, (-0.5, 0.5)), 17.4, 0.6)
-    P(M.air_swell(T("yours", 2) - T("share", 5) + 0.1), T("share", 5), 0.45)
-    # the world
-    P(M.soft_pass(1.2, (0.6, -0.6)), T("anywhere", 0) - 0.3, 0.75)
-    P(X.shimmer(), T("anywhere", 0) + 0.5, 0.35)
-    P(X.click(), T("remote", 2), 0.6)
-    P(C.whoosh(0.35, 800, 5000, 0.6, (-0.4, 0.4), air=0.5), T("sit", 5) - 0.1, 0.4)
-    P(M.air_swell(HIT - 33.45 + 0.1), 33.45, 0.7)
+    # the team gathering: a ping for each mind, the lattice locking with three places left open
+    for i in range(18):
+        P(M.ping(int(rng.choice([84, 86, 89, 91, 93, 96]))), 0.6 + i * 0.25, 0.22)
+    P(X.lock(), T("growing", 7), 0.5)
+    # the brain: synapses, a flare on "sharp"
+    for i in range(12):
+        P(M.ping(int(rng.choice([88, 91, 93, 96]))), T("many", 0) + 0.2 + i * 0.32, 0.18)
+    P(M.soft_pass(0.9, (-0.5, 0.5)), T("sharp", 6) - 0.45, 0.6)
+    P(X.shimmer(), T("sharp", 7), 0.4)
+    # the city: thunder and rain, the push towards the window
+    P(M.thunder(), 13.65, 0.8)
+    P(M.rain(3.3) * np.clip(tt(3.3) / 0.3, 0, 1)[None, :] * np.clip((3.3 - tt(3.3)) / 0.6, 0, 1)[None, :], 13.65, 0.8)
+    # the build: edges joining, the lock when it is complete, the world
+    for i in range(30):
+        P(X.click(), 17.7 + i * (23.2 - 17.7) / 30, 0.15)
+    P(X.lock(), 23.25, 0.5)
+    P(M.soft_pass(1.2, (0.6, -0.6)), T("anywhere", 0) - 0.4, 0.6)
+    P(X.shimmer(), 29.1, 0.4)
+    # devices
+    for at in (30.0, 30.75, 31.4):
+        P(X.select(), at, 0.4)
+    # the minimal mark
+    P(M.air_swell(HIT - 33.45 + 0.1), 33.45, 0.6)
     P(M.bloom_hit(3.5), HIT - 0.02, 0.8)
     # the website
     P(M.soft_pass(0.8, (0.4, -0.4)), 36.4, 0.5)
@@ -157,8 +160,12 @@ def sfx():
                 P(X.key(), a + (b - a) * i / len(txt), 0.18)
     P(X.click(), T("there", 0) - 0.05, 0.8)
     P(X.sent(), T("there", 0), 0.6)
-    P(M.soft_pass(1.0, (-0.5, 0.5)), 43.85, 0.7)
-    P(M.bloom_hit(END - FINAL), FINAL - 0.02, 0.9)
+    # the 3D mark: one smooth swell through the edge shots, soft passes on the cuts, a warm bloom
+    fin = 43.95
+    P(M.air_swell(1.83 + 0.15), fin, 0.85)
+    for at, pan in ((fin + 0.63, (-0.6, 0.6)), (fin + 1.23, (0.6, -0.6))):
+        P(M.soft_pass(0.8, pan), at - 0.4, 0.65)
+    P(M.bloom_hit(END - FINAL), FINAL - 0.02, 1.0)
     return s
 
 

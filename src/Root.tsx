@@ -47,7 +47,7 @@ export const Root: React.FC = () => {
       <Composition id="EdwEnterprise" component={EdwEnterprise} durationInFrames={70 * 30} fps={30} width={1920} height={1080} defaultProps={{ audio: false }} />
       <Composition id="EdwEnterpriseClean" component={EdwEnterprise} durationInFrames={70 * 30} fps={30} width={1920} height={1080} defaultProps={{ audio: false, reel: true }} />
       <Composition id="EdwReel" component={EdwReel} durationInFrames={70 * 30} fps={30} width={1080} height={1920} defaultProps={{ audio: false }} />
-      <Composition id="EdwHiring" component={HireFilm} durationInFrames={49 * 30} fps={30} width={1920} height={1080} defaultProps={{ audio: false }} />
+      <Composition id="EdwHiring" component={HireFilm} durationInFrames={Math.round(50.2 * 30)} fps={30} width={1920} height={1080} defaultProps={{ audio: false }} />
       <Composition id="EdwLogoFilm" component={EdwLogoFilm} durationInFrames={70 * 30} fps={30} width={1920} height={1080} />
       <Composition id="HandlyLaunch" component={HandlyLaunch} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
     </>

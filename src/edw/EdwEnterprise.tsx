@@ -8,7 +8,7 @@ import { LogoClip } from "./logoClip";
 import { END, END_FRAMES, MID, MID_END, MID_FRAMES, R, REVEAL } from "./logoShots";
 import { IdeaScene, MessageScene } from "./act5";
 import { DareScene, DevicesScene, NetworkScene, ScopeScene, SplitScene } from "./act4";
-import { Captions, CornerLogo, FPS, Grade, LAYOUT, w } from "./kit";
+import { CUES, Captions, CornerLogo, FPS, Grade, LAYOUT, w } from "./kit";
 
 /** mounts children for [from, to) seconds */
 export const Shot: React.FC<{ from: number; to: number; children: React.ReactNode }> = ({ from, to, children }) => {
@@ -23,6 +23,7 @@ export const CAPTION_MUTE: [number, number][] = [[29.35, w("roof", 0) + 0.5], [F
 
 export const EdwEnterprise: React.FC<{ audio?: boolean; reel?: boolean }> = ({ audio = true, reel = false }) => {
   LAYOUT.reel = reel;
+  CUES.remap = null;
   useExplainerFonts();
   return (
     <AbsoluteFill style={{ background: "#000" }}>

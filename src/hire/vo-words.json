@@ -1,0 +1,641 @@
+{
+ "growing": {
+  "start": 1.43,
+  "end": 5.47,
+  "text": "EDW Enterprise is growing, and we have three open spots on the team.",
+  "words": [
+   [
+    "EDW",
+    1.43
+   ],
+   [
+    "Enterprise",
+    2.32
+   ],
+   [
+    "is",
+    2.88
+   ],
+   [
+    "growing,",
+    3.12
+   ],
+   [
+    "and",
+    3.4
+   ],
+   [
+    "we",
+    3.72
+   ],
+   [
+    "have",
+    3.86
+   ],
+   [
+    "three",
+    4.1
+   ],
+   [
+    "open",
+    4.27
+   ],
+   [
+    "spots",
+    4.75
+   ],
+   [
+    "on",
+    4.92
+   ],
+   [
+    "the",
+    5.09
+   ],
+   [
+    "team.",
+    5.35
+   ]
+  ]
+ },
+ "many": {
+  "start": 6.0,
+  "end": 7.6,
+  "text": "We're not looking for many people,",
+  "words": [
+   [
+    "We're",
+    6.0
+   ],
+   [
+    "not",
+    6.26
+   ],
+   [
+    "looking",
+    6.44
+   ],
+   [
+    "for",
+    6.65
+   ],
+   [
+    "many",
+    6.83
+   ],
+   [
+    "people,",
+    7.33
+   ]
+  ]
+ },
+ "sharp": {
+  "start": 7.86,
+  "end": 13.38,
+  "text": "only for the ones who are seriously sharp technically and who solve problems the way other people breathe,",
+  "words": [
+   [
+    "only",
+    7.86
+   ],
+   [
+    "for",
+    8.18
+   ],
+   [
+    "the",
+    8.52
+   ],
+   [
+    "ones",
+    8.58
+   ],
+   [
+    "who",
+    9.09
+   ],
+   [
+    "are",
+    9.28
+   ],
+   [
+    "seriously",
+    9.46
+   ],
+   [
+    "sharp",
+    10.08
+   ],
+   [
+    "technically",
+    10.34
+   ],
+   [
+    "and",
+    11.13
+   ],
+   [
+    "who",
+    11.22
+   ],
+   [
+    "solve",
+    11.48
+   ],
+   [
+    "problems",
+    11.69
+   ],
+   [
+    "the",
+    11.98
+   ],
+   [
+    "way",
+    12.25
+   ],
+   [
+    "other",
+    12.51
+   ],
+   [
+    "people",
+    12.86
+   ],
+   [
+    "breathe,",
+    13.19
+   ]
+  ]
+ },
+ "calm": {
+  "start": 13.76,
+  "end": 16.52,
+  "text": "calmly and without needing anyone to push them.",
+  "words": [
+   [
+    "calmly",
+    13.76
+   ],
+   [
+    "and",
+    14.31
+   ],
+   [
+    "without",
+    14.45
+   ],
+   [
+    "needing",
+    14.91
+   ],
+   [
+    "anyone",
+    15.31
+   ],
+   [
+    "to",
+    15.91
+   ],
+   [
+    "push",
+    16.09
+   ],
+   [
+    "them.",
+    16.33
+   ]
+  ]
+ },
+ "share": {
+  "start": 17.67,
+  "end": 21.33,
+  "text": "Everyone who joins gets a percentage of the projects we build together,",
+  "words": [
+   [
+    "Everyone",
+    17.67
+   ],
+   [
+    "who",
+    18.33
+   ],
+   [
+    "joins",
+    18.51
+   ],
+   [
+    "gets",
+    18.63
+   ],
+   [
+    "a",
+    18.87
+   ],
+   [
+    "percentage",
+    19.0
+   ],
+   [
+    "of",
+    19.53
+   ],
+   [
+    "the",
+    19.78
+   ],
+   [
+    "projects",
+    19.96
+   ],
+   [
+    "we",
+    20.42
+   ],
+   [
+    "build",
+    20.61
+   ],
+   [
+    "together,",
+    20.83
+   ]
+  ]
+ },
+ "create": {
+  "start": 21.65,
+  "end": 22.89,
+  "text": "so what we create",
+  "words": [
+   [
+    "so",
+    21.65
+   ],
+   [
+    "what",
+    22.05
+   ],
+   [
+    "we",
+    22.3
+   ],
+   [
+    "create",
+    22.52
+   ]
+  ]
+ },
+ "yours": {
+  "start": 23.12,
+  "end": 24.1,
+  "text": "is partly yours.",
+  "words": [
+   [
+    "is",
+    23.12
+   ],
+   [
+    "partly",
+    23.32
+   ],
+   [
+    "yours.",
+    23.94
+   ]
+  ]
+ },
+ "anywhere": {
+  "start": 24.52,
+  "end": 26.47,
+  "text": "You can work from anywhere in the world,",
+  "words": [
+   [
+    "You",
+    24.52
+   ],
+   [
+    "can",
+    24.76
+   ],
+   [
+    "work",
+    24.91
+   ],
+   [
+    "from",
+    25.1
+   ],
+   [
+    "anywhere",
+    25.39
+   ],
+   [
+    "in",
+    25.97
+   ],
+   [
+    "the",
+    26.02
+   ],
+   [
+    "world,",
+    26.36
+   ]
+  ]
+ },
+ "remote": {
+  "start": 26.69,
+  "end": 28.07,
+  "text": "remotely or in person,",
+  "words": [
+   [
+    "remotely",
+    26.69
+   ],
+   [
+    "or",
+    27.32
+   ],
+   [
+    "in",
+    27.56
+   ],
+   [
+    "person,",
+    27.67
+   ]
+  ]
+ },
+ "rest": {
+  "start": 28.36,
+  "end": 29.56,
+  "text": "and we'll figure out the rest,",
+  "words": [
+   [
+    "and",
+    28.36
+   ],
+   [
+    "we'll",
+    28.47
+   ],
+   [
+    "figure",
+    28.69
+   ],
+   [
+    "out",
+    29.13
+   ],
+   [
+    "the",
+    29.16
+   ],
+   [
+    "rest,",
+    29.4
+   ]
+  ]
+ },
+ "build": {
+  "start": 29.86,
+  "end": 31.9,
+  "text": "because we care about what you can build",
+  "words": [
+   [
+    "because",
+    29.86
+   ],
+   [
+    "we",
+    30.35
+   ],
+   [
+    "care",
+    30.47
+   ],
+   [
+    "about",
+    30.72
+   ],
+   [
+    "what",
+    31.08
+   ],
+   [
+    "you",
+    31.25
+   ],
+   [
+    "can",
+    31.56
+   ],
+   [
+    "build",
+    31.78
+   ]
+  ]
+ },
+ "sit": {
+  "start": 32.18,
+  "end": 33.39,
+  "text": "and not about where you sit.",
+  "words": [
+   [
+    "and",
+    32.18
+   ],
+   [
+    "not",
+    32.36
+   ],
+   [
+    "about",
+    32.52
+   ],
+   [
+    "where",
+    32.94
+   ],
+   [
+    "you",
+    33.01
+   ],
+   [
+    "sit.",
+    33.29
+   ]
+  ]
+ },
+ "you": {
+  "start": 35.46,
+  "end": 36.57,
+  "text": "If that sounds like you,",
+  "words": [
+   [
+    "If",
+    35.46
+   ],
+   [
+    "that",
+    35.62
+   ],
+   [
+    "sounds",
+    35.94
+   ],
+   [
+    "like",
+    36.08
+   ],
+   [
+    "you,",
+    36.28
+   ]
+  ]
+ },
+ "website": {
+  "start": 36.83,
+  "end": 37.8,
+  "text": "go to our website,",
+  "words": [
+   [
+    "go",
+    36.83
+   ],
+   [
+    "to",
+    37.08
+   ],
+   [
+    "our",
+    37.23
+   ],
+   [
+    "website,",
+    37.5
+   ]
+  ]
+ },
+ "hiring": {
+  "start": 38.08,
+  "end": 40.28,
+  "text": "open the hiring section, and fill out the form.",
+  "words": [
+   [
+    "open",
+    38.08
+   ],
+   [
+    "the",
+    38.53
+   ],
+   [
+    "hiring",
+    38.69
+   ],
+   [
+    "section,",
+    39.04
+   ],
+   [
+    "and",
+    39.36
+   ],
+   [
+    "fill",
+    39.52
+   ],
+   [
+    "out",
+    39.82
+   ],
+   [
+    "the",
+    39.85
+   ],
+   [
+    "form.",
+    40.03
+   ]
+  ]
+ },
+ "tell": {
+  "start": 40.72,
+  "end": 43.33,
+  "text": "Tell us what you've built and what problems you've solved,",
+  "words": [
+   [
+    "Tell",
+    40.72
+   ],
+   [
+    "us",
+    40.98
+   ],
+   [
+    "what",
+    41.19
+   ],
+   [
+    "you've",
+    41.45
+   ],
+   [
+    "built",
+    41.68
+   ],
+   [
+    "and",
+    41.89
+   ],
+   [
+    "what",
+    41.96
+   ],
+   [
+    "problems",
+    42.22
+   ],
+   [
+    "you've",
+    42.67
+   ],
+   [
+    "solved,",
+    42.85
+   ]
+  ]
+ },
+ "there": {
+  "start": 43.6,
+  "end": 44.76,
+  "text": "and we'll take it from there.",
+  "words": [
+   [
+    "and",
+    43.6
+   ],
+   [
+    "we'll",
+    43.88
+   ],
+   [
+    "take",
+    44.07
+   ],
+   [
+    "it",
+    44.17
+   ],
+   [
+    "from",
+    44.46
+   ],
+   [
+    "there.",
+    44.64
+   ]
+  ]
+ }
+}

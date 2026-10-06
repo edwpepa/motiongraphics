@@ -1,10 +1,10 @@
 import React from "react";
 import { AbsoluteFill, Audio, Sequence, staticFile } from "remotion";
 import { useExplainerFonts } from "../explainer/fonts";
-import { BAR_H, FONT, Grade, H, Logo, clamp01, ease, useT } from "../edw/kit";
+import { BAR_H, FONT, Grade, H, Logo, W, clamp01, ease, useT } from "../edw/kit";
 import { VO } from "./type";
 import { Browser } from "./ui";
-import { BigBang, Blueprint, City, Crowd, Earth, Maze, Roof, Storm, Team, Z } from "./world";
+import { BigBang, Blueprint, City, Crowd, Earth, Maze, Roof, Space, Storm, Team, Z } from "./world";
 
 export const HIRE_END = Z.end;
 
@@ -37,7 +37,7 @@ const CHUNKS: Chunk[] = (() => {
     const next = out[i + 1]?.words[0][1] ?? 99;
     const lastWord = out[i].words[out[i].words.length - 1][1];
     // no words over the marks: lines finish before the minimal mark and before the 3D mark
-    const cap = [Z.signal - 0.1].find((m) => out[i].words[0][1] < m) ?? 99;
+    const cap = [Z.send + 0.7].find((m) => out[i].words[0][1] < m) ?? 99;
     out[i].end = Math.min(next - 0.08, lastWord + 1.1, cap);
   }
   return out;
@@ -50,19 +50,25 @@ const Center: React.FC = () => {
   const t0 = c.words[0][1] - 0.18;
   const o = clamp01((c.end - t) / 0.18);
   const boxed = c.words.findIndex(([wd]) => KEY.has(wd.toLowerCase()));
-  const band = ease.outCubic(clamp01((t - t0) / 0.25)) * o;
-  const feather = "linear-gradient(transparent 0%, black 30%, black 70%, transparent 100%)";
+  const lead = c.words[0][0] === "EDW";
+  const site = c.words[0][1] >= Z.ui;
   return (
     <AbsoluteFill style={{ pointerEvents: "none" }}>
-      {/* a band of smoked glass behind the words: whatever is behind stays, softened */}
-      <div style={{ position: "absolute", left: 0, right: 0, top: H / 2 - 150, height: 300, backdropFilter: "blur(14px) brightness(0.42)", WebkitBackdropFilter: "blur(14px) brightness(0.42)", WebkitMaskImage: feather, maskImage: feather, opacity: band }} />
-      <div style={{ position: "absolute", left: 140, right: 140, top: H / 2, transform: "translateY(-50%)", display: "flex", flexWrap: "wrap", justifyContent: "center", columnGap: 20, rowGap: 4, opacity: o }}>
+      <div style={{ position: "absolute", left: 140, right: 140, top: site ? 880 : H / 2, transform: `translateY(-50%) scale(${site ? 0.82 : 1})`, display: "flex", flexWrap: "wrap", justifyContent: "center", columnGap: 20, rowGap: 4, opacity: o }}>
         {c.words.map(([wd, at], i) => {
           const rise = ease.outExpo(clamp01((t - t0 - i * 0.035) / 0.6));
           const lit = ease.outCubic(clamp01((t - at + 0.06) / 0.22));
           const isBox = i === boxed;
           const bu = isBox ? ease.outExpo(clamp01((t - at) / 0.4)) : 0;
           const text = i === 0 ? wd.charAt(0).toUpperCase() + wd.slice(1) : wd;
+          // the company is the mark itself, not its name typed out
+          if (wd === "Enterprise" && c.words[i - 1]?.[0] === "EDW") return null;
+          if (wd === "EDW" && c.words[i + 1]?.[0] === "Enterprise")
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", opacity: lead ? 0.22 + 0.78 * lit : 1, transform: `translateY(${(1 - rise) * 30}px)`, filter: `blur(${(1 - rise) * 8}px) drop-shadow(0 3px 18px rgba(0,0,0,0.8))`, marginRight: 6 }}>
+                <Logo width={250} white />
+              </div>
+            );
           return (
             <div key={i} style={{ position: "relative", overflow: "hidden", padding: isBox ? "2px 14px" : "2px 0", lineHeight: 1.12 }}>
               {isBox && <div style={{ position: "absolute", inset: 0, background: "#f4f5f7", transform: `scaleX(${bu})`, transformOrigin: "left" }} />}
@@ -78,6 +84,7 @@ const Center: React.FC = () => {
                   transform: `translateY(${(1 - rise) * 100}%)`,
                   filter: `blur(${(1 - rise) * 8}px)`,
                   whiteSpace: "nowrap",
+                  textShadow: "0 0 42px rgba(0,0,0,0.95), 0 0 18px rgba(0,0,0,0.9), 0 3px 10px rgba(0,0,0,0.85)",
                 }}
               >
                 {text}
@@ -93,7 +100,7 @@ const Center: React.FC = () => {
 /** the small mark, top left */
 const Corner: React.FC = () => {
   const t = useT();
-  const o = clamp01((t - 3.8) / 0.5) * (1 - clamp01((t - (Z.signal - 0.6)) / 0.4));
+  const o = clamp01((t - 3.8) / 0.5) * (1 - clamp01((t - (Z.send + 0.2)) / 0.4));
   if (o <= 0.001) return null;
   return (
     <div style={{ position: "absolute", left: 64, top: BAR_H + 36, opacity: o }}>
@@ -102,27 +109,26 @@ const Corner: React.FC = () => {
   );
 };
 
-/** the closing line under the signal */
-const Hiring: React.FC = () => {
+/** the end: the mark alone, white, in space — it fades in, holds, and the whole screen fades away */
+const EndMark: React.FC = () => {
   const t = useT();
-  const a = clamp01((t - (Z.signal + 0.5)) / 0.8);
-  const b = clamp01((t - (Z.signal + 1.0)) / 0.8);
-  const o = 1 - clamp01((t - (Z.end - 0.9)) / 0.8);
-  if (a <= 0) return null;
+  const at = Z.send + 0.75;
+  if (t < at) return null;
+  const a = ease.inOut(clamp01((t - at) / 1.4));
+  const sc = 1.0 + 0.04 * clamp01((t - at) / 4.5);
   return (
-    <div style={{ position: "absolute", left: 0, right: 0, top: 640, display: "flex", flexDirection: "column", alignItems: "center", gap: 18, opacity: o }}>
-      <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 64, letterSpacing: `${0.02 + 0.3 * (1 - ease.outExpo(a))}em`, color: "#f4f5f7", opacity: a, filter: `blur(${(1 - a) * 10}px)` }}>WE'RE HIRING.</div>
-      <div style={{ fontFamily: FONT, fontWeight: 600, fontSize: 20, letterSpacing: "0.45em", color: "rgba(236,238,242,0.7)", opacity: b, marginRight: "-0.45em" }}>THREE OPEN SPOTS</div>
+    <div style={{ position: "absolute", left: W / 2, top: H / 2, transform: `translate(-50%, -50%) scale(${sc})`, opacity: a, filter: `blur(${(1 - a) * 10}px)` }}>
+      <Logo width={520} white />
     </div>
   );
 };
 
-/** the website, floating in the storm at an angle */
-const Site: React.FC = () => (
-  <AbsoluteFill style={{ transform: "perspective(1900px) rotateX(9deg) rotateY(-11deg) scale(0.86) translateY(30px)" }}>
-    <Browser />
-  </AbsoluteFill>
-);
+/** everything fades out together at the very end */
+const FadeOut: React.FC = () => {
+  const t = useT();
+  const o = ease.inOut(clamp01((t - (Z.end - 1.6)) / 1.5));
+  return o > 0 ? <AbsoluteFill style={{ background: "#000", opacity: o }} /> : null;
+};
 
 export const HireFilm: React.FC<{ audio?: boolean }> = ({ audio = true }) => {
   useExplainerFonts();
@@ -152,14 +158,20 @@ export const HireFilm: React.FC<{ audio?: boolean }> = ({ audio = true }) => {
       <Win from={Z.blue} to={Z.storm}>
         <Blueprint />
       </Win>
-      <Win from={Z.storm} to={Z.end}>
+      <Win from={Z.ui - 0.4} to={Z.end}>
+        <Space />
+      </Win>
+      <Win from={Z.storm} to={Z.ui + 0.7}>
         <Storm />
       </Win>
-      <Site />
+      <AbsoluteFill style={{ transform: "translateY(-80px) scale(0.82)" }}>
+        <Browser />
+      </AbsoluteFill>
+      <EndMark />
       <Grade />
       <Corner />
       <Center />
-      <Hiring />
+      <FadeOut />
       {audio && (
         <Sequence>
           <Audio src={staticFile("audio/hire-mix.mp3")} />

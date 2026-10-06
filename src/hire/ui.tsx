@@ -32,9 +32,9 @@ const typed = (t: number, a: number, b: number, s: string) => s.slice(0, Math.fl
 export const Browser: React.FC = () => {
   const t = useT();
   const from = K.away - 0.1;
-  if (t < from || t > K.rectAt + 0.15) return null;
+  if (t < from || t > K.rectAt + 0.6) return null;
   const inA = ease.outCubic(clamp01((t - from) / 0.45));
-  const outA = 1 - clamp01((t - K.rectAt) / 0.12);
+  const outA = 1 - ease.inOut(clamp01((t - (K.rectAt - 0.1)) / 0.6));
   const click1 = w("hiring", 2);
   const page = ease.inOut(clamp01((t - click1 - 0.05) / 0.5));
   const send = w("there", 0) - 0.05;
@@ -153,8 +153,6 @@ export const Browser: React.FC = () => {
       <svg width={30} height={40} viewBox="0 0 34 44" style={{ position: "absolute", left: px, top: py, opacity: clamp01((t - from - 0.3) / 0.3), transform: `scale(${1 - 0.12 * Math.max(press, pressHiring)})`, transformOrigin: "0 0" }}>
         <path d="M2 2 L2 34 L10 26 L16 40 L22 37 L16 24 L28 24 Z" fill="#f4f5f8" stroke="#0a0a0b" strokeWidth={2.5} strokeLinejoin="round" />
       </svg>
-      {/* the white-out as it becomes the mark */}
-      <div style={{ position: "absolute", inset: 0, background: "#e9ebef", opacity: clamp01((t - (K.rectAt - 0.25)) / 0.25) }} />
     </div>
   );
 };

@@ -282,7 +282,7 @@ export const Crowd: React.FC = () => (
           ctx.translate(hx, hy);
           ctx.rotate(a);
           const g = ctx.createLinearGradient(0, 0, len, 0);
-          g.addColorStop(0, `rgba(240,244,255,${0.16 * one})`);
+          g.addColorStop(0, `rgba(240,244,255,${0.1 * one})`);
           g.addColorStop(1, "rgba(240,244,255,0)");
           ctx.fillStyle = g;
           ctx.beginPath();
@@ -890,9 +890,9 @@ export const Storm: React.FC = () => (
   <CanvasScene
     draw={(ctx, T) => {
       const t = T - Z.storm;
-      const fade = rng01(t, 0, 0.3) * (1 - rng01(T, Z.end - 0.9, Z.end - 0.05));
+      const fade = rng01(t, 0, 0.3) * (1 - rng01(T, Z.ui - 0.2, Z.ui + 0.6));
       const bolt = t > 0.1 ? Math.exp(-(t - 0.1) / 0.14) + 0.7 * (t > 0.42 ? Math.exp(-(t - 0.42) / 0.09) : 0) : 0;
-      const on = T >= Z.beamOn ? clamp01((T - Z.beamOn) / 0.08) * (0.88 + 0.12 * (T - Z.beamOn < 0.5 ? Math.sign(Math.sin(T * 70)) : 1)) : 0;
+      const on = 0;
       const uiDim = 1 - 0.5 * rng01(T, Z.ui, Z.ui + 0.5) * (1 - rng01(T, Z.send, Z.send + 0.6));
       const mark = rng01(T, Z.signal - 0.05, Z.signal + 0.25, ease.outCubic);
       const sx = W / 2, sy = 300;
@@ -970,7 +970,7 @@ export const Storm: React.FC = () => (
         ctx.globalCompositeOperation = "source-over";
       }
       // the sent form, shooting up the beam
-      const shot = rng01(T, Z.send + 0.15, Z.signal - 0.05, ease.inCubic);
+      const shot = 0;
       if (shot > 0 && shot < 1) {
         ctx.globalCompositeOperation = "lighter";
         const y = lerp(560, sy, shot);
@@ -997,6 +997,33 @@ export const Storm: React.FC = () => (
         ctx.fillStyle = `rgba(230,235,245,${bolt * 0.3})`;
         ctx.fillRect(0, 0, W, H);
       }
+      ctx.globalAlpha = 1;
+    }}
+  />
+);
+
+// ------------------------------------------------------------------ 10. space: the website floats in it, and at the end the mark, alone, fading in and out
+export const Space: React.FC = () => (
+  <CanvasScene
+    draw={(ctx, T) => {
+      const fade = rng01(T, Z.ui - 0.4, Z.ui + 0.6);
+      ctx.globalAlpha = fade;
+      ctx.fillStyle = "#020203";
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalCompositeOperation = "lighter";
+      // slow parallax through the stars
+      for (let i = 0; i < 380; i++) {
+        const z = 0.3 + hash(i * 3.7) * 0.7;
+        const x = (hash(i * 1.37) * W - T * 6 * z + W * 10) % W;
+        const y = hash(i * 2.71) * H;
+        const tw = 0.5 + 0.5 * Math.sin(T * (0.8 + hash(i) * 2) + i);
+        ctx.fillStyle = `rgba(236,238,245,${(0.15 + 0.6 * z) * tw})`;
+        const s = z > 0.92 ? 2.2 : 1.2;
+        ctx.fillRect(x, y, s, s);
+      }
+      glow(ctx, W * 0.32 + Math.sin(T * 0.05) * 80, H * 0.4, 900, 0.05);
+      glow(ctx, W * 0.72, H * 0.62, 700, 0.035);
+      ctx.globalCompositeOperation = "source-over";
       ctx.globalAlpha = 1;
     }}
   />

@@ -158,10 +158,6 @@ def sfx():
     P(C.whoosh(0.9, 300, 3000, 0.6, (-0.3, 0.8), air=0.9), T("sit", 5) - 0.05, 0.6)
     # the storm; the searchlight bangs on
     P(M.thunder(), 33.5, 0.9)
-    P(M.thud(), 34.3, 1.0)
-    hum = np.sin(2 * np.pi * 60 * tt(9.4)) * 0.25 + C.filt(rng.standard_normal(int(9.4 * SR)), "bandpass", (100, 300)) * 0.25
-    hum *= np.clip(tt(9.4) / 0.05, 0, 1) * np.clip((9.4 - tt(9.4)) / 1.0, 0, 1)
-    P(hum, 34.3, 0.25)
     # the website
     P(M.soft_pass(0.8, (0.4, -0.4)), 36.4, 0.5)
     P(X.click(), T("hiring", 2), 0.8)
@@ -171,7 +167,7 @@ def sfx():
             if ch != " ":
                 P(X.key(), a + (b - a) * i / len(txt), 0.18)
     P(X.click(), T("there", 0) - 0.05, 0.8)
-    # sent: up the beam, and the signal answers
+    # sent: the page fades, the mark appears in space
     P(M.air_swell(FINAL - T("there", 0)), T("there", 0), 0.7)
     P(M.bloom_hit(END - FINAL), FINAL - 0.02, 0.9)
     return s

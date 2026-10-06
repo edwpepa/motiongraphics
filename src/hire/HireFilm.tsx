@@ -120,7 +120,9 @@ const CHUNKS: Chunk[] = (() => {
   for (let i = 0; i < out.length; i++) {
     const next = out[i + 1]?.words[0][1] ?? 99;
     const lastWord = out[i].words[out[i].words.length - 1][1];
-    out[i].end = Math.min(next - 0.08, lastWord + 1.1);
+    // no words over the marks: lines finish before the minimal mark and before the 3D mark
+    const cap = [MARK_AT + 0.05, LOGO_AT + 0.05].find((m) => out[i].words[0][1] < m) ?? 99;
+    out[i].end = Math.min(next - 0.08, lastWord + 1.1, cap);
   }
   return out;
 })();

@@ -127,10 +127,12 @@ def sfx():
     # the transmission opens and closes
     P(M.tx_in(1250, 1850, 0.22), bang - 0.6, 0.9)
     P(M.tx_out(1500, 1000, 0.3), 16.62, 1.0)
-    # a world is born: the inhale, the bang, the long tail
-    P(C.reverse_swell(1.0), bang - 1.0, 0.8)
-    P(M.trailer_hit(), bang, 0.9)
-    P(X.shimmer(), bang + 0.3, 0.4)
+    # the penthouse: rain on the glass, the radio crackles, a hand takes it, a cut to him listening
+    P(M.rain(3.6) * np.clip(tt(3.6) / 0.4, 0, 1)[None, :] * np.clip((3.6 - tt(3.6)) / 0.5, 0, 1)[None, :] * 0.6, 0.0, 0.6)
+    P(C.whoosh(0.5, 150, 1200, 0.6, (0.7, 0.1), air=0.5, low=0.3), 0.95, 0.5)
+    P(X.click(), 1.32, 0.7)
+    P(C.whoosh(0.5, 200, 1600, 0.5, (0.0, -0.3), air=0.5), 1.45, 0.4)
+    P(M.soft_pass(0.6, (-0.3, 0.3)), 1.75, 0.4)
     # the team: three lights switching on over the empty places
     P(M.soft_pass(0.8, (-0.4, 0.4)), 3.3, 0.5)
     for k in range(3):

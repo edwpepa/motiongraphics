@@ -1028,3 +1028,260 @@ export const Space: React.FC = () => (
     }}
   />
 );
+
+// ------------------------------------------------------------------ 0. the penthouse: a radio on the table, a hand takes it; a man at the window, listening
+let BOKEH: { x: number; y: number; r: number; a: number }[] | null = null;
+const bokeh = () =>
+  (BOKEH ??= (() => {
+    const r = mulberry(61);
+    return Array.from({ length: 140 }, () => ({ x: r() * W, y: 120 + r() * 620, r: 8 + r() * 46, a: 0.05 + r() * 0.22 }));
+  })());
+
+function windowView(ctx: CanvasRenderingContext2D, T: number, par: number, bright: number) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#07080a");
+  g.addColorStop(0.6, "#121318");
+  g.addColorStop(1, "#060607");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = "lighter";
+  // the city, out of focus: soft discs of light
+  for (const b of bokeh()) {
+    const x = b.x + par * (b.r / 50) * 40;
+    const rg = ctx.createRadialGradient(x, b.y, 0, x, b.y, b.r);
+    rg.addColorStop(0, `rgba(235,238,245,${b.a * bright})`);
+    rg.addColorStop(0.7, `rgba(235,238,245,${b.a * 0.8 * bright})`);
+    rg.addColorStop(1, "rgba(235,238,245,0)");
+    ctx.fillStyle = rg;
+    ctx.fillRect(x - b.r, b.y - b.r, b.r * 2, b.r * 2);
+  }
+  glow(ctx, W * 0.55, 420, 900, 0.08 * bright);
+  ctx.globalCompositeOperation = "source-over";
+  // rain running down the glass
+  ctx.strokeStyle = "rgba(220,225,235,0.12)";
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  for (let i = 0; i < 160; i++) {
+    const x = hash(i * 3.3) * W, sp = 60 + 140 * hash(i * 1.1);
+    const y = ((hash(i * 7.1) * H + T * sp) % (H + 60)) - 30;
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.sin(y / 40 + i) * 2, y + 14 + 20 * hash(i));
+  }
+  ctx.stroke();
+  for (let i = 0; i < 260; i++) {
+    ctx.fillStyle = `rgba(225,230,240,${0.08 + 0.12 * hash(i * 9.1)})`;
+    ctx.beginPath();
+    ctx.arc(hash(i * 4.4) * W, hash(i * 5.5) * H, 1 + 2.2 * hash(i * 6.6), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // mullions
+  ctx.fillStyle = "#040405";
+  for (const x of [380, 1010, 1640]) ctx.fillRect(x + par * 10, 0, 22, H);
+  ctx.fillRect(0, 96, W, 14);
+}
+
+/** a walkie-talkie standing on the table (x = centre, y = base) */
+function radio(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, led: number, rot = 0) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.scale(s, s);
+  const body = (path: () => void, fill: string) => {
+    ctx.beginPath();
+    path();
+    ctx.fillStyle = fill;
+    ctx.fill();
+  };
+  // antenna and knobs
+  body(() => ctx.roundRect(-60, -470, 26, 140, 10), "#0b0b0d");
+  body(() => ctx.roundRect(30, -372, 26, 40, 6), "#0e0e10");
+  // the body
+  const g = ctx.createLinearGradient(-80, 0, 80, 0);
+  g.addColorStop(0, "#0a0a0c");
+  g.addColorStop(0.75, "#141519");
+  g.addColorStop(1, "#2a2c32");
+  body(() => ctx.roundRect(-80, -340, 160, 340, 22), g as unknown as string);
+  ctx.strokeStyle = "rgba(190,195,205,0.35)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(-80, -340, 160, 340, 22);
+  ctx.stroke();
+  // screen, grille, led
+  body(() => ctx.roundRect(-52, -300, 104, 48, 6), "#1c1e22");
+  ctx.strokeStyle = "rgba(160,165,175,0.25)";
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 7; i++) {
+    ctx.beginPath();
+    ctx.moveTo(-50, -220 + i * 22);
+    ctx.lineTo(50, -220 + i * 22);
+    ctx.stroke();
+  }
+  ctx.globalCompositeOperation = "lighter";
+  glow(ctx, 36, -320, 26, 0.9 * led);
+  glow(ctx, 36, -320, 6, led);
+  ctx.globalCompositeOperation = "source-over";
+  ctx.restore();
+}
+
+/** a hand coming in from the right, fingers closing (u: 0 open → 1 closed) */
+function hand(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, u: number) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  // the sleeve of a dark coat, out to the edge of the frame
+  ctx.fillStyle = "#060607";
+  ctx.beginPath();
+  ctx.moveTo(150, -110);
+  ctx.lineTo(1400, -170);
+  ctx.lineTo(1400, 120);
+  ctx.lineTo(150, 90);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "rgba(200,205,215,0.28)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(150, -110);
+  ctx.lineTo(1400, -170);
+  ctx.stroke();
+  // the hand: palm, thumb up, fingers wrapping round the front
+  ctx.fillStyle = "#0d0d0f";
+  ctx.beginPath();
+  ctx.moveTo(160, -95);
+  ctx.quadraticCurveTo(40, -110, -10, -70);
+  ctx.lineTo(-10, 80);
+  ctx.quadraticCurveTo(60, 100, 160, 80);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(40, -112, 70, 22, -0.25, 0, Math.PI * 2);
+  ctx.fill();
+  for (let i = 0; i < 4; i++) {
+    const fy = -60 + i * 38;
+    const reach = lerp(40, 120, u);
+    ctx.beginPath();
+    ctx.roundRect(-10 - reach, fy, reach + 20, 30, 15);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(200,205,215,0.18)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+const OFF: Record<number, HTMLCanvasElement> = {};
+/** the window, drawn small and scaled up: a cheap, real out-of-focus look */
+function softWindow(ctx: CanvasRenderingContext2D, T: number, par: number, bright: number, k: number) {
+  const c = (OFF[k] ??= Object.assign(document.createElement("canvas"), { width: Math.round(W * k), height: Math.round(H * k) }));
+  const g = c.getContext("2d")!;
+  g.setTransform(k, 0, 0, k, 0, 0);
+  g.globalAlpha = 1;
+  g.globalCompositeOperation = "source-over";
+  windowView(g, T, par, bright);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(c, 0, 0, W, H);
+}
+
+export const Penthouse: React.FC = () => (
+  <CanvasScene
+    draw={(ctx, T) => {
+      const cut = 1.95;
+      const fadeIn = rng01(T, 0.05, 0.6);
+      const out = 1 - rng01(T, Z.team - 0.3, Z.team);
+      ctx.globalAlpha = fadeIn * out;
+      if (T < cut) {
+        // shot one: the radio on the table, crackling; a hand takes it
+        const push = lerp(1.0, 1.06, T / cut);
+        ctx.save();
+        ctx.translate(W / 2, H / 2);
+        ctx.scale(push, push);
+        ctx.translate(-W / 2, -H / 2);
+        softWindow(ctx, T, -T * 0.6, 0.8, 0.18);
+        // the table, a dark glossy slab with the window in it
+        const tg = ctx.createLinearGradient(0, 760, 0, H);
+        tg.addColorStop(0, "#111215");
+        tg.addColorStop(1, "#040405");
+        ctx.fillStyle = tg;
+        ctx.fillRect(0, 760, W, H - 760);
+        ctx.fillStyle = "rgba(210,215,225,0.35)";
+        ctx.fillRect(0, 758, W, 2);
+        ctx.globalCompositeOperation = "lighter";
+        ctx.save();
+        ctx.translate(W * 0.5, 800);
+        ctx.scale(1, 0.12);
+        glow(ctx, 0, 0, 700, 0.12);
+        ctx.restore();
+        ctx.globalCompositeOperation = "source-over";
+        const grab = 1.32;
+        const reach = ease.outCubic(clamp01((T - 0.95) / (grab - 0.95)));
+        const lift = ease.inCubic(clamp01((T - (grab + 0.08)) / 0.55));
+        const led = T < 0.8 ? 0.3 : 0.5 + 0.5 * Math.sign(Math.sin(T * 26));
+        const rx = 900, ry = 760 - lift * 700;
+        // its reflection in the table
+        if (lift < 0.2) {
+          ctx.save();
+          ctx.globalAlpha = 0.18 * fadeIn * (1 - lift * 5);
+          ctx.translate(0, 2 * 760);
+          ctx.scale(1, -1);
+          radio(ctx, rx, 760, 1.3, 0);
+          ctx.restore();
+          ctx.globalAlpha = fadeIn * out;
+        }
+        radio(ctx, rx, ry, 1.3, led, -lift * 0.15);
+        if (reach > 0) hand(ctx, lerp(2150, rx + 104, reach), ry - 230, 1.2, clamp01((T - grab + 0.1) / 0.15));
+        ctx.restore();
+      } else {
+        // shot two: from behind him, the radio at his ear, the city in the window
+        const t = T - cut;
+        const push = lerp(1.0, 1.07, ease.inOut(t / 1.7));
+        ctx.save();
+        ctx.translate(W / 2, H / 2);
+        ctx.scale(push, push);
+        ctx.translate(-W / 2, -H / 2);
+        softWindow(ctx, T, t * 0.8, 1.0, 0.4);
+        // head and shoulders, back to us, rim-lit by the window
+        const sil = (fill: string) => {
+          ctx.fillStyle = fill;
+          ctx.beginPath();
+          ctx.ellipse(800, 560, 150, 185, 0.05, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(700, 700);
+          ctx.quadraticCurveTo(560, 760, 330, 820);
+          ctx.quadraticCurveTo(200, 860, 160, H + 10);
+          ctx.lineTo(1460, H + 10);
+          ctx.quadraticCurveTo(1400, 850, 1180, 800);
+          ctx.quadraticCurveTo(980, 760, 900, 700);
+          ctx.closePath();
+          ctx.fill();
+          // the arm up to the ear, the radio against it
+          ctx.beginPath();
+          ctx.moveTo(1150, 820);
+          ctx.quadraticCurveTo(1060, 650, 990, 560);
+          ctx.lineTo(925, 600);
+          ctx.quadraticCurveTo(1000, 720, 1060, 860);
+          ctx.closePath();
+          ctx.fill();
+          ctx.beginPath();
+          ctx.roundRect(905, 430, 70, 170, 14);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.roundRect(918, 330, 18, 110, 8);
+          ctx.fill();
+        };
+        ctx.save();
+        ctx.shadowColor = "rgba(230,236,248,0.8)";
+        ctx.shadowBlur = 22;
+        sil("rgba(200,206,218,0.85)");
+        ctx.restore();
+        sil("#040405");
+        ctx.globalCompositeOperation = "lighter";
+        const led = 0.5 + 0.5 * Math.sign(Math.sin(T * 9));
+        glow(ctx, 960, 444, 18, 0.7 * led);
+        ctx.globalCompositeOperation = "source-over";
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+    }}
+  />
+);

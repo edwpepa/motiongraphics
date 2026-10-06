@@ -4,7 +4,7 @@ import { useExplainerFonts } from "../explainer/fonts";
 import { BAR_H, FONT, Grade, H, Logo, W, clamp01, ease, useT } from "../edw/kit";
 import { VO } from "./type";
 import { Browser } from "./ui";
-import { BigBang, Blueprint, City, Crowd, Earth, Maze, Roof, Space, Storm, Team, Z } from "./world";
+import { Blueprint, City, Crowd, Earth, Maze, Penthouse, Roof, Space, Storm, Team, Z } from "./world";
 
 export const HIRE_END = Z.end;
 
@@ -49,7 +49,7 @@ const Center: React.FC = () => {
   if (!c) return null;
   const t0 = c.words[0][1] - 0.18;
   const o = clamp01((c.end - t) / 0.18);
-  const boxed = c.words.findIndex(([wd]) => KEY.has(wd.toLowerCase()));
+  const boxed = -1;
   const lead = c.words[0][0] === "EDW";
   const site = c.words[0][1] >= Z.ui;
   return (
@@ -65,7 +65,7 @@ const Center: React.FC = () => {
           if (wd === "Enterprise" && c.words[i - 1]?.[0] === "EDW") return null;
           if (wd === "EDW" && c.words[i + 1]?.[0] === "Enterprise")
             return (
-              <div key={i} style={{ display: "flex", alignItems: "center", opacity: lead ? 0.22 + 0.78 * lit : 1, transform: `translateY(${(1 - rise) * 30}px)`, filter: `blur(${(1 - rise) * 8}px) drop-shadow(0 3px 18px rgba(0,0,0,0.8))`, marginRight: 6 }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", opacity: lead ? 0.22 + 0.78 * lit : 1, transform: `translateY(${(1 - rise) * 30}px)`, filter: `blur(${(1 - rise) * 8}px)`, marginRight: 6 }}>
                 <Logo width={250} white />
               </div>
             );
@@ -84,7 +84,7 @@ const Center: React.FC = () => {
                   transform: `translateY(${(1 - rise) * 100}%)`,
                   filter: `blur(${(1 - rise) * 8}px)`,
                   whiteSpace: "nowrap",
-                  textShadow: "0 0 42px rgba(0,0,0,0.95), 0 0 18px rgba(0,0,0,0.9), 0 3px 10px rgba(0,0,0,0.85)",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.35)",
                 }}
               >
                 {text}
@@ -135,7 +135,7 @@ export const HireFilm: React.FC<{ audio?: boolean }> = ({ audio = true }) => {
   return (
     <AbsoluteFill style={{ background: "#000" }}>
       <Win from={0} to={Z.team}>
-        <BigBang />
+        <Penthouse />
       </Win>
       <Win from={Z.team} to={Z.crowd}>
         <Team />

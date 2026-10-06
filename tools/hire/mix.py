@@ -127,14 +127,14 @@ def sfx():
     # the transmission opens and closes
     P(M.tx_in(1250, 1850, 0.22), bang - 0.6, 0.9)
     P(M.tx_out(1500, 1000, 0.3), 16.62, 1.0)
-    # the penthouse: rain on the glass, the radio crackles, a hand takes it, a cut to him listening
-    P(M.rain(3.6) * np.clip(tt(3.6) / 0.4, 0, 1)[None, :] * np.clip((3.6 - tt(3.6)) / 0.5, 0, 1)[None, :] * 0.6, 0.0, 0.6)
-    P(C.whoosh(0.5, 150, 1200, 0.6, (0.7, 0.1), air=0.5, low=0.3), 0.95, 0.5)
-    P(X.click(), 1.32, 0.7)
-    P(C.whoosh(0.5, 200, 1600, 0.5, (0.0, -0.3), air=0.5), 1.45, 0.4)
-    P(M.soft_pass(0.6, (-0.3, 0.3)), 1.75, 0.4)
+    # the map: Romania lights with the transmission, the world opens, routes fly out and land
+    P(M.air_swell(1.9), 0.7, 0.55)
+    for i in range(16):
+        st = 1.2 + i * 0.085
+        P(C.whoosh(0.5, 600, 5000, 0.7, (-0.2, 0.6 if i % 2 else -0.6), air=0.35), st, 0.22)
+        P(M.ping(int(rng.choice([84, 86, 89, 91, 93, 96]))), st + 0.75, 0.16)
     # the team: three lights switching on over the empty places
-    P(M.soft_pass(0.8, (-0.4, 0.4)), 3.3, 0.5)
+    P(M.soft_pass(0.8, (-0.4, 0.4)), 3.05, 0.5)
     for k in range(3):
         P(M.thud(), T("growing", 7) + k * 0.16, 0.45)
     # the crowd murmurs; one lights up; the mind turns sharp

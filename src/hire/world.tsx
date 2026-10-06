@@ -3,11 +3,12 @@ import { fog } from "../edw/act3";
 import { CanvasScene, H, V3, W, clamp01, ease, fbm, flare, glow, hash, lerp, mulberry, proj, rng01, rotX, rotY } from "../edw/kit";
 import { contours, fillContours } from "./mark";
 import { w } from "./type";
+import MAP from "./worldmap.json";
 
 /** the hiring film's clock */
 export const Z = {
   bang: w("growing", 0),
-  team: 3.55,
+  team: 3.3,
   crowd: 5.9,
   one: w("sharp", 0),
   maze: 11.05,
@@ -1281,6 +1282,104 @@ export const Penthouse: React.FC = () => (
         ctx.globalCompositeOperation = "source-over";
         ctx.restore();
       }
+      ctx.globalAlpha = 1;
+    }}
+  />
+);
+
+// ------------------------------------------------------------------ 0. the map: Romania lights up, the camera pulls back, routes fly out to the world
+const ORIGIN: [number, number] = [26.1, 44.43]; // Bucharest (lon, lat)
+const DEST: [number, number][] = [
+  [13.4, 52.52], [-0.13, 51.5], [2.35, 48.86], [4.9, 52.37], [18.07, 59.33], [-3.7, 40.42], [55.27, 25.2], [72.88, 19.07],
+  [-74.0, 40.71], [-79.38, 43.65], [-122.42, 37.77], [-46.63, -23.55], [103.82, 1.35], [139.69, 35.68], [151.21, -33.87], [18.42, -33.92],
+];
+export const WorldMap: React.FC = () => (
+  <CanvasScene
+    draw={(ctx, T) => {
+      const M = MAP as unknown as { world: [number, number][]; romania: [number, number][]; outline: [number, number][][] };
+      const fade = rng01(T, 0.0, 0.5) * (1 - rng01(T, Z.team - 0.3, Z.team));
+      const pull = ease.inOut(rng01(T, 0.7, 2.3, (x) => x));
+      const k0 = 5.6;
+      const zoom = lerp(6.5, 1.0, pull);
+      const fx = lerp(ORIGIN[0], 14, pull), fy = lerp(ORIGIN[1], 14, pull);
+      const P = (lon: number, lat: number) => [W / 2 + (lon - fx) * k0 * zoom, H / 2 - (lat - fy) * k0 * zoom] as const;
+      ctx.globalAlpha = fade;
+      ctx.fillStyle = "#040405";
+      ctx.fillRect(0, 0, W, H);
+      // the world, in dots
+      const ds = Math.min(5, 2.1 * Math.pow(zoom, 0.55));
+      const worldIn = rng01(T, 0.4, 1.6);
+      ctx.fillStyle = `rgba(150,156,168,${0.55 * worldIn})`;
+      for (const [lon, lat] of M.world) {
+        const [x, y] = P(lon, lat);
+        if (x < -10 || x > W + 10 || y < -10 || y > H + 10) continue;
+        ctx.fillRect(x - ds / 2, y - ds / 2, ds, ds);
+      }
+      // Romania, bright, with its border
+      const ro = rng01(T, 0.15, 0.7);
+      const rs = Math.max(1.4, 0.22 * k0 * zoom * 0.62);
+      ctx.fillStyle = `rgba(245,247,252,${ro})`;
+      for (const [lon, lat] of M.romania) {
+        const [x, y] = P(lon, lat);
+        ctx.fillRect(x - rs / 2, y - rs / 2, rs, rs);
+      }
+      ctx.strokeStyle = `rgba(245,247,252,${0.8 * ro})`;
+      ctx.lineWidth = 1.5;
+      for (const r of M.outline) {
+        ctx.beginPath();
+        r.forEach(([lon, lat], i) => {
+          const [x, y] = P(lon, lat);
+          i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        });
+        ctx.closePath();
+        ctx.stroke();
+      }
+      ctx.globalCompositeOperation = "lighter";
+      const [ox, oy] = P(ORIGIN[0], ORIGIN[1]);
+      // the origin pulses with the transmission
+      for (let k = 0; k < 3; k++) {
+        const ph = ((T - 0.8 - k * 0.45) % 1.35) / 1.35;
+        if (T < 0.8 + k * 0.45) continue;
+        ctx.strokeStyle = `rgba(245,247,252,${0.6 * (1 - ph)})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(ox, oy, 6 + 60 * ph, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      glow(ctx, ox, oy, 40, 0.8 * ro);
+      glow(ctx, ox, oy, 8, ro);
+      // routes out to the world
+      DEST.forEach(([lon, lat], i) => {
+        const st = 1.2 + i * 0.085;
+        const u = ease.inOut(clamp01((T - st) / 0.75));
+        if (u <= 0) return;
+        const [dx, dy] = P(lon, lat);
+        const len = Math.hypot(dx - ox, dy - oy);
+        const cx = (ox + dx) / 2, cy = (oy + dy) / 2 - len * 0.32;
+        const at = (v: number) => [(1 - v) * (1 - v) * ox + 2 * (1 - v) * v * cx + v * v * dx, (1 - v) * (1 - v) * oy + 2 * (1 - v) * v * cy + v * v * dy];
+        for (const [lw, al] of [[6, 0.08], [1.6, 0.75]] as const) {
+          ctx.strokeStyle = `rgba(240,244,255,${al})`;
+          ctx.lineWidth = lw;
+          ctx.beginPath();
+          for (let j = 0; j <= 40; j++) {
+            const [x, y] = at((j / 40) * u);
+            j ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+          }
+          ctx.stroke();
+        }
+        const [hx, hy] = at(u);
+        glow(ctx, hx, hy, 18, u < 1 ? 0.9 : 0);
+        if (u >= 1) {
+          const ph = clamp01((T - st - 0.75) / 0.8);
+          ctx.strokeStyle = `rgba(245,247,252,${0.7 * (1 - ph)})`;
+          ctx.beginPath();
+          ctx.arc(dx, dy, 4 + 26 * ph, 0, Math.PI * 2);
+          ctx.stroke();
+          glow(ctx, dx, dy, 14, 0.8);
+          glow(ctx, dx, dy, 4, 1);
+        }
+      });
+      ctx.globalCompositeOperation = "source-over";
       ctx.globalAlpha = 1;
     }}
   />

@@ -4,7 +4,7 @@ import { useExplainerFonts } from "../explainer/fonts";
 import { BAR_H, FONT, Grade, H, Logo, W, clamp01, ease, useT } from "../edw/kit";
 import { VO } from "./type";
 import { Browser } from "./ui";
-import { Blueprint, City, Crowd, Earth, Maze, Penthouse, Roof, Space, Storm, Team, Z } from "./world";
+import { Blueprint, City, Crowd, Earth, Maze, Roof, WorldMap, Space, Storm, Team, Z } from "./world";
 
 export const HIRE_END = Z.end;
 
@@ -45,7 +45,7 @@ const CHUNKS: Chunk[] = (() => {
 
 const Center: React.FC = () => {
   const t = useT();
-  const c = CHUNKS.find((x) => t >= x.words[0][1] - 0.18 && t < x.end);
+  const c = CHUNKS.find((x) => t >= x.words[0][1] - 0.18 && t < x.end && x.words[0][1] >= Z.team - 0.05);
   if (!c) return null;
   const t0 = c.words[0][1] - 0.18;
   const o = clamp01((c.end - t) / 0.18);
@@ -135,7 +135,7 @@ export const HireFilm: React.FC<{ audio?: boolean }> = ({ audio = true }) => {
   return (
     <AbsoluteFill style={{ background: "#000" }}>
       <Win from={0} to={Z.team}>
-        <Penthouse />
+        <WorldMap />
       </Win>
       <Win from={Z.team} to={Z.crowd}>
         <Team />

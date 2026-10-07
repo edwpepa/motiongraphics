@@ -2,10 +2,10 @@ import React from "react";
 import { AbsoluteFill, Audio, staticFile } from "remotion";
 import { Logo, ease, rng01 } from "../edw/kit";
 import { Captions, ReelGrade, TopMark, Win, useT } from "./rk";
-import { EarthOpen, Helix, People, Tree } from "./sceneA";
-import { Minds, Sim } from "./sceneB";
-import { Fast, Futures } from "./sceneC";
-import { Bet, Gift, Peak, Spire } from "./sceneD";
+import { EarthOpen } from "./sceneA";
+import { Spire } from "./sceneD";
+import { Crowd, Digitize, Genes, Grow, Simworld } from "./story1";
+import { Alike, Clocks, Faith, History, Ideas, Invent, Phone, Rockets, Rooftop, Summit } from "./story2";
 
 /** the end: the mark alone in the middle, then black */
 const EndMark: React.FC = () => {
@@ -25,44 +25,33 @@ const Black: React.FC = () => {
   return o > 0 ? <AbsoluteFill style={{ background: "#000", opacity: o }} /> : null;
 };
 
+const SCENES: [number, number, React.FC][] = [
+  [0, 4.8, EarthOpen],
+  [4.5, 9.65, Crowd],
+  [9.3, 11.65, Genes],
+  [11.25, 20.85, Grow],
+  [20.2, 24.45, Digitize],
+  [24.0, 28.96, Simworld],
+  [28.85, 32.85, Ideas],
+  [32.5, 36.2, Alike],
+  [36.1, 42.35, Clocks],
+  [42.0, 46.45, History],
+  [46.2, 51.4, Rockets],
+  [51.0, 53.45, Faith],
+  [53.1, 57.6, Invent],
+  [57.4, 61.95, Spire],
+  [61.6, 65.4, Rooftop],
+  [65.0, 68.35, Summit],
+  [67.9, 72.1, Phone],
+];
+
 export const ReelFilm: React.FC<{ audio?: boolean }> = ({ audio = true }) => (
   <AbsoluteFill style={{ background: "#030304" }}>
-    <Win from={0} to={4.8}>
-      <EarthOpen />
-    </Win>
-    <Win from={4.5} to={9.65}>
-      <People />
-    </Win>
-    <Win from={9.3} to={12.0}>
-      <Helix />
-    </Win>
-    <Win from={11.25} to={21.35}>
-      <Tree />
-    </Win>
-    <Win from={21.35} to={28.96}>
-      <Sim />
-    </Win>
-    <Win from={28.85} to={36.2}>
-      <Minds />
-    </Win>
-    <Win from={36.1} to={46.3}>
-      <Fast />
-    </Win>
-    <Win from={46.2} to={57.6}>
-      <Futures />
-    </Win>
-    <Win from={57.4} to={61.95}>
-      <Spire />
-    </Win>
-    <Win from={61.6} to={65.4}>
-      <Gift />
-    </Win>
-    <Win from={65.0} to={68.35}>
-      <Peak />
-    </Win>
-    <Win from={67.9} to={72.1}>
-      <Bet />
-    </Win>
+    {SCENES.map(([a, b, S], i) => (
+      <Win key={i} from={a} to={b}>
+        <S />
+      </Win>
+    ))}
     <ReelGrade />
     <TopMark until={71.4} />
     <Captions until={71.85} />

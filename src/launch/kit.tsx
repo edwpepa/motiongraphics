@@ -122,10 +122,10 @@ export const Txt: React.FC<{
   tint?: [string, string];
   dur?: number;
   tracking?: string;
-  mode?: "rise" | "track";
+  mode?: "rise" | "track" | "apple";
   lineHeight?: number;
   weight?: number;
-}> = ({ words, size, on, x = 960, y = 540, align = "center", breaks, out, ink, tint, dur = 12, tracking = "-0.045em", mode, lineHeight = 1.08, weight }) => {
+}> = ({ words, size, on, x = 960, y = 540, align = "center", breaks, out, ink, tint, dur = 14, tracking = "-0.035em", mode = "apple", lineHeight = 1.08, weight = 600 }) => {
   const frame = useCurrentFrame();
   if (!words.length || frame < words[0].at - 1) return null;
   const t = out === undefined ? 0 : clamp01((frame - out) / 7);
@@ -133,7 +133,7 @@ export const Txt: React.FC<{
   const dark = isDark(on);
   const defInk = ink ?? (on === "white" ? INK : on === "green" ? WHITE_INK : INK_DARK);
   const defTint = tint ?? (on === "white" ? GREEN_INK : on === "green" ? DEEP_INK : MINT_INK);
-  const shadow = on === "white" ? "drop-shadow(0 10px 24px rgba(8,48,28,0.12))" : on === "green" ? "drop-shadow(0 10px 30px rgba(0,60,30,0.35))" : "drop-shadow(0 10px 30px rgba(0,0,0,0.5))";
+  const shadow = on === "white" ? "drop-shadow(0 6px 18px rgba(8,48,28,0.07))" : on === "green" ? "drop-shadow(0 8px 24px rgba(0,60,30,0.25))" : "drop-shadow(0 8px 26px rgba(0,0,0,0.45))";
   const k = 1 - ease.outExpo(clamp01((frame - words[0].at) / 14));
   const tx = align === "center" ? "-50%" : align === "right" ? "-100%" : "0";
   return (

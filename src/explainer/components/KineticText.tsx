@@ -41,7 +41,7 @@ type Props = {
   breaks?: number[];
   /** entrance length per letter, frames */
   dur?: number;
-  mode?: "rise" | "track";
+  mode?: "rise" | "track" | "apple";
   lineHeight?: number;
   style?: React.CSSProperties;
 };
@@ -107,7 +107,7 @@ const Word: React.FC<{
   ink: [string, string];
   tint: [string, string];
   dur: number;
-  mode: "rise" | "track";
+  mode: "rise" | "track" | "apple";
   seed: number;
   blurMax: number;
 }> = ({ word, frame, ink, tint, dur, mode, seed, blurMax }) => {
@@ -116,6 +116,26 @@ const Word: React.FC<{
   const wordP = clamp01(local / (dur + letters.length * 0.55));
   const blur = (1 - ease.outCubic(clamp01(local / (dur * 0.9)))) * blurMax;
   const skew = (1 - ease.outExpo(wordP)) * -10;
+
+  if (mode === "apple") {
+    // Apple keynote type: the whole word resolves out of a soft blur while drifting up a touch; no wobble, no colour flash
+    const p = clamp01(local / (dur + 4));
+    const e = 1 - Math.pow(1 - p, 4);
+    return (
+      <span
+        style={{
+          display: "inline-block",
+          whiteSpace: "pre",
+          opacity: clamp01(local / 6) * (0.15 + 0.85 * e),
+          transform: `translateY(${(1 - e) * 0.28}em) scale(${1 + 0.035 * (1 - e)})`,
+          filter: e < 0.995 ? `blur(${(1 - e) * blurMax * 1.6}px)` : undefined,
+          ...grad(ink, ink, 1),
+        }}
+      >
+        {word.text}
+      </span>
+    );
+  }
 
   if (mode === "track") {
     // letters start spread around the word's centre and converge (transform-only, so layout never shifts)

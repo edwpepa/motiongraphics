@@ -48,6 +48,9 @@ def main():
 
     # ---- voice
     vo = np.zeros((2, N))
+    if "intro" in TL:
+        intro = load(os.path.join(ROOT, "public/audio", TL["intro"]["file"]))
+        place_clip(vo, fade(intro, 0.005, 0.08), TL["intro"]["at"])
     for c in TL["pre"]:
         a, b = c["vo"]
         place_clip(vo, fade(vo_src[:, int(a * SR):int(b * SR)], 0.01, 0.06), c["at"])

@@ -1,29 +1,22 @@
 {
   "fps": 30,
-  "drop": 39.75,
-  "end": 120.0,
+  "drop": 35.0,
+  "end": 115.25,
   "songFile": "launch-song.mp3",
   "pre": [
-    {
-      "vo": [
-        0.0,
-        21.25
-      ],
-      "at": 1.2
-    },
     {
       "vo": [
         21.95,
         33.6
       ],
-      "at": 24.0
+      "at": 19.3
     },
     {
       "vo": [
         33.85,
         36.3
       ],
-      "at": 37.0
+      "at": 32.25
     }
   ],
   "post": {
@@ -69,5 +62,9 @@
   "quietR": 51.8,
   "breakR": 62.03,
   "finalR": 63.82,
-  "endHitR": 76.78
+  "endHitR": 76.78,
+  "intro": {
+    "file": "launch-vo-intro2.mp3",
+    "at": 0.6
+  }
 }

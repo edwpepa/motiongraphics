@@ -1,15 +1,6 @@
 import { BEATS, BREAK, DROP, F, FINAL, pEnd, pStart, w } from "./timeline";
 
 // Scene boundaries (frames), shared by the picture and the sound design.
-export const A1_END = pStart("robinet") - 4;
-export const A2_END = pStart("perete") - 3;
-export const A3_END = w("situ", 0) - 2;
-export const A4_END = w("nici1", 0) - 3;
-export const A5_END = w("amani", 0) - 2;
-export const A6_END = w("speri1", 0) - 3;
-export const A7_END = pStart("lumea") - 8;
-export const A8_END = pStart("obositor") - 2;
-export const A9_END = w("rogi", 0) - 3;
 export const A10_END = pEnd("rogi") + 14;
 export const A12_END = F(DROP);
 export const B1_END = pStart("postezi") - 6;
@@ -46,7 +37,3 @@ export const HEARTBEATS = (() => {
   }
   return out;
 })();
-/** "se rezolvă singur": the loader gives up, becomes a heart monitor, three fading beats, then flat */
-export const ECG_FAIL = w("speri3", 0) - 6;
-export const ECG_BEATS = [ECG_FAIL + 26, ECG_FAIL + 44, ECG_FAIL + 64];
-export const ECG_FLAT = ECG_FAIL + 78;

@@ -13,6 +13,7 @@ import { morphNamed, shape, ShapeName } from "./morph";
 import { Slam } from "./slam";
 import { absorbed, Explosion, ServiceName, ServiceTile, SERVICES, Vortex } from "./fx";
 import { HEARTBEATS, SPLIT } from "./scenes";
+import { AText, AW, Cam, Dark as ADark, Light as ALight, outExpo, outQuart, r01 } from "./apple";
 import { BEATS, BREAK, BRIDGE, DROP, END, END_HIT, F, FINAL, kw, pEnd, pStart, w, words } from "./timeline";
 
 const CX = 960;
@@ -21,69 +22,70 @@ const D0 = F(DROP);
 const bt = (k: number) => Math.round(D0 + k * BEATS);
 const beatAt = (frame: number) => Math.floor((frame - D0 + 0.5) / BEATS);
 
-// ------------------------------------------------------------------ C1: not only for those who need help
-
+// ------------------------------------------------------------------ C1: not only for those who need help — the camera pulls back on one line, then the switch flips
+const measureW = (() => {
+  let c: CanvasRenderingContext2D | null = null;
+  return (t: string, size: number) => {
+    if (!c) c = document.createElement("canvas").getContext("2d");
+    if (!c) return t.length * size * 0.55;
+    c.font = `600 ${size}px Inter`;
+    return c.measureText(t).width - Array.from(t).length * 0.035 * size;
+  };
+})();
 const C1: React.FC = () => {
   const frame = useCurrentFrame();
-  const ws = words("dar");
-  const FS = 104;
-  const gap = 0.27 * FS;
-  const Y1 = CY + 40;
-  const Y2 = CY + 170;
-  // word centres, laid out exactly like the two centred lines below
-  const centres = (idx: number[], y: number) => {
-    const wd = idx.map((i) => textWidth(ws[i][0], FS, -0.045));
-    const total = wd.reduce((p, q) => p + q, 0) + gap * (idx.length - 1);
-    let x = CX - total / 2;
-    return idx.map((_, j) => {
-      const c = x + wd[j] / 2;
-      x += wd[j] + gap;
-      return { x: c, y };
-    });
+  const ws = words("dar").map(([t, f]) => [t, f - 3] as AW);
+  const SZ = 140;
+  const wAll = measureW(ws.map(([t]) => t).join(" "), SZ);
+  const wA = measureW("Dar Handly", SZ);
+  const fit = Math.min(1, 1480 / wAll);
+  const pullAt = ws[2][1];
+  const seg = r01(frame, C1_END - 34, C1_END - 22, outQuart);
+  const flip = r01(frame, C1_END - 16, C1_END - 6);
+  const cam = (f: number) => {
+    const pl = r01(f, pullAt - 6, pullAt + 22);
+    const intro = r01(f, BRIDGE, BRIDGE + 18, outExpo);
+    return { s: lerp(1.25, 1, intro) * lerp(1 + 0.03 * clamp01((f - BRIDGE) / 40), fit, pl) * (1 + 0.025 * clamp01((f - pullAt) / 90)), x: lerp(-wAll / 2 + wA / 2, 0, pl), y: lerp(0, -40, seg) };
   };
-  const pos = [...centres([0, 1, 2, 3, 4], Y1), ...centres([5, 6, 7, 8, 9, 10, 11], Y2)];
-  const at = ws.map(([, f]) => f - 3);
-  // camera: close on the words as they arrive, gliding along, then it pulls back to show it all
-  let fx = pos[0].x;
-  let fy = pos[0].y;
-  for (let k = 1; k < pos.length; k++) {
-    const t = ease.inOutCubic(clamp01((frame - at[k] + 4) / 14));
-    if (t <= 0) break;
-    fx = lerp(fx, pos[k].x, t);
-    fy = lerp(fy, pos[k].y, t);
-  }
-  const wide = ease.inOutCubic(clamp01((frame - (at[at.length - 1] + 2)) / 22));
-  const intro = ease.outCubic(clamp01((frame - (BRIDGE - 2)) / 16));
-  const z = lerp(lerp(2.2, 1.75, intro), 1, wide);
-  const cx = lerp(fx, CX, wide);
-  const cy = lerp(fy, CY + 30, wide);
-  const enter = ease.outExpo(clamp01((frame - BRIDGE) / 20));
-  const spin = ease.inOutCubic(clamp01((frame - (at[4] - 2)) / 18));
-  const S = 230;
+  const SW = 900;
   return (
     <AbsoluteFill>
-      <Bg kind="white" />
-      <AbsoluteFill style={{ transformOrigin: "0 0", transform: `translate(${CX - cx * z}px, ${CY - cy * z}px) scale(${z})` }}>
-        <div style={{ position: "absolute", left: CX - S / 2, top: CY - 220 - S / 2, width: S, height: S, transform: `perspective(1200px) rotateY(${spin * 360}deg) scale(${(0.8 + 0.2 * enter) * (1 + 0.1 * Math.sin(Math.PI * spin))})`, opacity: enter * clamp01((frame - (at[1] - 6)) / 8) }}>
-          <Logo size={S} />
-        </div>
-        <Txt words={kw("dar", { only: [0, 1, 2, 3, 4], color: { 1: GREEN_INK, 4: GREEN_INK } })} size={FS} on="white" y={Y1} out={C1_END - 6} />
-        <Txt words={kw("dar", { only: [5, 6, 7, 8, 9, 10, 11] })} size={FS} on="white" y={Y2} out={C1_END - 6} />
-      </AbsoluteFill>
+      <ALight />
+      <Cam at={cam}>
+        <AText words={ws} size={SZ} hi={{ 1: "#00a852" }} />
+      </Cam>
+      <div style={{ position: "absolute", left: 960 - SW / 2, top: 700, width: SW, height: 96, borderRadius: 999, background: "#e9ebea", opacity: seg, transform: `translateY(${(1 - seg) * 30}px) scale(${0.96 + 0.04 * seg})`, filter: seg < 1 ? `blur(${(1 - seg) * 14}px)` : undefined, fontFamily: FONT }}>
+        <div style={{ position: "absolute", top: 8, bottom: 8, left: 8 + flip * (SW / 2 - 8), width: SW / 2 - 8, borderRadius: 999, background: "#fff", boxShadow: "0 8px 24px rgba(0,0,0,0.10)" }} />
+        {["Am nevoie de ajutor", "Vreau să câștig"].map((t, i) => (
+          <div key={t} style={{ position: "absolute", top: 0, bottom: 0, left: i * (SW / 2), width: SW / 2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, fontWeight: 600, letterSpacing: "-0.02em", color: i === 1 ? (flip > 0.5 ? "#00a852" : "#86868b") : flip > 0.5 ? "#86868b" : "#1d1d1f" }}>
+            {t}
+          </div>
+        ))}
+      </div>
     </AbsoluteFill>
   );
 };
 
-// ------------------------------------------------------------------ C2: if you know how to do something
-
+// ------------------------------------------------------------------ C2: if you know how to do something — the skills float in the dark, out of focus
 const C2: React.FC = () => {
   const frame = useCurrentFrame();
-  const spark = ease.outBack(clamp01((frame - (w("daca", 4) - 2)) / 12));
+  const icons: ServiceName[] = ["wrench", "roller", "hammer", "sparkles", "box", "plug", "leaf", "droplet", "sofa"];
+  const T = (frame - C1_END) / 30;
+  const cam = (f: number) => ({ s: lerp(1.15, 1, r01(f, C1_END, C1_END + 20, outExpo)) * (1 + 0.04 * clamp01((f - C1_END) / 60)), x: 0, y: 0 });
   return (
     <AbsoluteFill>
-      <Bg kind="white" />
-      <Txt words={kw("daca", { color: { 4: GREEN_INK } })} size={140} on="white" />
-      {spark > 0 && <Shape pts={shape("star")} x={CX + 640} y={CY - 110} size={110 * spark} rot={frame * 3} fill={P.green} />}
+      <ADark />
+      <Cam at={cam}>
+        {icons.map((ic, i) => {
+          const z = 0.9 + 1.6 * seeded(i, 4) - T * 0.18;
+          const x = 960 + ((seeded(i, 9) - 0.5) * 2200) / z, y = 540 + ((seeded(i, 2) - 0.5) * 1100) / z;
+          const s = 120 / z;
+          const dof = Math.abs(z - 1) * 10;
+          return <div key={i} style={{ position: "absolute", left: x - s / 2, top: y - s / 2, opacity: 0.85 * clamp01((frame - C1_END - i) / 10), filter: `blur(${dof.toFixed(1)}px)` }}><ServiceTile name={ic} size={s} tone="dark" /></div>;
+        })}
+        <AbsoluteFill style={{ background: "radial-gradient(ellipse 40% 22% at 50% 50%, rgba(2,3,3,0.85) 0%, rgba(2,3,3,0) 100%)" }} />
+        <AText words={words("daca").map(([t, f]) => [t, f - 3] as AW)} size={120} color="#f5f7f6" hi={{ 4: "#5df0a5" }} />
+      </Cam>
     </AbsoluteFill>
   );
 };

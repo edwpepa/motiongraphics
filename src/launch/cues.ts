@@ -1,6 +1,7 @@
 // Sound-design cue sheet, derived from the same scene boundaries as the picture.
 // Exported as JSON by tools/launch/cues.mjs and played by tools/launch/mix.py.
 import * as S from "./scenes";
+import * as I from "./introTimes";
 import { BEATS, BREAK, BRIDGE, DROP, END_HIT, F, FINAL, QUIET, w } from "./timeline";
 
 export type Cue = { f: number; k: string; g?: number };
@@ -19,40 +20,40 @@ export const cues = (): Cue[] => {
   const c: Cue[] = [];
   const add = (f: number, k: string, g = 1) => c.push({ f: Math.round(f), k, g });
 
-  // ---------------------------------------------------------------- act I
-  add(2, "bloom", 0.8);
-  add(w("cap", 0) - 12, "air", 0.7);
-  add(S.A1_END - 16, "wipe");
-  add(S.A1_END + 22, "drip", 0.8);
-  add(S.A1_END + 46, "splash");
-  add(S.A1_END + 46 + 30, "drip", 0.45);
-  for (let i = 0; i < 3; i++) add(S.A2_END - 2 + i * 3, "roller", 0.8);
-  add(w("perete", 4) - 6, "brush");
-  add(S.A3_END, "thud", 0.9);
-  add(w("nici1", 3) - 12, "pop");
-  add(w("nici1", 5) - 10, "morph");
-  add(w("nici2", 1) - 10, "morph");
-  add(w("nici2", 1), "glitch", 0.5);
-  add(w("nici2", 2) - 6, "suck", 0.7);
-  add(S.A5_END, "wipe", 0.8);
-  for (let i = 0; i < 12; i++) {
-    const at = S.A5_END + (520 + 116 - 960 + 60 + i * 250) / 9;
-    if (at > S.A5_END && at < S.A6_END) add(at, "late");
-  }
-  S.ECG_BEATS.forEach((f, k) => add(f, "beep", [1, 0.7, 0.45][k]));
-  add(S.ECG_FLAT, "flatline");
-  add(S.A7_END + 2, "whoosh");
-  for (let i = 0; i < 6; i++) add(w("lumea", 5) - 2 + (i * 14) / 6, "key", 0.8);
-  add(w("lumea", 9) - 2, "nope");
-  add(w("obositor", 3) - 3, "cut");
-  add(w("obositor", 3) - 1, "search", 0.7);
-  add(w("obositor", 5) - 3, "cut");
-  add(w("obositor", 5) - 1, "ring", 0.8);
-  add(w("obositor", 7) - 3, "cut");
-  for (let i = 0; i < 3; i++) add(w("obositor", 7) - 3 + i * 6, "tick", 0.8);
-  add(S.A9_END + 4, "whoosh");
-  add(w("rogi", 11), "glitch", 0.8);
-  for (let i = 0; i < 5; i++) add(w("rogi", 11) + 2 + i * 2, "fall", 0.6);
+  // ---------------------------------------------------------------- act I: the new opening
+  add(2, "air", 0.6);
+  add(I.iw("probleme", 6) - 4, "select", 0.7);
+  add(I.S1_END - 12, "suck", 0.7);
+  add(I.S1_END, "bloom", 0.7);
+  add(I.iw("iarba", 0) - 7, "whoosh", 0.7);
+  add(I.iw("dulap", 0) - 7, "whoosh", 0.7);
+  add(I.iw("priza", 1), "glitch", 0.35);
+  for (let i = 0; i < 8; i++) add(I.iw("dulap", 2) + i * 3, "tick", 0.5);
+  add(I.iw("dulap", 6) + 4, "zoom", 0.6);
+  add(I.S2_END, "wipe", 0.7);
+  [I.iw("timpul", 3), I.iw("sculele", 0), I.iw("nervii", 0)].forEach((f) => {
+    add(f - 6, "pop", 0.7);
+    add(f + 14, "nope", 0.35);
+  });
+  add(I.S3_END, "whoosh", 0.6);
+  [I.S3_END + 2, I.iw("amani", 1) - 2, I.iw("amani", 2) + 3].forEach((f, i) => {
+    add(f, "notif", 0.8);
+    if (i < 2) add(f + 10, "tap", 0.6);
+  });
+  add(I.S4_END, "wipe", 0.6);
+  add(I.iw("singur", 2) - 6, "suck", 0.8);
+  add(I.S5_END, "whoosh");
+  for (let i = 0; i < 10; i++) add(w("lumea", 3) + i * ((w("lumea", 7) - w("lumea", 3)) / 10), "key", 0.7);
+  add(w("lumea", 10) - 2, "nope");
+  add(I.S6_END, "whoosh");
+  add(w("obositor", 4) - 8, "search", 0.7);
+  add(w("obositor", 6) - 7, "whoosh", 0.6);
+  add(w("obositor", 6) - 2, "ring", 0.8);
+  add(w("obositor", 8) - 7, "whoosh", 0.6);
+  [4, 11, 18, 25].forEach((d, i) => add(w("obositor", 8) - 7 + d, i % 2 ? "bubble" : "sent", 0.7));
+  add(I.S7_END, "whoosh");
+  for (let i = 0; i < 5; i++) add(w("rogi", 8) + i * 4, "fall", 0.6);
+  add(w("rogi", 11) - 2, "glitch", 0.9);
   add(S.A10_END - 6, "calm", 1);
   add(D0 - 60, "roll");
   add(S.A10_END + 2, "pop", 0.5);
@@ -95,7 +96,7 @@ export const cues = (): Cue[] => {
 
   // ---------------------------------------------------------------- act III
   add(BRIDGE, "whoosh");
-  add(w("dar", 4) - 4, "spin");
+  add(S.C1_END - 16, "select");
   add(w("daca", 4) - 2, "sparkle");
   [0, 2, 3, 4, 5].forEach((i) => add(w("skills", i) - 3, "cut"));
   add(S.C3_END, "whoosh");

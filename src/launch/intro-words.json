@@ -1,0 +1,251 @@
+{
+ "probleme": {
+  "start": 0.11,
+  "end": 3.03,
+  "text": "Probleme prin casă care îți dau bătăi de cap?",
+  "words": [
+   [
+    "Probleme",
+    0.11
+   ],
+   [
+    "prin",
+    0.73
+   ],
+   [
+    "casă",
+    0.95
+   ],
+   [
+    "care",
+    1.24
+   ],
+   [
+    "îți",
+    1.63
+   ],
+   [
+    "dau",
+    2.13
+   ],
+   [
+    "bătăi",
+    2.31
+   ],
+   [
+    "de",
+    2.6
+   ],
+   [
+    "cap?",
+    2.85
+   ]
+  ]
+ },
+ "priza": {
+  "start": 3.95,
+  "end": 4.92,
+  "text": "O priză stricată,",
+  "words": [
+   [
+    "O",
+    3.95
+   ],
+   [
+    "priză",
+    4.15
+   ],
+   [
+    "stricată,",
+    4.52
+   ]
+  ]
+ },
+ "iarba": {
+  "start": 4.92,
+  "end": 5.96,
+  "text": "iarba netunsă,",
+  "words": [
+   [
+    "iarba",
+    4.92
+   ],
+   [
+    "netunsă,",
+    5.4
+   ]
+  ]
+ },
+ "dulap": {
+  "start": 5.96,
+  "end": 8.53,
+  "text": "dulapul care stă nemontat de o lună.",
+  "words": [
+   [
+    "dulapul",
+    5.96
+   ],
+   [
+    "care",
+    6.62
+   ],
+   [
+    "stă",
+    7.03
+   ],
+   [
+    "nemontat",
+    7.22
+   ],
+   [
+    "de",
+    7.67
+   ],
+   [
+    "o",
+    7.91
+   ],
+   [
+    "lună.",
+    8.07
+   ]
+  ]
+ },
+ "timpul": {
+  "start": 8.88,
+  "end": 9.91,
+  "text": "Și tu n-ai nici timpul,",
+  "words": [
+   [
+    "Și",
+    8.88
+   ],
+   [
+    "tu",
+    9.06
+   ],
+   [
+    "n-ai",
+    9.19
+   ],
+   [
+    "nici",
+    9.28
+   ],
+   [
+    "timpul,",
+    9.7
+   ]
+  ]
+ },
+ "sculele": {
+  "start": 9.91,
+  "end": 11.28,
+  "text": "nici sculele,",
+  "words": [
+   [
+    "nici",
+    9.91
+   ],
+   [
+    "sculele,",
+    10.45
+   ]
+  ]
+ },
+ "nervii": {
+  "start": 11.28,
+  "end": 12.87,
+  "text": "nici nervii pentru toate astea.",
+  "words": [
+   [
+    "nici",
+    11.28
+   ],
+   [
+    "nervii",
+    11.58
+   ],
+   [
+    "pentru",
+    11.95
+   ],
+   [
+    "toate",
+    12.25
+   ],
+   [
+    "astea.",
+    12.58
+   ]
+  ]
+ },
+ "amani": {
+  "start": 13.34,
+  "end": 14.45,
+  "text": "Și tot amâni...",
+  "words": [
+   [
+    "Și",
+    13.34
+   ],
+   [
+    "tot",
+    13.61
+   ],
+   [
+    "amâni...",
+    13.72
+   ]
+  ]
+ },
+ "speri": {
+  "start": 14.88,
+  "end": 15.75,
+  "text": "Și speri că,",
+  "words": [
+   [
+    "Și",
+    14.88
+   ],
+   [
+    "speri",
+    15.16
+   ],
+   [
+    "că,",
+    15.47
+   ]
+  ]
+ },
+ "cumva": {
+  "start": 15.9,
+  "end": 16.49,
+  "text": "cumva,",
+  "words": [
+   [
+    "cumva,",
+    15.9
+   ]
+  ]
+ },
+ "singur": {
+  "start": 16.7,
+  "end": 17.8,
+  "text": "se rezolvă singur.",
+  "words": [
+   [
+    "se",
+    16.7
+   ],
+   [
+    "rezolvă",
+    16.82
+   ],
+   [
+    "singur.",
+    17.51
+   ]
+  ]
+ }
+}

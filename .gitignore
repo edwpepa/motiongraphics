@@ -6,7 +6,9 @@ public/audio/launch-song.mp3
 public/audio/launch-mix.mp3
 __pycache__/
 .lstills.mjs
+.lstills2.mjs
 tools/launch/cues.json
 public/audio/edw-vo.wav
 public/video/edw-clean.mp4
 public/audio/hire-vo.wav
+public/audio/reel-vo.wav

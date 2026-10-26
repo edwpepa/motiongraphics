@@ -13,7 +13,7 @@ const Studio: React.FC<{ x: number; tone: [string, string] }> = ({ x, tone }) =>
 );
 
 // ---------------------------------------------------------------- the socket: a white plate hanging crooked, cracked and scorched, still sparking
-const Socket: React.FC<{ f: number; at: number }> = ({ f, at }) => {
+export const Socket: React.FC<{ f: number; at: number }> = ({ f, at }) => {
   const sp = (k: number) => {
     const period = 17 + k * 5;
     const t = ((f - at + k * 7) % period) / 6;
@@ -104,7 +104,7 @@ const BLADES = Array.from({ length: 420 }, (_, i) => {
   const depth = seeded(i, 3);
   return { x, h: h * (0.65 + 0.35 * depth), lean: (seeded(i, 4) - 0.5) * 120, w: 7 + 9 * depth, depth, ph: seeded(i, 5) * 6.28 };
 }).sort((a, b) => a.depth - b.depth);
-const Lawn: React.FC<{ f: number }> = ({ f }) => {
+export const Lawn: React.FC<{ f: number }> = ({ f }) => {
   const g = (d: number) => {
     const a = [24 + 40 * d, 92 + 70 * d, 44 + 40 * d];
     const b = [110 + 70 * d, 188 + 40 * d, 92 + 40 * d];
@@ -153,7 +153,7 @@ const Lawn: React.FC<{ f: number }> = ({ f }) => {
 };
 
 // ---------------------------------------------------------------- the cabinet: still in its box, a panel against the wall, a calendar crossing off the days
-const Cabinet: React.FC<{ f: number; days: number }> = ({ f, days }) => (
+export const Cabinet: React.FC<{ f: number; days: number }> = ({ f, days }) => (
   <svg width={1500} height={860} viewBox="0 0 1500 860" style={{ overflow: "visible" }}>
     <defs>
       <linearGradient id="kTop" x1="0" y1="0" x2="1" y2="1">

@@ -3,11 +3,13 @@ import { HandlyReel } from "./HandlyReel";
 import { HandlyExplainer } from "./explainer/HandlyExplainer";
 import * as EX from "./explainer/timing";
 import { HandlyLaunch } from "./launch/HandlyLaunch";
+import { HandlyLaunchToon } from "./launch/HandlyLaunchToon";
 import { EdwEnterprise } from "./edw/EdwEnterprise";
 import { EdwLogoFilm } from "./edw/EdwLogoFilm";
 import { EdwReel } from "./edw/EdwReel";
 import { HireFilm } from "./hire/HireFilm";
 import { ReelFilm } from "./reel/ReelFilm";
+import { ToonTest } from "./launch/toon/Test";
 import { HandlyTimisoara } from "./tm/HandlyTimisoara";
 import { HandlyTimisoaraIso } from "./tm/HandlyTimisoaraIso";
 import { HandlyTimisoaraLaunch } from "./tm/HandlyTimisoaraLaunch";
@@ -50,8 +52,10 @@ export const Root: React.FC = () => {
       <Composition id="EdwReel" component={EdwReel} durationInFrames={70 * 30} fps={30} width={1080} height={1920} defaultProps={{ audio: false }} />
       <Composition id="EdwHiring" component={HireFilm} durationInFrames={Math.round(49.5 * 30)} fps={30} width={1920} height={1080} defaultProps={{ audio: false }} />
       <Composition id="EdwReelAI" component={ReelFilm} durationInFrames={Math.round(74.5 * 30)} fps={30} width={1080} height={1920} defaultProps={{ audio: false }} />
+      <Composition id="ToonTest" component={ToonTest} durationInFrames={60} fps={30} width={1920} height={1080} />
       <Composition id="EdwLogoFilm" component={EdwLogoFilm} durationInFrames={70 * 30} fps={30} width={1920} height={1080} />
       <Composition id="HandlyLaunch" component={HandlyLaunch} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
+      <Composition id="HandlyLaunchToon" component={HandlyLaunchToon} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
     </>
   );
 };

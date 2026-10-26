@@ -29,7 +29,7 @@ const SLAM: Array<{ bg: BgKind; logo: "white" | "green"; word: string }> = [
   { bg: "deep", logo: "green", word: "#ffffff" },
 ];
 
-const B1: React.FC = () => <Slam from={D0} zoomOutAt={B1_END - 8} shakeAt={D0} />;
+export const B1: React.FC = () => <Slam from={D0} zoomOutAt={B1_END - 8} shakeAt={D0} />;
 
 // ------------------------------------------------------------------ B2: post it in under a minute
 
@@ -602,7 +602,7 @@ const B7: React.FC = () => {
 const MBG: BgKind[] = ["white", "black", "green", "deep", "white"];
 const MONTAGE_N = 5;
 
-const B8: React.FC = () => {
+export const B8: React.FC = () => {
   const frame = useCurrentFrame();
   const k0 = Math.ceil((B7_END - D0) / BEATS);
   if (frame >= bt(k0 + MONTAGE_N)) return <Slam from={bt(k0 + MONTAGE_N)} />;

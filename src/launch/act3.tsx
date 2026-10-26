@@ -408,7 +408,7 @@ const C6: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ C7: silence. "Handly."
-const C7: React.FC = () => {
+export const C7: React.FC = () => {
   const frame = useCurrentFrame();
   const at = w("handly", 0);
   const grow = ease.outBack(clamp01((frame - (at - 6)) / 12));
@@ -428,7 +428,7 @@ const C7: React.FC = () => {
 
 // ------------------------------------------------------------------ C8: final chorus — help when you need it / money when you have time
 
-const C8: React.FC = () => {
+export const C8: React.FC = () => {
   const frame = useCurrentFrame();
   const t = frame - SPLIT;
   const inL = ease.outExpo(clamp01(t / 14));
@@ -474,7 +474,7 @@ const Splash: React.FC<{ frame: number; at: number }> = ({ frame, at }) => {
   );
 };
 
-const C9: React.FC = () => {
+export const C9: React.FC = () => {
   const frame = useCurrentFrame();
   const a = C8_END;
   const enter = ease.outExpo(clamp01((frame - a) / 24));
@@ -502,7 +502,7 @@ const C9: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ C10: the end card, landing on the song's last hit
-const C10: React.FC = () => {
+export const C10: React.FC = () => {
   const frame = useCurrentFrame();
   const a = C9_END;
   const hit = frame - END_HIT;

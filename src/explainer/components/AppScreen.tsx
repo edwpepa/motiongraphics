@@ -80,8 +80,8 @@ const MiniMap: React.FC<{ y: number; loc: number }> = ({ y, loc }) => (
 );
 
 /** The handly.ro "post a task" flow, rendered inside the phone. */
-export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
-  const typed = TASK_TEXT.slice(0, Math.max(0, Math.min(TASK_TEXT.length, Math.floor(s.typed))));
+export const AppScreen: React.FC<{ s: AppState; text?: string; cats?: Array<[React.ReactNode, string]>; placeholder?: string }> = ({ s, text = TASK_TEXT, cats, placeholder = "ex: Robinet care curge" }) => {
+  const typed = text.slice(0, Math.max(0, Math.min(text.length, Math.floor(s.typed))));
   const btnScale = 1 - 0.045 * Math.sin(clamp01(s.press) * Math.PI);
   const spin = s.loading * 360 * 1.6;
   const checkLen = ease.outCubic(clamp01(s.check));
@@ -123,18 +123,19 @@ export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
           fontWeight: BOLD,
         }}
       >
-        {typed.length === 0 && s.focus < 0.5 ? <span style={{ color: "#a9b0ac" }}>ex: Robinet care curge</span> : <span>{typed}</span>}
+        {typed.length === 0 && s.focus < 0.5 ? <span style={{ color: "#a9b0ac" }}>{placeholder}</span> : <span>{typed}</span>}
         <span style={{ width: 2, height: 22, marginLeft: 1, background: C.green, opacity: s.caret && s.focus > 0.5 ? 1 : 0 }} />
       </div>
 
       <Label y={312}>CATEGORIE</Label>
       <div style={{ position: "absolute", left: 24, top: 334, display: "flex", gap: 8 }}>
         {(
-          [
+          cats ??
+          ([
             ["wrench", "Instalații"],
             ["roller", "Zugrăveli"],
             ["hammer", "Montaj"],
-          ] as [GlyphName, string][]
+          ] as [GlyphName, string][])
         ).map(([g, label], i) => {
           const on = i === 0 ? s.category : 0;
           return (
@@ -154,7 +155,7 @@ export const AppScreen: React.FC<{ s: AppState }> = ({ s }) => {
                 transform: `scale(${1 + 0.08 * Math.sin(clamp01(on) * Math.PI)})`,
               }}
             >
-              <Glyph name={g} size={16} color={mixColor(C.ink, "#ffffff", on)} weight={2.4} />
+              {typeof g === "string" ? <Glyph name={g as GlyphName} size={16} color={mixColor(C.ink, "#ffffff", on)} weight={2.4} /> : <span style={{ color: mixColor(C.ink, "#ffffff", on), display: "flex" }}>{g}</span>}
               {label}
             </div>
           );

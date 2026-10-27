@@ -331,7 +331,7 @@ const C5: React.FC = () => {
 
 // ------------------------------------------------------------------ C6: the build — every shape spirals in
 // hyperspace: the camera dives through a tunnel of green light; stars streak past; the mark waits at the end
-const C6: React.FC = () => {
+export const C6: React.FC = () => {
   const frame = useCurrentFrame();
   const a = C5_END;
   const L = BREAK - a;

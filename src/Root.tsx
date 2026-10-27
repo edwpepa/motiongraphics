@@ -4,6 +4,7 @@ import { HandlyExplainer } from "./explainer/HandlyExplainer";
 import * as EX from "./explainer/timing";
 import { HandlyLaunch } from "./launch/HandlyLaunch";
 import { HandlyLaunchToon } from "./launch/HandlyLaunchToon";
+import { HandlyLaunchTV } from "./launch/HandlyLaunchTV";
 import { GlassTest } from "./launch/tv/GlassTest";
 import { StyleFrame } from "./launch/tv/StyleFrame";
 import { EdwEnterprise } from "./edw/EdwEnterprise";
@@ -60,6 +61,7 @@ export const Root: React.FC = () => {
       <Composition id="EdwLogoFilm" component={EdwLogoFilm} durationInFrames={70 * 30} fps={30} width={1920} height={1080} />
       <Composition id="HandlyLaunch" component={HandlyLaunch} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
       <Composition id="HandlyLaunchToon" component={HandlyLaunchToon} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
+      <Composition id="HandlyLaunchTV" component={HandlyLaunchTV} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
     </>
   );
 };

@@ -5,7 +5,7 @@ import { Sym } from "../tv/ios";
 import { GREEN, io3, outExpo, Sparkle, spring } from "../tv3d/kit3d";
 import { I, R1_END, R2_END, R3_END, R4_END, R5_END, R6_END, R7_END, R8_END, V, D0, pEnd } from "./marks";
 import { RefLine } from "./type";
-import { AppTile, Card, cardShadow, Cursor, GlossIcon, PillBtn, UI } from "./ui";
+import { Card, cardShadow, Cursor, IOSBanner, PillBtn, UI } from "./ui";
 
 const MUTE = "#7c8481";
 const RED = "#ff453a";
@@ -21,7 +21,6 @@ export const R1: React.FC = () => {
           { t: "Probleme", at: I("probleme", 0), acc: true },
           { t: "prin", at: I("probleme", 1) },
           { t: "casă", at: I("probleme", 2) },
-          { at: I("probleme", 2) + 7, w: 104, node: (p, k) => <div style={{ transform: `scale(${0.4 + 0.6 * spring(clamp01(k / 16))}) rotate(${(1 - p) * -14 + Math.sin(k / 14) * 2}deg) translateY(${Math.sin(k / 11) * 3}px)` }}><GlossIcon n="house" size={96} /></div> },
         ]}
         out={big - 8}
       />
@@ -53,13 +52,13 @@ export const R2: React.FC = () => {
         const hi = i === 2 ? lift : 0;
         return (
           <div key={i} style={{ position: "absolute", left: x - 250, top: 540 - 220 + (1 - e) * 140 - hi * 16, width: 500, opacity: o * (1 - u), transform: `perspective(1400px) rotateY(${(1 - e) * -18 + (x - 960) * -0.012}deg) rotateZ(${(1 - e) * 6}deg) scale(${(0.82 + 0.18 * e) * (1 + 0.05 * hi) * (1 - 0.06 * u)})`, filter: u > 0 ? `blur(${u * 14}px)` : undefined }}>
-            <Card w={500} r={30} pad={12} style={{ boxShadow: cardShadow(1 + hi * 0.6) }}>
+            <Card w={500} r={30} pad={12} style={{ boxShadow: cardShadow(1 + hi * 0.4) }}>
               <div style={{ width: 476, height: 330, borderRadius: 18, overflow: "hidden", position: "relative" }}>
                 <Img src={staticFile(p.src)} style={{ width: "100%", height: "100%", objectFit: "cover", transform: `scale(${1.18 - 0.1 * e + 0.0006 * (f - at[i])})` }} />
               </div>
               <div style={{ display: "flex", alignItems: "center", padding: "16px 8px 6px", gap: 10 }}>
                 <div style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-0.02em" }}>{p.title}</div>
-                <div style={{ width: 10, height: 10, borderRadius: 5, background: RED, boxShadow: `0 0 0 ${3 + 2 * Math.sin(f / 5)}px rgba(255,69,58,0.18)` }} />
+                <div style={{ width: 10, height: 10, borderRadius: 5, background: RED }} />
               </div>
               <div style={{ padding: "0 8px 8px", fontSize: 21, fontWeight: 500, color: MUTE }}>{p.sub}</div>
               {i === 2 && days > 0 && (
@@ -171,23 +170,20 @@ export const R6: React.FC = () => {
     <AbsoluteFill style={{ perspective: 1800 }}>
       <div style={{ position: "absolute", left: 960 - 450, top: 540 - 310 + (1 - e) * 560, width: 900, height: 620, transform: `rotateX(${(1 - e) * 38 + 6 + Math.sin(f / 40) * 1.5}deg) rotateZ(${(1 - e) * -10 - 2}deg) rotateY(${Math.sin(f / 50) * 3}deg) scale(${(1.14 + 0.04 * clamp01((f - in0) / 100)) * (1 + push * push * 0.9)})`, opacity: 1 - push * push, filter: push > 0 ? `blur(${push * push * 16}px)` : undefined }}>
         <Card w={900} h={620} r={30} pad={0} style={{ overflow: "hidden" }}>
-          <div style={{ height: 64, display: "flex", alignItems: "center", gap: 9, padding: "0 22px", borderBottom: "1px solid #eef0ef" }}>
-            {["#ff5f57", "#febc2e", "#28c840"].map((c) => <div key={c} style={{ width: 14, height: 14, borderRadius: 7, background: c }} />)}
-            <div style={{ marginLeft: 16, fontSize: 20, fontWeight: 600 }}>Contacte</div>
-          </div>
-          <div style={{ margin: "22px 28px 8px", height: 64, borderRadius: 18, background: "#f2f4f3", display: "flex", alignItems: "center", gap: 14, padding: "0 20px", fontSize: 26, fontWeight: 500 }}>
-            <Sym n="search" size={26} color={MUTE} w={2.4} />
-            {typed === 0 ? <span style={{ color: "#a8afac" }}>Caută</span> : <span>{q.slice(0, typed)}</span>}
+          <div style={{ padding: "28px 28px 0", fontSize: 46, fontWeight: 700, letterSpacing: "-0.02em" }}>Contacte</div>
+          <div style={{ margin: "16px 28px 8px", height: 60, borderRadius: 16, background: "#eeeef0", display: "flex", alignItems: "center", gap: 12, padding: "0 18px", fontSize: 27, fontWeight: 400 }}>
+            <Sym n="search" size={26} color="#8a8a8e" w={2.4} />
+            {typed === 0 ? <span style={{ color: "#8a8a8e" }}>Caută</span> : <span>{q.slice(0, typed)}</span>}
             <span style={{ width: 2.5, height: 30, background: GREEN, marginLeft: -10, opacity: Math.floor(f / 8) % 2 || typed < q.length ? 1 : 0 }} />
           </div>
           {CONTACTS.map(([ini, name, sub], i) => {
             const g = gone(i);
             return (
-              <div key={name} style={{ height: 82, margin: "0 28px", display: "flex", alignItems: "center", gap: 18, borderBottom: "1px solid #f0f2f1", opacity: 1 - g, transform: `translateX(${g * -40}px)`, filter: g > 0 ? `blur(${g * 6}px)` : undefined }}>
-                <div style={{ width: 52, height: 52, borderRadius: 26, background: `hsl(${150 + i * 37}, 22%, ${82 - i * 3}%)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 600, color: "#fff" }}>{ini}</div>
+              <div key={name} style={{ height: 78, margin: "0 28px", display: "flex", alignItems: "center", gap: 18, borderBottom: "1px solid #e3e3e8", opacity: 1 - g, transform: `translateX(${g * -40}px)`, filter: g > 0 ? `blur(${g * 6}px)` : undefined }}>
+                <div style={{ width: 52, height: 52, borderRadius: 26, background: "linear-gradient(180deg, #a5abb6 0%, #858b96 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 600, color: "#fff" }}>{ini}</div>
                 <div>
-                  <div style={{ fontSize: 24, fontWeight: 600 }}>{name}</div>
-                  <div style={{ fontSize: 17, fontWeight: 500, color: MUTE }}>{sub}</div>
+                  <div style={{ fontSize: 26, fontWeight: 400 }}>{name}</div>
+                  <div style={{ fontSize: 18, fontWeight: 400, color: "#8a8a8e" }}>{sub}</div>
                 </div>
               </div>
             );
@@ -247,22 +243,7 @@ export const R8: React.FC = () => {
         const y = lerp(fy, b.y, e) + (b.y - 540) * u * u * 1.4 + Math.cos(f / 27 + i * 2) * 8;
         return (
           <div key={i} style={{ position: "absolute", left: x + shake, top: y, transform: `translate(-50%, -50%) perspective(1200px) rotateY(${(b.x < 960 ? 1 : -1) * (14 + 6 * Math.sin(f / 40 + i))}deg) rotateZ(${b.r + (1 - e) * b.r * 2}deg) scale(${lerp(1.9, 1, e) * (1 + u * u * 0.6)})`, opacity: clamp01((f - at) / 5) * (1 - u), filter: e < 0.85 || u > 0 ? `blur(${(1 - e) * 18 + u * 12}px)` : undefined }}>
-            <Card w={560} r={30} pad={26}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{ width: 52, height: 52, borderRadius: 26, background: "#e6e9e8", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Sym n={b.kind === "call" ? "phone" : "user"} size={26} color={b.kind === "call" ? RED : "#9aa39f"} w={2.2} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  {b.kind === "review" ? (
-                    <div style={{ display: "flex", gap: 3 }}>{[0, 1, 2, 3, 4].map((s) => <Sym key={s} n="star" size={20} color={s === 0 ? "#ffb800" : "#dfe3e1"} fill={s === 0 ? "#ffb800" : "#dfe3e1"} w={1} />)}</div>
-                  ) : (
-                    <div style={{ fontSize: 20, fontWeight: 600, color: MUTE }}>{b.kind === "call" ? "Meșter" : "Meșter · ieri"}</div>
-                  )}
-                  <div style={{ fontSize: 27, fontWeight: 500, marginTop: 4, color: b.kind === "call" ? RED : "#1d2321", letterSpacing: "-0.01em" }}>{b.kind === "msg" ? `„${b.t}”` : b.t}</div>
-                </div>
-              </div>
-              {b.kind === "msg" && <div style={{ position: "absolute", right: 22, bottom: 12, fontSize: 15, fontWeight: 500, color: "#a6aeab" }}>Văzut</div>}
-            </Card>
+            <IOSBanner app={b.kind === "call" ? "phone" : "messages"} title={b.kind === "call" ? "Apel nepreluat" : b.kind === "review" ? "Recenzie: 1 din 5" : "Meșter"} body={b.kind === "msg" ? `„${b.t}”` : b.kind === "call" ? "Meșter · de 4 ori" : b.t} time={b.kind === "msg" ? "ieri" : "acum"} w={600} scale={1.25} />
           </div>
         );
       })}
@@ -283,7 +264,7 @@ export const R9: React.FC = () => {
         words={[
           { t: "Aici", at: V("aici", 0) },
           { t: "intervine", at: V("aici", 1) },
-          { at: V("aici", 2) - 3, w: 112, node: (p, k) => <div style={{ transform: `scale(${0.3 + 0.7 * spring(clamp01(k / 18))}) rotate(${(1 - p) * -30}deg)` }}><AppTile size={108} /></div> },
+          { at: V("aici", 2) - 3, w: 96, node: (p, k) => <div style={{ transform: `scale(${0.3 + 0.7 * spring(clamp01(k / 18))}) rotate(${(1 - p) * -30}deg)` }}><Img src={staticFile("images/logo.webp")} style={{ width: 92, height: 92, display: "block" }} /></div> },
           { t: "Handly.", at: V("aici", 2), acc: true },
         ]}
         out={pEnd("aici") + 2}

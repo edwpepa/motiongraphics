@@ -20,6 +20,9 @@ export const beatF = (k: number) => F(DROP + k * BEAT);
 export const BEATS = BEAT * FPS;
 
 export const BRIDGE = R(TL.bridgeR);
+/** the dead stop after "Fără stres." (the song restarts on "Dar", at BRIDGE, on its own grid) */
+export const STOP = R((TL as unknown as { stopR?: number }).stopR ?? TL.bridgeR);
+export const BUILD = R((TL as unknown as { buildR?: number }).buildR ?? TL.breakR - 4 * BEAT);
 export const BASS_BACK = R(TL.bassBackR);
 export const QUIET = R(TL.quietR);
 export const BREAK = R(TL.breakR);

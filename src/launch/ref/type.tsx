@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { useCurrentFrame } from "remotion";
 import { clamp01 } from "../../explainer/lib/anim";
+import { beatPulse } from "./marks";
 
 // ------------------------------------------------------------------ the reference's type, frame for frame:
 // a new line slams in from big and blurred and settles fast; every next word pops into its slot (a hair bigger,
@@ -40,7 +41,9 @@ export const RefLine: React.FC<{
   weight?: number;
   bump?: number;
   exitLen?: number;
-}> = ({ words, size = 76, x = 960, y = 540, out, exit = "zoom", enter = "slam", drift = -0.035, dark = false, weight = 400, bump = 1, exitLen }) => {
+  /** a small punch on every beat of the song */
+  beat?: number;
+}> = ({ words, size = 76, x = 960, y = 540, out, exit = "zoom", enter = "slam", drift = -0.035, dark = false, weight = 400, bump = 1, exitLen, beat = 0.022 }) => {
   const f = useCurrentFrame();
   const widths = useMemo(() => words.map((w) => (w.node ? w.w ?? size : measure(w.t ?? "", size, weight))), [words, size, weight]);
   const t0 = words[0].at;
@@ -81,7 +84,7 @@ export const RefLine: React.FC<{
     nb = 14 * (1 - e);
     no = e;
   }
-  const scale = ns * (1 + (drift * k) / 30) * es * bump;
+  const scale = ns * (1 + (drift * k) / 30) * es * bump * (1 + beat * beatPulse(f, 7));
   const blur = nb + eb;
 
   const gap = size * 0.27;
@@ -103,7 +106,7 @@ export const RefLine: React.FC<{
         const kk = f - w.at;
         const first = enter === "slam" && w.at <= t0 + 1;
         const pop = first || w.node ? 0 : Math.exp(-kk / 2.2);
-        const base: React.CSSProperties = { position: "absolute", left, top: 0, height: size * 1.24, display: "flex", alignItems: "center", whiteSpace: "nowrap", transform: `translateY(${pop * size * 0.12}px) scale(${1 + 0.16 * pop})`, transformOrigin: "50% 60%", opacity: first || w.node ? 1 : clamp01(0.45 + kk / 2) };
+        const base: React.CSSProperties = { position: "absolute", left, top: 0, height: size * 1.24, display: "flex", alignItems: "center", whiteSpace: "nowrap", transform: `translateY(${pop * size * 0.12}px) scale(${1 + 0.16 * pop})`, transformOrigin: "0% 60%", opacity: first || w.node ? 1 : clamp01(0.45 + kk / 2) };
         if (w.node)
           return (
             <div key={i} style={{ ...base, width: cur[i], justifyContent: "center" }}>

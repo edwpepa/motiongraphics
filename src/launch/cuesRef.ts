@@ -1,7 +1,7 @@
 // Sound-design cue sheet for the reference-style launch ad (HandlyLaunchRef), from the same frames as the picture.
 // Exported by `ENTRY=src/launch/cuesRef.ts OUT=cuesRef.json node tools/launch/cues.mjs`, played by tools/launch/mix.py.
-import { B_END, BREAK_F, BUILD, C1_END, C2_END, C3_END, CTA, D0, DROP_END, END_FLY, END_HIT, F1_START, FINAL_F, GATA, I, PHONE_IN, R1_END, R2_END, R3_END, R4_END, R5_END, R6_END, R7_END, R8_END, STAR, SWOOSH, V, pEnd, pStart } from "./ref/marks";
-import { BRIDGE } from "./timeline";
+import { BREAK_F, BUILD, C3_END, CTA, D0, DROP_END, END_FLY, END_HIT, F1_START, FINAL_F, GATA, I, MAP_IN, PHONE_BACK, PHONE_IN, PICK, R2_END, R3_END, R5_END, R6_END, R8_END, STAR, STOP_F, SWOOSH, V, bt, bt2, pEnd, pStart } from "./ref/marks";
+import { BEATS, BRIDGE } from "./timeline";
 
 export type Cue = { f: number; k: string; g?: number };
 
@@ -12,7 +12,6 @@ export const cues = (): Cue[] => {
 
   // ---------------------------------------------------------------- act I
   slam(I("probleme", 0), 0.6);
-  add(I("probleme", 2) + 7, "pop", 0.6);
   slam(I("probleme", 6), 0.7);
   [I("priza", 1) - 5, I("iarba", 0) - 5, I("dulap", 0) - 5].forEach((f) => { add(f, "whoosh", 0.35); add(f + 4, "expand", 0.5); });
   add(I("dulap", 4), "notif", 0.45);
@@ -31,30 +30,39 @@ export const cues = (): Cue[] => {
   add(R6_END - 10, "zoom", 0.45);
   slam(V("obositor", 1), 0.55);
   slam(V("obositor", 4), 0.55);
-  [0, 1, 2, 3].forEach((i) => add(V("rogi", 0) + i * 9, "whoosh", 0.32));
+  [0, 1, 2, 3].forEach((i) => add(V("rogi", 0) + i * 9, "notif", 0.4));
   add(V("rogi", 11), "glitch", 0.5);
   slam(V("rogi", 10), 0.5);
   add(R8_END - 10, "whoosh", 0.4);
-  slam(V("aici", 0), 0.45);
-  add(V("aici", 2) - 3, "pop", 0.6);
+  // "Aici intervine Handly." over the calm charge, the roll into the drop
+  add(pStart("aici") - 6, "calm", 1);
+  add(D0 - 60, "roll");
   add(V("aici", 2) - 1, "shimmer", 0.6);
 
-  // ---------------------------------------------------------------- act II
-  add(D0, "splash", 0.8);
+  // ---------------------------------------------------------------- the first drop
+  add(D0, "drop");
+  for (let k = 1; bt(k) < DROP_END - 8; k++) add(bt(k), "slam", 0.6);
   add(DROP_END - 8, "zoom", 0.5);
+
+  // ---------------------------------------------------------------- act II
   add(PHONE_IN, "whoosh", 0.55);
   for (let i = 0; i < 12; i++) add(V("postezi", 0) + 2 + i * 2, "key", 0.5);
   add(V("postezi", 4) - 2, "expand", 0.5);
   add(V("postezi", 9) - 12, "tap", 0.8);
   add(V("postezi", 9), "success", 0.6);
-  add(V("taskeri", 0) - 6, "whoosh", 0.35);
-  [V("taskeri", 1), V("taskeri", 4), V("taskeri", 7) - 4].forEach((f) => add(f, "notif", 0.5));
-  add(V("taskeri", 3) - 4, "pop", 0.5);
-  add(V("alegi", 1), "click", 0.8);
-  add(V("alegi", 1) + 2, "select", 0.5);
+  add(MAP_IN, "whoosh", 0.5);
+  [0, 5, 22, 28, 36].forEach((d) => add(V("taskeri", 0) + d, "pop", 0.55));
+  add(V("taskeri", 1), "select", 0.4);
+  [0, 5, 10].forEach((d) => add(V("taskeri", 6) - 4 + d, "sent", 0.5));
+  add(V("taskeri", 6) + 12, "notif", 0.55);
+  add(PICK, "click", 0.8);
+  add(PICK + 6, "expand", 0.5);
+  add(PICK + 20, "tap", 0.6);
+  add(PHONE_BACK, "whoosh", 0.5);
   add(V("alegi", 5), "bubble", 0.6);
   add(V("alegi", 8), "sent", 0.6);
   add(V("alegi", 11) - 4, "expand", 0.45);
+  add(V("alegi", 11) + 10, "select", 0.4);
   add(V("alegi", 14), "click", 0.8);
   add(V("alegi", 14) + 4, "lock", 0.5);
   add(V("cash", 0) - 4, "cash", 0.6);
@@ -67,24 +75,30 @@ export const cues = (): Cue[] => {
   add(GATA, "success", 0.8);
   add(GATA, "sparkle", 0.6);
   slam(V("fara1", 0), 0.45);
-  add(pEnd("fara2") + 8, "air", 0.35);
+  // the dead stop: nothing (the song cuts, the screen goes black)
 
   // ---------------------------------------------------------------- act III
   add(V("dar", 1) - 2, "pop", 0.45);
+  slam(V("dar", 5), 0.45);
   slam(V("daca", 0), 0.5);
-  [0, 2, 3, 4, 5].forEach((wi) => add(V("skills", wi) - 2, "pop", 0.55));
+  [0, 2, 3, 4, 5].forEach((wi) => add(V("skills", wi) - 2, "select", 0.55));
   add(C3_END - 12, "whoosh", 0.55);
   for (let i = 0; i < 8; i++) add(V("cont", 0) + i * 3, "key", 0.4);
   add(V("cont", 7), "success", 0.55);
   add(V("cont", 8) - 6, "whoosh", 0.3);
   [V("cont", 11), V("cont", 13), V("cont", 15)].forEach((f) => add(f, "coin", 0.6));
   add(V("program", 2) - 4, "expand", 0.45);
+  add(V("program", 2), "select", 0.45);
   add(V("taskurile", 2), "click", 0.8);
-  add(V("taskurile", 2) + 3, "select", 0.45);
+  add(V("taskurile", 2) + 3, "success", 0.4);
   add(V("muncesti", 3) - 4, "expand", 0.45);
-  add(BUILD, "suck", 0.5);
-  add(V("handly", 0) - 3, "shimmer", 0.45);
-  add(FINAL_F, "splash", 0.8);
+  add(V("muncesti", 3) + 2, "zip", 0.4);
+  add(BREAK_F - 12, "suck");
+  add(V("handly", 0) - 4, "shimmer");
+
+  // ---------------------------------------------------------------- the final drop and the close
+  add(FINAL_F, "drop");
+  for (let k = Math.round((FINAL_F - BRIDGE) / BEATS) + 1; bt2(k) < F1_START - 4; k++) add(bt2(k), "slam", 0.6);
   add(F1_START - 8, "zoom", 0.45);
   slam(V("ajutor", 0), 0.5);
   slam(V("bani", 0), 0.5);
@@ -92,25 +106,21 @@ export const cues = (): Cue[] => {
   add(V("cta", 1) - 1, "click", 0.85);
   add(V("cta", 1) + 2, "success", 0.5);
   add(STAR - 4, "morph", 0.55);
-  add(STAR, "sparkle", 0.7);
+  add(STAR, "sparkle", 0.6);
   add(END_FLY, "whoosh", 0.35);
-  add(END_HIT, "sparkle", 0.6);
-  return c.filter((x) => x.f >= 0);
+  add(END_HIT, "end");
+  // nothing may sound in the dead stop
+  return c.filter((x) => x.f >= 0 && !(x.f >= STOP_F && x.f < BRIDGE)).sort((a, b) => a.f - b.f);
 };
 
 export const marks = () => ({
-  // the verse builds straight into the drop (no pre-fade)
-  preFadeFrom: D0 / 30 + 5,
-  preFadeTo: D0 / 30 + 6,
+  preFadeFrom: pStart("aici") / 30 - 2.7,
+  preFadeTo: pStart("aici") / 30 - 0.1,
   contFrom: pStart("cont") / 30 - 0.4,
   contTo: pEnd("cont") / 30 + 0.6,
+  stop: STOP_F / 30,
   bridge: BRIDGE / 30,
   suspense: BUILD / 30,
   brk: BREAK_F / 30,
   final: FINAL_F / 30,
-  gata: GATA / 30,
-  bEnd: B_END / 30,
-  c1: C1_END / 30,
-  c2: C2_END / 30,
-  r: [R1_END, R2_END, R3_END, R4_END, R5_END, R6_END, R7_END, R8_END].map((f) => f / 30),
 });

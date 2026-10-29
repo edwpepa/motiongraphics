@@ -74,6 +74,8 @@ def main():
     CUE_FILE = os.path.join(ROOT, "tools/launch", os.environ.get("CUES", "cues.json"))
     if SC == "ref":
         import score_ref as score
+    elif SC == "anthem":
+        import score_anthem as score
     elif ID:
         import score_id as score
     else:
@@ -82,7 +84,7 @@ def main():
     mus = score.build(M0)
     # tail of the song fades out by END
     t = np.arange(N) / SR
-    tail = 1.4 if os.environ.get("SCORE") == "ref" else 2.5  # the last hit gets to ring
+    tail = 1.4 if os.environ.get("SCORE") in ("ref", "anthem") else 2.5  # the last hit gets to ring
     mus *= np.interp(t, [END - tail, END - 0.05], [1, 0])[None, :]
     # the muffled bed melts away before the bell; quieter under the tasker sign-up;
     # silent through the "we can't" section (only the charging), back on the final drop
@@ -93,6 +95,8 @@ def main():
     # the build cuts dead at the break; silence for "Handly.", then the final drop
     if SC != "ref":  # the reference-style score writes its own break (a note and a breath in it)
         env *= np.interp(t, [M0["brk"] - 0.02, M0["brk"], M0["final"] - 0.03, M0["final"]], [1, 0, 0, 1])
+    if "stop" in M0:  # everything stops dead after "Fără stres." and comes back with "Dar"
+        env *= np.interp(t, [M0["stop"] - 0.004, M0["stop"], M0["bridge"] - 0.01, M0["bridge"]], [1, 0, 0, 1])
     mus *= env[None, :]
     # from the end of the chorus to the final drop the song plays as if from inside a box:
     # band-limited, a small boxy room, and lower — then it bursts back open on the final chorus
@@ -100,7 +104,10 @@ def main():
         box = np.stack([C.filt(C.filt(mus[ch], "lowpass", 650, 4), "highpass", 140, 2) for ch in range(2)])
         box = box * 1.9 + C.reverb(box, C.IR_ROOM)[:, :N] * 0.35
         # the box opens up through the build (a filter sweep you can feel), then the break, then the drop
-        m = np.interp(t, [M0["bridge"] - 0.15, M0["bridge"] + 0.25, M0["suspense"], M0["brk"] - 0.1, M0["final"] - 0.02, M0["final"]], [0, 1, 1, 0, 0, 0])
+        if "stop" in M0:  # the song is already in the box when it comes back
+            m = np.interp(t, [M0["bridge"] - 0.06, M0["bridge"] - 0.02, M0["suspense"], M0["brk"] - 0.1, M0["final"] - 0.02, M0["final"]], [0, 1, 1, 0, 0, 0])
+        else:
+            m = np.interp(t, [M0["bridge"] - 0.15, M0["bridge"] + 0.25, M0["suspense"], M0["brk"] - 0.1, M0["final"] - 0.02, M0["final"]], [0, 1, 1, 0, 0, 0])
         mus = mus * (1 - m)[None, :] + box * (m * 0.62)[None, :]
 
     # ---- sfx (cue sheet exported from the picture: node tools/launch/cues.mjs)

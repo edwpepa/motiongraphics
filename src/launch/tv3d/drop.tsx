@@ -6,6 +6,8 @@ import { FONT } from "../../explainer/theme";
 import { BEATS } from "../timeline";
 import { OUTFIT } from "../tv/font";
 import { bt, D0, GREEN, GREEN2, INK, outExpo, r01, Sparkle, Splash, spring } from "./kit3d";
+import { Heart } from "../ref/ui";
+import { measure } from "../ref/type";
 
 // ------------------------------------------------------------------ the drop: on every beat a new colour floods in as paint; the mark rides the beat, sparkles around it
 const PAL = [
@@ -64,7 +66,7 @@ export const PremiumDrop: React.FC<{ from: number; offset?: number; zoomOutAt?: 
   );
 };
 
-// ------------------------------------------------------------------ the end: the sparkle flies in, turns, and becomes the Handly mark
+// ------------------------------------------------------------------ the end: the heart flies in, lands, and becomes the Handly mark; handly.ro opens beside it
 export const EndCard: React.FC<{ from: number; hit: number; end: number; bg?: string }> = ({ from, hit, end, bg = "#f3f5f8" }) => {
   const f = useCurrentFrame();
   const fly = r01(f, from, hit - 6, (u) => 1 - Math.pow(1 - u, 3));
@@ -72,37 +74,37 @@ export const EndCard: React.FC<{ from: number; hit: number; end: number; bg?: st
   const morph = r01(f, hit - 6, hit + 6, (u) => u);
   const land = spring(clamp01((f - hit) / 22));
   const word = r01(f, hit + 4, hit + 24, (u) => 1 - Math.pow(1 - u, 4));
-  const url = r01(f, hit + 14, hit + 30, (u) => 1 - Math.pow(1 - u, 3));
-  const badges = r01(f, hit + 20, hit + 40, (u) => 1 - Math.pow(1 - u, 3));
+  const badges = r01(f, hit + 16, hit + 36, (u) => 1 - Math.pow(1 - u, 3));
   const drift = 1 + 0.035 * clamp01((f - hit) / (end - hit));
   const LOGO = 120;
-  const groupW = LOGO + (LOGO * 0.3 + 390) * word;
+  // the whole wordmark, measured, so the reveal never clips it
+  const WORD = Math.ceil(measure("handly.ro", 132, 700, -0.05)) + 16;
+  const groupW = LOGO + (LOGO * 0.3 + WORD) * word;
   const lx = 960 - groupW / 2;
   return (
     <AbsoluteFill style={{ background: bg }}>
       <AbsoluteFill style={{ background: "radial-gradient(ellipse 55% 50% at 50% 45%, #ffffff 0%, rgba(255,255,255,0) 70%)" }} />
       <Splash x={960} y={540} t={clamp01((f - hit) / 16)} R={260} color={GREEN} light={GREEN2} seed={29} drops={20} opacity={Math.max(0, 1 - (f - hit) / 22)} />
       <AbsoluteFill style={{ transform: `scale(${drift})` }}>
-        {/* the star on its way in, spinning faster as it comes */}
-        {morph < 1 && <Sparkle x={sx} y={sy} size={lerp(60, 110, fly) * (1 - 0.3 * morph)} t={1} rot={fly * 540 + morph * 180} opacity={1 - morph} />}
+        {/* the heart on its way in */}
+        {morph < 1 && <Heart x={sx} y={sy} size={lerp(48, 80, fly) * (1 - 0.3 * morph)} rot={Math.sin(fly * Math.PI * 2) * 12} opacity={1 - morph} />}
         {f < hit &&
           [0.06, 0.12, 0.18].map((d, i) => {
             const u = Math.max(0, fly - d);
-            return <Sparkle key={i} x={lerp(1500, 960, u)} y={lerp(860, 540, u) - Math.sin(u * Math.PI) * 120} size={14 - i * 3} t={1} rot={u * 400} opacity={0.5 - i * 0.12} />;
+            return <Heart key={i} x={lerp(1500, 960, u)} y={lerp(860, 540, u) - Math.sin(u * Math.PI) * 120} size={12 - i * 3} opacity={0.45 - i * 0.12} />;
           })}
         {/* the mark */}
         {morph > 0 && (
-          <div style={{ position: "absolute", left: lx, top: 540 - LOGO / 2 - 40 * badges, width: groupW + 10, height: LOGO, display: "flex", alignItems: "center" }}>
-            <Img src={staticFile("images/logo.webp")} style={{ width: LOGO, height: LOGO, transform: `scale(${(0.6 + 0.4 * land) * (morph < 1 ? morph : 1)}) rotate(${(1 - land) * -40}deg)`, opacity: morph }} />
-            <div style={{ overflow: "hidden", marginLeft: LOGO * 0.3 * word, width: 390 * word, flexShrink: 0 }}>
-              <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 132, letterSpacing: "-0.05em", color: INK, lineHeight: 1, transform: `translateX(${(1 - word) * -120}px) translateY(-6px)`, whiteSpace: "nowrap" }}>handly</div>
+          <div style={{ position: "absolute", left: lx, top: 540 - LOGO / 2 - 50 * badges, width: groupW + 10, height: LOGO, display: "flex", alignItems: "center" }}>
+            <Img src={staticFile("images/logo.webp")} style={{ width: LOGO, height: LOGO, transform: `scale(${(0.6 + 0.4 * land) * (morph < 1 ? morph : 1)}) rotate(${(1 - land) * -20}deg)`, opacity: morph }} />
+            <div style={{ overflow: "hidden", marginLeft: LOGO * 0.3 * word, width: WORD * word, flexShrink: 0 }}>
+              <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 132, letterSpacing: "-0.05em", color: INK, lineHeight: 1, transform: `translateX(${(1 - word) * -120}px) translateY(-6px)`, whiteSpace: "nowrap", paddingRight: 8 }}>handly.ro</div>
             </div>
           </div>
         )}
-        <div style={{ position: "absolute", left: 0, width: 1920, top: 540 + 52 - 40 * badges, textAlign: "center", fontFamily: OUTFIT, fontWeight: 500, fontSize: 30, color: "#6e6e73", opacity: url, filter: url < 1 ? `blur(${(1 - url) * 8}px)` : undefined, letterSpacing: "0.01em" }}>handly.ro</div>
-        <div style={{ position: "absolute", left: 0, width: 1920, top: 540 + 120, display: "flex", justifyContent: "center", gap: 22, opacity: badges, transform: `translateY(${(1 - badges) * 30}px)` }}>
-          <StoreBadge store="apple" h={76} shine={clamp01((f - hit - 24) / 20)} />
-          <StoreBadge store="google" h={76} shine={clamp01((f - hit - 30) / 20)} />
+        <div style={{ position: "absolute", left: 0, width: 1920, top: 540 + 90, display: "flex", justifyContent: "center", gap: 22, opacity: badges, transform: `translateY(${(1 - badges) * 30}px)` }}>
+          <StoreBadge store="apple" h={80} shine={clamp01((f - hit - 22) / 20)} />
+          <StoreBadge store="google" h={80} shine={clamp01((f - hit - 28) / 20)} />
         </div>
       </AbsoluteFill>
       <AbsoluteFill style={{ background: bg, opacity: r01(f, end - 16, end) }} />

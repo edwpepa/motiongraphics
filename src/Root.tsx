@@ -5,6 +5,7 @@ import * as EX from "./explainer/timing";
 import { HandlyLaunch } from "./launch/HandlyLaunch";
 import { HandlyLaunchToon } from "./launch/HandlyLaunchToon";
 import { HandlyLaunchTV } from "./launch/HandlyLaunchTV";
+import { HandlyLaunchRef } from "./launch/HandlyLaunchRef";
 import { HandlyLaunch3D } from "./launch/HandlyLaunch3D";
 import { GlassTest } from "./launch/tv/GlassTest";
 import { Test3D } from "./launch/tv3d/Test3D";
@@ -65,6 +66,7 @@ export const Root: React.FC = () => {
       <Composition id="HandlyLaunch" component={HandlyLaunch} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
       <Composition id="HandlyLaunchToon" component={HandlyLaunchToon} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
       <Composition id="HandlyLaunchTV" component={HandlyLaunchTV} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
+      <Composition id="HandlyLaunchRef" component={HandlyLaunchRef} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} defaultProps={{ audio: true }} />
       <Composition id="HandlyLaunch3D" component={HandlyLaunch3D} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
     </>
   );

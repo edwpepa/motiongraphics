@@ -29,12 +29,22 @@ export const END_HIT = R(TL.endHitR);
 type PhraseKey = keyof typeof WORDS;
 const W = WORDS as unknown as Record<string, { start: number; end: number; text: string; words: [string, number][] }>;
 const POST = TL.post as Record<string, number>;
+/** the read is played sped up (pitch kept): source seconds shrink by this */
+const TEMPO = (TL as unknown as { tempo?: number }).tempo ?? 1;
 
 /** voiceover-file seconds → output seconds for a phrase */
 const voToOut = (key: string, v: number) => {
   if (key in POST) return DROP + POST[key] + (v - W[key].start);
-  for (const c of TL.pre) if (v >= c.vo[0] - 0.05 && v <= c.vo[1] + 0.05) return c.at + (v - c.vo[0]);
-  throw new Error(`no chunk for ${key} @ ${v}`);
+  // the chunk holding v among this phrase's chunks (nearest one if v fell in a trimmed silence)
+  const p = W[key];
+  let best: (typeof TL.pre)[number] | undefined, dist = Infinity;
+  for (const c of TL.pre) {
+    if (c.vo[1] < p.start - 0.02 || c.vo[0] > p.end + 0.02) continue;
+    const d = v < c.vo[0] ? c.vo[0] - v : v > c.vo[1] ? v - c.vo[1] : 0;
+    if (d < dist) (best = c), (dist = d);
+  }
+  if (!best) throw new Error(`no chunk for ${key} @ ${v}`);
+  return best.at + (Math.min(Math.max(v, best.vo[0]), best.vo[1]) - best.vo[0]) / TEMPO;
 };
 
 /** word onset frames of a phrase: [text, frame][] */

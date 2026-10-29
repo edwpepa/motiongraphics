@@ -65,7 +65,7 @@ export const PremiumDrop: React.FC<{ from: number; offset?: number; zoomOutAt?: 
 };
 
 // ------------------------------------------------------------------ the end: the sparkle flies in, turns, and becomes the Handly mark
-export const EndCard: React.FC<{ from: number; hit: number; end: number }> = ({ from, hit, end }) => {
+export const EndCard: React.FC<{ from: number; hit: number; end: number; bg?: string }> = ({ from, hit, end, bg = "#f3f5f8" }) => {
   const f = useCurrentFrame();
   const fly = r01(f, from, hit - 6, (u) => 1 - Math.pow(1 - u, 3));
   const sx = lerp(1500, 960, fly), sy = lerp(860, 540, fly) - Math.sin(fly * Math.PI) * 120;
@@ -79,7 +79,7 @@ export const EndCard: React.FC<{ from: number; hit: number; end: number }> = ({ 
   const groupW = LOGO + (LOGO * 0.3 + 390) * word;
   const lx = 960 - groupW / 2;
   return (
-    <AbsoluteFill style={{ background: "#f3f5f8" }}>
+    <AbsoluteFill style={{ background: bg }}>
       <AbsoluteFill style={{ background: "radial-gradient(ellipse 55% 50% at 50% 45%, #ffffff 0%, rgba(255,255,255,0) 70%)" }} />
       <Splash x={960} y={540} t={clamp01((f - hit) / 16)} R={260} color={GREEN} light={GREEN2} seed={29} drops={20} opacity={Math.max(0, 1 - (f - hit) / 22)} />
       <AbsoluteFill style={{ transform: `scale(${drift})` }}>
@@ -105,7 +105,7 @@ export const EndCard: React.FC<{ from: number; hit: number; end: number }> = ({ 
           <StoreBadge store="google" h={76} shine={clamp01((f - hit - 30) / 20)} />
         </div>
       </AbsoluteFill>
-      <AbsoluteFill style={{ background: "#f3f5f8", opacity: r01(f, end - 16, end) }} />
+      <AbsoluteFill style={{ background: bg, opacity: r01(f, end - 16, end) }} />
     </AbsoluteFill>
   );
 };

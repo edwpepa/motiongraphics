@@ -18,10 +18,15 @@ END = TL["end"]
 N = int(END * SR)
 
 
-def load(path):
+TEMPO = TL.get("tempo", 1.0)
+
+
+def load(path, tempo=1.0):
+    """decode to stereo float; tempo > 1 speeds the read up with the pitch (and formants) kept"""
+    af = ["-af", f"rubberband=tempo={tempo}:formant=preserved:pitchq=quality:window=standard:channels=together"] if tempo != 1.0 else []
     with tempfile.TemporaryDirectory() as td:
         wav = os.path.join(td, "x.wav")
-        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", path, "-ac", "2", "-ar", str(SR), wav], check=True)
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", path, *af, "-ac", "2", "-ar", str(SR), wav], check=True)
         _, x = wavfile.read(wav)
     return x.astype(np.float64).T / 32768
 
@@ -44,25 +49,32 @@ def at_of(spec):
 
 
 def main():
-    vo_src = load(os.path.join(ROOT, "public/audio/launch-vo.mp3"))
+    vo_src = load(os.path.join(ROOT, "public/audio/launch-vo.mp3"), TEMPO)
+    cut = lambda x, a, b: x[:, int(a / TEMPO * SR):int(b / TEMPO * SR)]
 
     # ---- voice
     vo = np.zeros((2, N))
     if "intro" in TL:
-        intro = load(os.path.join(ROOT, "public/audio", TL["intro"]["file"]))
-        place_clip(vo, fade(intro, 0.005, 0.08), TL["intro"]["at"])
+        intro = load(os.path.join(ROOT, "public/audio", TL["intro"]["file"]), TEMPO)
+        if "chunks" in TL["intro"]:
+            for c in TL["intro"]["chunks"]:
+                place_clip(vo, fade(cut(intro, *c["vo"]), 0.01, 0.06), c["at"])
+        else:
+            place_clip(vo, fade(intro, 0.005, 0.08), TL["intro"]["at"])
     for c in TL["pre"]:
-        a, b = c["vo"]
-        place_clip(vo, fade(vo_src[:, int(a * SR):int(b * SR)], 0.01, 0.06), c["at"])
+        place_clip(vo, fade(cut(vo_src, *c["vo"]), 0.01, 0.06), c["at"])
     for key, r in TL["post"].items():
         p = WORDS[key]
         a, b = p["start"] - 0.1, p["end"] + 0.18
         place_clip(vo, fade(vo_src[:, int(a * SR):int(b * SR)], 0.01, 0.08), D + r - 0.1)
 
     # ---- song edit
-    ID = os.environ.get("SCORE") == "id"
+    SC = os.environ.get("SCORE", "")
+    ID = SC in ("id", "ref")
     CUE_FILE = os.path.join(ROOT, "tools/launch", os.environ.get("CUES", "cues.json"))
-    if ID:
+    if SC == "ref":
+        import score_ref as score
+    elif ID:
         import score_id as score
     else:
         import score
@@ -70,7 +82,8 @@ def main():
     mus = score.build(M0)
     # tail of the song fades out by END
     t = np.arange(N) / SR
-    mus *= np.interp(t, [END - 2.5, END - 0.05], [1, 0])[None, :]
+    tail = 1.4 if os.environ.get("SCORE") == "ref" else 2.5  # the last hit gets to ring
+    mus *= np.interp(t, [END - tail, END - 0.05], [1, 0])[None, :]
     # the muffled bed melts away before the bell; quieter under the tasker sign-up;
     # silent through the "we can't" section (only the charging), back on the final drop
     pf = np.clip((t - M0["preFadeFrom"]) / (M0["preFadeTo"] - M0["preFadeFrom"]), 0, 1)
@@ -78,7 +91,8 @@ def main():
     if not ID:
         env *= np.interp(t, [M0["contFrom"], M0["contFrom"] + 0.6, M0["contTo"] - 0.4, M0["contTo"]], [1, 0.8, 0.8, 1])
     # the build cuts dead at the break; silence for "Handly.", then the final drop
-    env *= np.interp(t, [M0["brk"] - 0.02, M0["brk"], M0["final"] - 0.03, M0["final"]], [1, 0, 0, 1])
+    if SC != "ref":  # the reference-style score writes its own break (a note and a breath in it)
+        env *= np.interp(t, [M0["brk"] - 0.02, M0["brk"], M0["final"] - 0.03, M0["final"]], [1, 0, 0, 1])
     mus *= env[None, :]
     # from the end of the chorus to the final drop the song plays as if from inside a box:
     # band-limited, a small boxy room, and lower — then it bursts back open on the final chorus

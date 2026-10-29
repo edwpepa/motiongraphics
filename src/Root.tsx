@@ -5,7 +5,9 @@ import * as EX from "./explainer/timing";
 import { HandlyLaunch } from "./launch/HandlyLaunch";
 import { HandlyLaunchToon } from "./launch/HandlyLaunchToon";
 import { HandlyLaunchTV } from "./launch/HandlyLaunchTV";
+import { HandlyLaunch3D } from "./launch/HandlyLaunch3D";
 import { GlassTest } from "./launch/tv/GlassTest";
+import { Test3D } from "./launch/tv3d/Test3D";
 import { StyleFrame } from "./launch/tv/StyleFrame";
 import { EdwEnterprise } from "./edw/EdwEnterprise";
 import { EdwLogoFilm } from "./edw/EdwLogoFilm";
@@ -56,12 +58,14 @@ export const Root: React.FC = () => {
       <Composition id="EdwHiring" component={HireFilm} durationInFrames={Math.round(49.5 * 30)} fps={30} width={1920} height={1080} defaultProps={{ audio: false }} />
       <Composition id="EdwReelAI" component={ReelFilm} durationInFrames={Math.round(74.5 * 30)} fps={30} width={1080} height={1920} defaultProps={{ audio: false }} />
       <Composition id="TVStyleFrame" component={StyleFrame} durationInFrames={240} fps={30} width={1920} height={1080} />
+      <Composition id="Test3D" component={Test3D} durationInFrames={240} fps={30} width={1920} height={1080} />
       <Composition id="GlassTest" component={GlassTest} durationInFrames={240} fps={30} width={1920} height={1080} />
       <Composition id="ToonTest" component={ToonTest} durationInFrames={60} fps={30} width={1920} height={1080} />
       <Composition id="EdwLogoFilm" component={EdwLogoFilm} durationInFrames={70 * 30} fps={30} width={1920} height={1080} />
       <Composition id="HandlyLaunch" component={HandlyLaunch} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
       <Composition id="HandlyLaunchToon" component={HandlyLaunchToon} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
       <Composition id="HandlyLaunchTV" component={HandlyLaunchTV} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
+      <Composition id="HandlyLaunch3D" component={HandlyLaunch3D} durationInFrames={LA.TOTAL} fps={LA.FPS} width={LA.WIDTH} height={LA.HEIGHT} />
     </>
   );
 };

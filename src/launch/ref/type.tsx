@@ -87,14 +87,15 @@ export const RefLine: React.FC<{
   const gap = size * 0.27;
   // the line re-centres on what's already there: each new word opens its slot in a few frames, the rest slide over
   const vis = words.map((w) => (f < w.at ? 0 : w.node ? outExpo(clamp01((f - w.at) / 9)) : w.at <= t0 + 1 && enter !== "pop" ? 1 : outExpo(clamp01((f - w.at + 1) / 6))));
-  const cur = words.map((_w, i) => widths[i] * vis[i]);
-  const gaps = words.map((_w, i) => (i === 0 ? 0 : gap * vis[i]));
-  const total = cur.reduce((s, v, i) => s + v + gaps[i], 0);
+  // a word always sits a full gap after the previous one; only the centring eases (inline objects really open up)
+  const cur = words.map((w, i) => (w.node ? widths[i] * vis[i] : f >= w.at ? widths[i] : 0));
+  const gaps = words.map((w, i) => (i === 0 || f < w.at ? 0 : w.node ? gap * vis[i] : gap));
+  const total = words.reduce((s, w, i) => s + (w.node ? cur[i] + gaps[i] : (widths[i] + (i === 0 ? 0 : gap)) * vis[i]), 0);
   const ink = dark ? RINK_D : RINK;
   const [ga, gb] = dark ? ACC_D : ACC;
   let cx = 0;
   return (
-    <div style={{ position: "absolute", left: x - total / 2, top: y - size * 0.62, width: total, height: size * 1.24, transform: `scale(${scale})`, transformOrigin: "50% 50%", opacity: no * eo, filter: blur > 0.25 ? `blur(${blur}px)` : undefined, pointerEvents: "none" }}>
+    <div style={{ position: "absolute", left: x - total / 2, top: y - size * 0.62, width: total, height: size * 1.24, transform: `scale(${scale})`, transformOrigin: `${total / 2}px 50%`, opacity: no * eo, filter: blur > 0.25 ? `blur(${blur}px)` : undefined, pointerEvents: "none" }}>
       {words.map((w, i) => {
         const left = cx + gaps[i];
         cx = left + cur[i];

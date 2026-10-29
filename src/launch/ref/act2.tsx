@@ -293,7 +293,7 @@ export const Done: React.FC = () => {
         exitLen={22}
         drift={0.015}
       />
-      <div style={{ position: "absolute", left: 960 - 85, top: 640 - 85 - 40 * io3(fade), transform: `scale(${1 + 0.25 * io3(fade)})`, opacity: 1 - io3(clamp01((f - (B_END - 30)) / 26)) }}>
+      <div style={{ position: "absolute", left: 960 - 85, top: 640 - 85 - 40 * io3(fade), transform: `scale(${1 + 0.25 * io3(fade)})`, opacity: 1 - io3(clamp01((io3(clamp01((f - (pEnd("fara2") + 4)) / (B_END - pEnd("fara2") + 2))) - 0.8) / 0.17)), filter: `blur(${8 * clamp01((io3(clamp01((f - (pEnd("fara2") + 4)) / (B_END - pEnd("fara2") + 2))) - 0.8) / 0.17)}px)` }}>
         <CheckCircle size={170} t={t} glow={io3(fade)} />
       </div>
       <Shards at={GATA} x={960} y={600} n={44} />
@@ -307,11 +307,13 @@ export const Bridge: React.FC = () => {
   const from = pEnd("fara2") + 4;
   const t = io3(clamp01((f - from) / (B_END - from + 6)));
   // a soft iris: the dark comes in from the edges and leaves the check glowing in the middle, then takes it too
-  const r0 = lerp(130, -10, t), r1 = r0 + lerp(60, 30, t);
+  const r0 = lerp(130, -40, t), r1 = r0 + lerp(60, 30, t);
   const mask = `radial-gradient(circle at 50% 55%, rgba(0,0,0,0) ${r0}%, rgba(0,0,0,1) ${r1}%)`;
   return (
     <AbsoluteFill>
       <RefBg />
+      {/* what's left of the light turns mint as the spotlight closes on the check */}
+      {t > 0 && <AbsoluteFill style={{ background: `radial-gradient(circle at 50% 55%, rgba(0,191,99,${0.22 * t}) 0%, rgba(0,191,99,${0.1 * t}) 18%, rgba(0,191,99,0) 40%)` }} />}
       {t > 0 && (
         <AbsoluteFill style={{ WebkitMaskImage: mask, maskImage: mask }}>
           <DarkBg glow={0.6 + 0.4 * t} />

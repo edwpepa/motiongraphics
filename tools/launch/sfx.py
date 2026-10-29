@@ -131,15 +131,13 @@ def pop():
 
 
 def bop():
-    """the soft Apple-style 'bop' under each word as it appears: a round sine blip with a tiny drop in pitch"""
-    t = T(0.14)
-    f0 = 660 * 2 ** (rng.choice([0, 2, 3, 5, 7]) / 12)
-    fq = f0 * (1 + 0.35 * np.exp(-t / 0.012))
-    ph = 2 * np.pi * np.cumsum(fq) / SR
-    y = np.sin(ph) * np.exp(-t / 0.034) + 0.18 * np.sin(2 * ph) * np.exp(-t / 0.014)
-    y *= np.clip(t / 0.0015, 0, 1)
-    click = C.filt(noise(0.14), "bandpass", (1800, 5200), 2)[: len(t)] * np.exp(-t / 0.0025) * 0.12
-    return st(norm(y + click) * 0.7, rng.uniform(-0.25, 0.25))
+    """the soft breath under each word as it appears: a whisper of air, rounded at both ends, a touch of body"""
+    t = T(0.18)
+    env = np.sin(np.pi * np.clip(t / 0.016, 0, 0.5)) * np.exp(-np.maximum(0, t - 0.008) / 0.05)
+    lo, hi = rng.choice([(2600, 7000), (3000, 8000), (3400, 9000)])
+    air = C.filt(noise(0.18), "bandpass", (lo, hi), 2)[: len(t)] * env
+    body = C.filt(noise(0.18), "bandpass", (700, 1700), 2)[: len(t)] * env * 0.22
+    return st(norm(air + body) * 0.5, rng.uniform(-0.3, 0.3))
 
 
 def morph():
@@ -552,5 +550,5 @@ GAIN = {
     "nope": 0.45, "cut": 0.75, "search": 0.4, "ring": 0.35, "tick": 0.35, "fall": 0.35, "bell": 0.42, "shimmer": 0.5,
     "drop": 1.0, "slam": 0.55, "zoom": 0.5, "tap": 0.45, "success": 0.5, "notif": 0.45, "select": 0.45, "expand": 0.45,
     "bubble": 0.4, "sent": 0.4, "lock": 0.5, "dissolve": 0.55, "step": 0.4, "release": 0.5, "morphhit": 0.55,
-    "spin": 0.5, "sparkle": 0.4, "bop": 0.3, "coin": 0.3, "cash": 0.45, "click": 0.4, "zip": 0.4, "end": 1.0, "charge": 0.6, "calm": 0.6, "heart": 0.45, "roll": 0.8, "glide": 0.55, "ignite": 0.7, "flatline": 0.28, "beep": 0.3,
+    "spin": 0.5, "sparkle": 0.4, "bop": 0.13, "coin": 0.3, "cash": 0.45, "click": 0.4, "zip": 0.4, "end": 1.0, "charge": 0.6, "calm": 0.6, "heart": 0.45, "roll": 0.8, "glide": 0.55, "ignite": 0.7, "flatline": 0.28, "beep": 0.3,
 }

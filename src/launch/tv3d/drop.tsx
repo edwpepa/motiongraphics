@@ -66,11 +66,13 @@ export const PremiumDrop: React.FC<{ from: number; offset?: number; zoomOutAt?: 
   );
 };
 
+const io = (u: number) => (u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2);
 // ------------------------------------------------------------------ the end: the heart flies in, lands, and becomes the Handly mark; handly.ro opens beside it
-export const EndCard: React.FC<{ from: number; hit: number; end: number; bg?: string }> = ({ from, hit, end, bg = "#f3f5f8" }) => {
+export const EndCard: React.FC<{ from: number; hit: number; end: number; bg?: string; heartFrom?: [number, number, number] }> = ({ from, hit, end, bg = "#f3f5f8", heartFrom }) => {
   const f = useCurrentFrame();
   const fly = r01(f, from, hit - 6, (u) => 1 - Math.pow(1 - u, 3));
-  const sx = lerp(1500, 960, fly), sy = lerp(860, 540, fly) - Math.sin(fly * Math.PI) * 120;
+  const [hx, hy, hs] = heartFrom ?? [1500, 860, 48];
+  const sx = lerp(hx, 960, fly), sy = lerp(hy, 540, fly) - (heartFrom ? 0 : Math.sin(fly * Math.PI) * 120);
   const morph = r01(f, hit - 6, hit + 6, (u) => u);
   const land = spring(clamp01((f - hit) / 22));
   const word = r01(f, hit + 4, hit + 24, (u) => 1 - Math.pow(1 - u, 4));
@@ -87,8 +89,8 @@ export const EndCard: React.FC<{ from: number; hit: number; end: number; bg?: st
       <Splash x={960} y={540} t={clamp01((f - hit) / 16)} R={260} color={GREEN} light={GREEN2} seed={29} drops={20} opacity={Math.max(0, 1 - (f - hit) / 22)} />
       <AbsoluteFill style={{ transform: `scale(${drift})` }}>
         {/* the heart on its way in */}
-        {morph < 1 && <Heart x={sx} y={sy} size={lerp(48, 80, fly) * (1 - 0.3 * morph)} rot={Math.sin(fly * Math.PI * 2) * 12} opacity={1 - morph} />}
-        {f < hit &&
+        {morph < 1 && <Heart x={sx} y={sy} size={lerp(hs, 70, io(fly)) * (1 - 0.3 * morph)} rot={heartFrom ? 0 : Math.sin(fly * Math.PI * 2) * 12} opacity={1 - morph} pulse={0.04 * Math.sin((f - from) / 5)} />}
+        {f < hit && !heartFrom &&
           [0.06, 0.12, 0.18].map((d, i) => {
             const u = Math.max(0, fly - d);
             return <Heart key={i} x={lerp(1500, 960, u)} y={lerp(860, 540, u) - Math.sin(u * Math.PI) * 120} size={12 - i * 3} opacity={0.45 - i * 0.12} />;

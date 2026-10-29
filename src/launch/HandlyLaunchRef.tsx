@@ -67,7 +67,7 @@ export const HandlyLaunchRef: React.FC<{ audio?: boolean }> = ({ audio = true })
       {f >= F1_START && f < END_FLY && <RefBg />}
       <Win from={F1_START} to={CTA + 4}><F1 /></Win>
       <Win still from={CTA - 2} to={END_FLY + 2}><Cta /></Win>
-      <Win still from={END_FLY} to={TOTAL}><EndCard from={END_FLY} hit={END_HIT} end={TOTAL} bg={BG} /></Win>
+      <Win still from={END_FLY} to={TOTAL}><EndCard from={END_FLY} hit={END_HIT} end={TOTAL} bg={BG} heartFrom={[960, 540, 170]} /></Win>
       {audio && <Audio src={staticFile("audio/launch-mix-ref.mp3")} />}
     </AbsoluteFill>
   );

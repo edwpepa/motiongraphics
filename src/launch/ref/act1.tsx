@@ -115,16 +115,20 @@ const CONTACTS = [
 export const R6: React.FC = () => {
   const f = useCurrentFrame();
   const in0 = R5_END - 6;
-  const e = outExpo(clamp01((f - in0) / 26));
+  // a slow, eased arrival: it floats up a little, straightens, sharpens and fades in — no jump
+  const a = clamp01((f - in0) / 36);
+  const e = io3(a);
+  const fade = io3(clamp01((f - in0) / 16));
+  const sharp = io3(clamp01((f - in0) / 22));
   const q = "meșter de încredere";
   const t0 = V("lumea", 4), t1 = V("lumea", 7) + 10;
   const typed = Math.floor(q.length * clamp01((f - t0) / (t1 - t0)));
   const gone = (i: number) => clamp01((f - (t0 + 6 + i * 5)) / 6);
   const empty = clamp01((f - (V("lumea", 10) - 4)) / 14);
-  const push = clamp01((f - (R6_END - 10)) / 10);
+  const push = io3(clamp01((f - (R6_END - 14)) / 14));
   return (
     <AbsoluteFill style={{ perspective: 1800 }}>
-      <div style={{ position: "absolute", left: 960 - 450, top: 540 - 310 + (1 - e) * 560, width: 900, height: 620, transform: `rotateX(${(1 - e) * 38 + 6 + Math.sin(f / 40) * 1.5}deg) rotateZ(${(1 - e) * -10 - 2}deg) rotateY(${Math.sin(f / 50) * 3}deg) scale(${(1.14 + 0.04 * clamp01((f - in0) / 100)) * (1 + push * push * 0.9)})`, opacity: 1 - push * push, filter: push > 0 ? `blur(${push * push * 16}px)` : undefined }}>
+      <div style={{ position: "absolute", left: 960 - 450, top: 540 - 310 + (1 - e) * 150, width: 900, height: 620, transform: `rotateX(${(1 - e) * 16 + 6 + Math.sin(f / 40) * 1.5}deg) rotateZ(${(1 - e) * -3 - 2}deg) rotateY(${Math.sin(f / 50) * 3}deg) scale(${(1.08 + 0.06 * e + 0.04 * clamp01((f - in0) / 100)) * (1 + push * 0.45)})`, opacity: fade * (1 - push), filter: (1 - sharp) * 12 + push * 14 > 0.2 ? `blur(${(1 - sharp) * 12 + push * 14}px)` : undefined }}>
         <Card w={900} h={620} r={30} pad={0} style={{ overflow: "hidden" }}>
           <div style={{ padding: "28px 28px 0", fontSize: 46, fontWeight: 700, letterSpacing: "-0.02em" }}>Contacte</div>
           <div style={{ margin: "16px 28px 8px", height: 60, borderRadius: 16, background: "#eeeef0", display: "flex", alignItems: "center", gap: 12, padding: "0 18px", fontSize: 27, fontWeight: 400 }}>

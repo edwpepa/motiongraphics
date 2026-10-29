@@ -222,13 +222,14 @@ export const Cta: React.FC = () => {
   const BX = 960 + 330, BY = 540;
   const zoom = 1.22 + 0.3 * io3(clamp01((f - CTA) / (click - CTA + 10)));
   const rest = 1 - clamp01((f - (click + 6)) / 10);
-  const m = clamp01((f - (STAR - 4)) / 10); // button → star
-  const fly = clamp01((f - (STAR + 8)) / (END_FLY - STAR - 8));
-  // star path: from the button to the middle (big), then away to where the end card picks it up
-  const big = outExpo(m);
-  const sx = lerp(lerp(BX, 960, big), 1500, io3(fly)), sy = lerp(lerp(BY, 540, big), 860, io3(fly));
-  const ssize = lerp(lerp(40, 230, big), 60, io3(fly));
-  // the camera lets go of the zoom as the star takes the stage
+  const m = clamp01((f - (STAR - 4)) / 12); // button → heart
+  // the heart grows out of the button into the middle, beats twice (lub-dub), then breathes until the end card takes it
+  const big = io3(m);
+  const sx = lerp(BX, 960, big), sy = lerp(BY, 540, big);
+  const beat = (at: number) => (f >= at && f < at + 9 ? Math.sin((Math.PI * (f - at)) / 9) : 0);
+  const pulse = beat(STAR + 6) + 0.7 * beat(STAR + 13) + 0.04 * Math.sin((f - STAR) / 5);
+  const ssize = lerp(30, 170, big);
+  // the camera lets go of the zoom as the heart takes the stage
   const cam = lerp(zoom, 1, io3(m));
   return (
     <AbsoluteFill>
@@ -247,8 +248,16 @@ export const Cta: React.FC = () => {
         </div>
         <Cursor keys={[{ f: CTA + 8, x: 1500, y: 900 }, { f: click - 3, x: BX + 20, y: BY + 14 }, { f: click + 22, x: BX + 120, y: BY + 160 }]} clicks={[click]} hideAt={click + 12} />
       </AbsoluteFill>
-      {m > 0 && f < END_FLY + 2 && <Heart x={sx} y={sy} size={ssize * 0.8} rot={Math.sin(m * Math.PI) * 12 + Math.sin(fly * Math.PI * 2) * 10} opacity={clamp01(m * 3)} />}
-      {m > 0 && m < 1 && <AbsoluteFill style={{ background: `radial-gradient(circle at 50% 50%, rgba(0,191,99,${0.2 * Math.sin(Math.PI * m)}) 0%, rgba(0,191,99,0) 45%)` }} />}
+      {m > 0 && f < END_FLY + 2 && <Heart x={sx} y={sy} size={ssize} rot={Math.sin(m * Math.PI) * -10} opacity={clamp01(m * 3)} pulse={pulse} />}
+      {/* glints that twinkle round it on the beats */}
+      {m >= 1 &&
+        [0, 1, 2, 3].map((i) => {
+          const at = STAR + 6 + i * 4;
+          const t = clamp01((f - at) / 16);
+          if (t <= 0 || t >= 1) return null;
+          const a = -2.2 + i * 1.5;
+          return <Sparkle key={i} x={960 + Math.cos(a) * 250} y={540 + Math.sin(a) * 200} size={18 + 8 * (i % 2)} t={Math.sin(Math.PI * t)} rot={t * 90} opacity={Math.sin(Math.PI * t)} />;
+        })}
     </AbsoluteFill>
   );
 };

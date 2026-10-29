@@ -243,15 +243,42 @@ export const IOSBanner: React.FC<{ app: "messages" | "phone"; title: string; bod
   </div>
 );
 
-// ------------------------------------------------------------------ the heart (the mark's shape): what the button turns into at the end
-export const Heart: React.FC<{ x: number; y: number; size: number; rot?: number; opacity?: number }> = ({ x, y, size, rot = 0, opacity = 1 }) => (
-  <svg width={size * 2} height={size * 2} viewBox="-1.1 -1.1 2.2 2.2" style={{ position: "absolute", left: x - size, top: y - size, transform: `rotate(${rot}deg)`, overflow: "visible", opacity, filter: `drop-shadow(0 ${size * 0.08}px ${size * 0.2}px rgba(0,0,0,0.12))` }}>
-    <defs>
-      <linearGradient id="heartG" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stopColor="#3fe39a" />
-        <stop offset="1" stopColor="#00a856" />
-      </linearGradient>
-    </defs>
-    <path d="M0 0.9 C-0.15 0.75 -1 0.2 -1 -0.35 C-1 -0.8 -0.55 -1 -0.3 -0.95 C-0.12 -0.92 0 -0.75 0 -0.62 C0 -0.75 0.12 -0.92 0.3 -0.95 C0.55 -1 1 -0.8 1 -0.35 C1 0.2 0.15 0.75 0 0.9 Z" fill="url(#heartG)" />
-  </svg>
-);
+// ------------------------------------------------------------------ the heart (the mark's shape): glossy, with depth; what the button turns into at the end
+const HEART = "M0 0.92 C-0.35 0.62 -1.02 0.18 -1 -0.36 C-0.98 -0.78 -0.62 -1 -0.3 -0.98 C-0.12 -0.97 0 -0.86 0 -0.62 C0 -0.86 0.12 -0.97 0.3 -0.98 C0.62 -1 0.98 -0.78 1 -0.36 C1.02 0.18 0.35 0.62 0 0.92 Z";
+export const Heart: React.FC<{ x: number; y: number; size: number; rot?: number; opacity?: number; pulse?: number }> = ({ x, y, size, rot = 0, opacity = 1, pulse = 0 }) => {
+  const id = `h${Math.round(size * 10) % 997}`;
+  const s = size * (1 + 0.12 * pulse);
+  return (
+    <svg width={s * 2.4} height={s * 2.4} viewBox="-1.2 -1.2 2.4 2.4" style={{ position: "absolute", left: x - s * 1.2, top: y - s * 1.2, transform: `rotate(${rot}deg)`, overflow: "visible", opacity, filter: `drop-shadow(0 ${s * 0.12}px ${s * 0.22}px rgba(0,40,20,0.18)) drop-shadow(0 ${s * 0.03}px ${s * 0.05}px rgba(0,0,0,0.12))` }}>
+      <defs>
+        <radialGradient id={`${id}f`} cx="0.32" cy="0.26" r="0.85">
+          <stop offset="0" stopColor="#9ff6c9" />
+          <stop offset="0.32" stopColor="#2fdc89" />
+          <stop offset="0.72" stopColor="#00ad58" />
+          <stop offset="1" stopColor="#007c3f" />
+        </radialGradient>
+        <linearGradient id={`${id}s`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0.45" stopColor="rgba(0,50,25,0)" />
+          <stop offset="1" stopColor="rgba(0,50,25,0.35)" />
+        </linearGradient>
+        <radialGradient id={`${id}g`} cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="rgba(255,255,255,0.9)" />
+          <stop offset="1" stopColor="rgba(255,255,255,0)" />
+        </radialGradient>
+        <clipPath id={`${id}c`}>
+          <path d={HEART} />
+        </clipPath>
+      </defs>
+      <path d={HEART} fill={`url(#${id}f)`} />
+      <g clipPath={`url(#${id}c)`}>
+        <rect x={-1.2} y={-1.2} width={2.4} height={2.4} fill={`url(#${id}s)`} />
+        {/* the gloss on the left lobe, a small glint on the right one */}
+        <ellipse cx={-0.46} cy={-0.56} rx={0.34} ry={0.17} transform="rotate(-38 -0.46 -0.56)" fill={`url(#${id}g)`} opacity={0.75} />
+        <ellipse cx={0.5} cy={-0.66} rx={0.13} ry={0.07} transform="rotate(30 0.5 -0.66)" fill={`url(#${id}g)`} opacity={0.55} />
+        {/* a rim of light along the bottom edge */}
+        <path d={HEART} fill="none" stroke="rgba(190,255,220,0.35)" strokeWidth={0.05} transform="translate(0 -0.03)" />
+      </g>
+      <path d={HEART} fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth={0.018} />
+    </svg>
+  );
+};

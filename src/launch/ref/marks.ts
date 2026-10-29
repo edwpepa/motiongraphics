@@ -29,7 +29,7 @@ export const beatPulse = (f: number, len = 7) => {
 };
 
 export const R1_END = onBeat(I("priza", 0) - 4);
-export const R2_END = onBeat(I("timpul", 3) - 6);
+export const R2_END = onBeat(I("timpul", 0) - 6);
 export const R3_END = onBeat(I("amani", 0) - 8);
 export const R4_END = onBeat(I("speri", 0) - 4);
 export const R5_END = onBeat(pStart("lumea") - 6);

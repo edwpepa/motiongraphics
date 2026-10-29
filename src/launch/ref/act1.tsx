@@ -4,30 +4,15 @@ import { clamp01, lerp, seeded } from "../../explainer/lib/anim";
 import { Sym } from "../tv/ios";
 import { GREEN, io3, outExpo, Sparkle, spring } from "../tv3d/kit3d";
 import { I, R1_END, R2_END, R3_END, R4_END, R5_END, R6_END, R7_END, R8_END, V, D0, pEnd } from "./marks";
-import { RefLine } from "./type";
+import { LINES } from "./lines";
+import { KText } from "./type";
 import { Card, cardShadow, Cursor, IOSBanner, PillBtn, UI } from "./ui";
 
 const MUTE = "#7c8481";
 const RED = "#ff453a";
 
 // ------------------------------------------------------------------ 1 · "Probleme prin casă [⌂] … Bătăi de cap?"
-export const R1: React.FC = () => {
-  const big = I("probleme", 6);
-  return (
-    <>
-      <RefLine
-        size={84}
-        words={[
-          { t: "Probleme", at: I("probleme", 0), acc: true },
-          { t: "prin", at: I("probleme", 1) },
-          { t: "casă", at: I("probleme", 2) },
-        ]}
-        out={big - 8}
-      />
-      <RefLine size={128} words={[{ t: "Bătăi", at: big, acc: true }, { t: "de", at: I("probleme", 7) }, { t: "cap?", at: I("probleme", 8) }]} out={R1_END - 6} exit="blur" drift={-0.05} />
-    </>
-  );
-};
+export const R1: React.FC = () => <KText {...LINES.probleme()} out={R1_END - 6} />;
 
 // ------------------------------------------------------------------ 2 · the three photos, as cards in a carousel
 const PH = [
@@ -76,21 +61,7 @@ export const R2: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ 3 · "Nici timpul. Nici sculele. Nici nervii."
-export const R3: React.FC = () => (
-  <RefLine
-    size={78}
-    words={[
-      { t: "Nici", at: I("timpul", 3) },
-      { t: "timpul.", at: I("timpul", 4), acc: true, accOff: I("sculele", 1) },
-      { t: "Nici", at: I("sculele", 0) },
-      { t: "sculele.", at: I("sculele", 1), acc: true, accOff: I("nervii", 1) },
-      { t: "Nici", at: I("nervii", 0) },
-      { t: "nervii.", at: I("nervii", 1), acc: true },
-    ]}
-    out={R3_END - 8}
-    drift={0.02}
-  />
-);
+export const R3: React.FC = () => <KText {...LINES.timpul()} out={R3_END - 8} />;
 
 // ------------------------------------------------------------------ 4 · "Și tot amâni…" — the reminder row and its black button
 export const R4: React.FC = () => {
@@ -131,22 +102,7 @@ export const R4: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ 5 · "Și speri că, cumva, / se rezolvă singur. ✦"
-export const R5: React.FC = () => (
-  <>
-    <RefLine size={84} words={[{ t: "Și", at: I("speri", 0) }, { t: "speri", at: I("speri", 1), acc: true }, { t: "că,", at: I("speri", 2) }, { t: "cumva,", at: I("cumva", 0) }]} out={I("singur", 0) - 8} />
-    <RefLine
-      size={92}
-      words={[
-        { t: "se", at: I("singur", 0) },
-        { t: "rezolvă", at: I("singur", 1) },
-        { t: "singur.", at: I("singur", 2), acc: true },
-        { at: I("singur", 2) + 6, w: 60, node: (_p, k) => <div style={{ position: "relative", width: 60, height: 60, transform: "translateY(-22px)" }}><Sparkle x={30} y={30} size={30} t={clamp01(k / 10)} rot={k * 4} /></div> },
-      ]}
-      out={R5_END - 6}
-      exit="blur"
-    />
-  </>
-);
+export const R5: React.FC = () => <KText {...LINES.speri()} out={R5_END - 6} />;
 
 // ------------------------------------------------------------------ 6 · nobody to call: the contacts window finds no one
 const CONTACTS = [
@@ -204,21 +160,7 @@ export const R6: React.FC = () => {
 };
 
 // ------------------------------------------------------------------ 7 · "E obositor. / Cauți. Suni. Negociezi."
-export const R7: React.FC = () => (
-  <>
-    <RefLine size={96} words={[{ t: "E", at: V("obositor", 1) }, { t: "obositor.", at: V("obositor", 2), acc: true }]} out={V("obositor", 4) - 8} />
-    <RefLine
-      size={80}
-      words={[
-        { t: "Cauți.", at: V("obositor", 4), acc: true, accOff: V("obositor", 6) },
-        { t: "Suni.", at: V("obositor", 6), acc: true, accOff: V("obositor", 8) },
-        { t: "Negociezi.", at: V("obositor", 8), acc: true },
-      ]}
-      out={R7_END - 8}
-      drift={0.025}
-    />
-  </>
-);
+export const R7: React.FC = () => <KText {...LINES.obositor()} out={R7_END - 8} />;
 
 // ------------------------------------------------------------------ 8 · the people who let you down float around: "te păcălește."
 const BAD = [
@@ -247,7 +189,7 @@ export const R8: React.FC = () => {
           </div>
         );
       })}
-      <RefLine size={104} words={[{ t: "te", at: V("rogi", 10) }, { t: "păcălește.", at: V("rogi", 11), acc: true }]} out={go} />
+      <KText {...LINES.rogi()} out={go} />
     </AbsoluteFill>
   );
 };
@@ -259,19 +201,7 @@ export const R9: React.FC = () => {
   return (
     <AbsoluteFill>
       <AbsoluteFill style={{ background: `radial-gradient(circle at 50% 50%, rgba(0,191,99,${0.22 * ch * ch}) 0%, rgba(0,191,99,0) ${30 + 40 * ch}%)` }} />
-      <RefLine
-        size={88}
-        words={[
-          { t: "Aici", at: V("aici", 0) },
-          { t: "intervine", at: V("aici", 1) },
-          { at: V("aici", 2) - 3, w: 96, node: (p, k) => <div style={{ transform: `scale(${0.3 + 0.7 * spring(clamp01(k / 18))}) rotate(${(1 - p) * -30}deg)` }}><Img src={staticFile("images/logo.webp")} style={{ width: 92, height: 92, display: "block" }} /></div> },
-          { t: "Handly.", at: V("aici", 2), acc: true },
-        ]}
-        out={pEnd("aici") + 2}
-        exit="push"
-        exitLen={D0 - pEnd("aici") - 2}
-        drift={0.03}
-      />
+      <KText {...LINES.aici()} out={pEnd("aici") + 4} />
       {Array.from({ length: 10 }, (_, i) => {
         const a = seeded(i, 81) * Math.PI * 2;
         const r = lerp(700, 40, ch * ch);

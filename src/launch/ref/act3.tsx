@@ -8,47 +8,15 @@ import { Mark } from "../tv3d/drop";
 import { io3, outExpo, Sparkle, spring } from "../tv3d/kit3d";
 import { leanBack } from "./act2";
 import { beatPulse, BREAK_F, BUILD, C1_END, C2_END, C3_END, CTA, END_FLY, F1_START, FINAL_F, STAR, V, bt2 } from "./marks";
-import { RefLine } from "./type";
+import { LINES } from "./lines";
+import { KText } from "./type";
 import { Card, Cursor, Heart, IOSC, IOSGroup, IOSIcon, PillBtn, UI } from "./ui";
 
 // ------------------------------------------------------------------ 1 · "Dar [mark] Handly nu e doar / pentru cei care au nevoie de ajutor." — the intro's type, on the night
-export const C1: React.FC = () => (
-  <>
-    <RefLine
-      dark
-      size={84}
-      words={[
-        { t: "Dar", at: V("dar", 0) },
-        { at: V("dar", 1) - 2, w: 88, node: (p, k) => <div style={{ transform: `scale(${0.3 + 0.7 * spring(clamp01(k / 18))}) rotate(${(1 - p) * -24}deg)` }}><Img src={staticFile("images/logo.webp")} style={{ width: 84, height: 84, display: "block" }} /></div> },
-        { t: "Handly", at: V("dar", 1), acc: true },
-        { t: "nu", at: V("dar", 2) },
-        { t: "e", at: V("dar", 3) },
-        { t: "doar", at: V("dar", 4) },
-      ]}
-      out={V("dar", 5) - 8}
-    />
-    <RefLine
-      dark
-      size={84}
-      words={[
-        { t: "pentru", at: V("dar", 5) },
-        { t: "cei", at: V("dar", 6) },
-        { t: "care", at: V("dar", 7) },
-        { t: "au", at: V("dar", 8) },
-        { t: "nevoie", at: V("dar", 9) },
-        { t: "de", at: V("dar", 10) },
-        { t: "ajutor.", at: V("dar", 11), acc: true },
-      ]}
-      out={C1_END - 6}
-      exit="blur"
-    />
-  </>
-);
+export const C1: React.FC = () => <KText {...LINES.dar()} out={C1_END - 6} />;
 
 // ------------------------------------------------------------------ 2 · "Dacă știi să faci ceva"
-export const C2: React.FC = () => (
-  <RefLine dark size={92} words={[{ t: "Dacă", at: V("daca", 0) }, { t: "știi", at: V("daca", 1) }, { t: "să", at: V("daca", 2) }, { t: "faci", at: V("daca", 3) }, { t: "ceva", at: V("daca", 4), acc: true }]} out={C2_END - 8} />
-);
+export const C2: React.FC = () => <KText {...LINES.daca()} out={C2_END - 8} />;
 
 // ------------------------------------------------------------------ 3 · the skills, as a Settings list: a switch turns on with every word
 const SK: [SymName, string, string, number][] = [
@@ -232,8 +200,8 @@ export const F1: React.FC = () => {
   const k0 = Math.floor((f - bt2(0)) / ((bt2(100) - bt2(0)) / 100));
   return (
     <AbsoluteFill>
-      <RefLine size={104} words={[{ t: "Ajutor", at: V("ajutor", 0), acc: true }, { t: "când", at: V("ajutor", 1) }, { t: "ai", at: V("ajutor", 2) }, { t: "nevoie.", at: V("ajutor", 3) }]} out={V("bani", 0) - 8} bump={bump} beat={0} drift={-0.03} />
-      <RefLine size={104} words={[{ t: "Bani", at: V("bani", 0), acc: true }, { t: "când", at: V("bani", 1) }, { t: "ai", at: V("bani", 2) }, { t: "timp.", at: V("bani", 3) }]} out={CTA - 6} bump={bump} beat={0} drift={0.03} />
+      <KText {...LINES.ajutor()} out={CTA - 6} />
+      <KText {...LINES.bani()} out={CTA - 6} />
       {/* a sparkle lights on every beat, somewhere around the line */}
       {Array.from({ length: 5 }, (_, j) => {
         const kk = k0 - j;

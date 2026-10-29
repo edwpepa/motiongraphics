@@ -8,7 +8,8 @@ import { Sym } from "../tv/ios";
 import { Device, Pose, mixPose } from "../tv/kit";
 import { GREEN, io3, outExpo, spring } from "../tv3d/kit3d";
 import { GATA, MAP_IN, PHONE_BACK, PHONE_IN, PICK, STOP_F, SWOOSH, V, pEnd } from "./marks";
-import { RefLine } from "./type";
+import { LINES } from "./lines";
+import { KText } from "./type";
 import { cardShadow, CheckCircle, Cursor, IOSC, IOSGroup, IOSIcon, PillBtn, ProgressBar, Shards, Stack, UI } from "./ui";
 
 const RED = "#ff3b30";
@@ -377,20 +378,8 @@ export const Done: React.FC = () => {
   const t = clamp01((f - GATA) / 22);
   return (
     <AbsoluteFill>
-      <RefLine size={92} y={400} words={[{ t: "Gata", at: GATA, acc: true }]} out={V("fara1", 0) - 6} exit="blur" drift={-0.02} />
-      <RefLine
-        size={80}
-        y={400}
-        words={[
-          { t: "Fără", at: V("fara1", 0) },
-          { t: "bătaie", at: V("fara1", 1), acc: true },
-          { t: "de", at: V("fara1", 2), acc: true },
-          { t: "cap.", at: V("fara1", 3), acc: true },
-          { t: "Fără", at: V("fara2", 0) },
-          { t: "stres.", at: V("fara2", 1), acc: true },
-        ]}
-        drift={0.015}
-      />
+      <KText {...LINES.gata()} out={V("fara1", 0) - 6} />
+      <KText {...LINES.fara()} />
       <div style={{ position: "absolute", left: 960 - 85, top: 640 - 85 }}>
         <CheckCircle size={170} t={t} />
       </div>

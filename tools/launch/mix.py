@@ -128,7 +128,7 @@ def main():
         elif k == "roll":
             clip, off = X.roll(D - cue["t"]), 0.0
         else:
-            if k not in cache or k in ("fall", "bubble", "coin", "drip", "key"):
+            if k not in cache or k in ("fall", "bubble", "coin", "drip", "key", "bop"):
                 r = X.KINDS[k]()
                 cache[k] = r if isinstance(r, tuple) else (r, 0.0)
             clip, off = cache[k]

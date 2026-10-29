@@ -128,3 +128,108 @@ export const RefLine: React.FC<{
 
 /** words with explicit times; `acc` marks accent word indexes */
 export const ws = (pairs: [string, number][], acc: number[] = []): RW[] => pairs.map(([t, at], i) => ({ t, at, acc: acc.includes(i) }));
+
+// ------------------------------------------------------------------ KText: the old Handly type, word by word on the voice.
+// Inter Bold; the layout is final from the first frame (lines wrap, nothing moves while the sentence builds); each
+// word's letters rise out of a soft blur one after another, tinted green, and settle to ink (accents stay green).
+const LIGHT_INK: [string, string] = ["#34463d", "#050a07"];
+const LIGHT_TINT: [string, string] = ["#1fd17c", "#00964d"];
+const DARK_INK: [string, string] = ["#ffffff", "#b4c4bb"];
+const DARK_TINT: [string, string] = ["#d9ffe9", "#5df0a5"];
+const DARK_ACC: [string, string] = ["#7af0b4", "#1fd17c"];
+const hex = (c: string) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+const mixHex = (a: string, b: string, t: number) => {
+  const A = hex(a), B = hex(b);
+  return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(",")})`;
+};
+const gradText = (a: [string, string], b: [string, string], t: number): React.CSSProperties => ({
+  backgroundImage: `linear-gradient(180deg, ${mixHex(a[0], b[0], t)} 10%, ${mixHex(a[1], b[1], t)} 90%)`,
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+});
+const outE = (t: number) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * clamp01(t)));
+const outC = (t: number) => 1 - Math.pow(1 - clamp01(t), 3);
+
+export type Line = { words: RW[]; size?: number; x?: number; y?: number; maxW?: number; align?: "center" | "left"; dark?: boolean; lineHeight?: number; breaks?: number[] };
+
+export const KText: React.FC<Line & { out?: number; dur?: number }> = ({ words, size = 80, x = 960, y = 540, maxW = 1400, align = "center", dark = false, lineHeight = 1.16, breaks, out, dur = 13 }) => {
+  const f = useCurrentFrame();
+  const gap = size * 0.27;
+  const widths = useMemo(() => words.map((w) => (w.node ? w.w ?? size : measure(w.t ?? "", size, 700, -0.03))), [words, size]);
+  // greedy line breaks, fixed for the whole life of the block
+  const lines = useMemo(() => {
+    const L: number[][] = [[]];
+    if (breaks) {
+      // breaks set by meaning: a new line after each listed word index
+      words.forEach((_w, i) => {
+        L[L.length - 1].push(i);
+        if (breaks.includes(i) && i < words.length - 1) L.push([]);
+      });
+      return L;
+    }
+    let cur = 0;
+    widths.forEach((wd, i) => {
+      const add = (L[L.length - 1].length ? gap : 0) + wd;
+      if (L[L.length - 1].length && cur + add > maxW) {
+        L.push([i]);
+        cur = wd;
+      } else {
+        L[L.length - 1].push(i);
+        cur += add;
+      }
+    });
+    return L;
+  }, [widths, gap, maxW, breaks, words]);
+  if (!words.length || f < words[0].at - 1) return null;
+  const t = out === undefined ? 0 : clamp01((f - out) / 7);
+  if (t >= 1) return null;
+  const k = 1 - outE(clamp01((f - words[0].at) / 14));
+  const LH = size * lineHeight;
+  const top = y - (lines.length * LH) / 2;
+  const ink = dark ? DARK_INK : LIGHT_INK;
+  const tint = dark ? DARK_TINT : LIGHT_TINT;
+  const acc = dark ? DARK_ACC : LIGHT_TINT;
+  const blurMax = size * 0.11;
+  return (
+    <div style={{ position: "absolute", left: 0, top: 0, width: 1920, height: 1080, pointerEvents: "none", transform: `scale(${(1 + 0.04 * k) * (1 - 0.08 * t * t * t)})`, transformOrigin: `${x}px ${y}px`, opacity: 1 - t * t * t, filter: `${t > 0 ? `blur(${18 * t}px) ` : ""}drop-shadow(0 8px 22px rgba(0,0,0,${dark ? 0.45 : 0.07}))` }}>
+      {lines.map((ln, li) => {
+        const lw = ln.reduce((s, i, j) => s + widths[i] + (j ? gap : 0), 0);
+        let cx = align === "center" ? x - lw / 2 : x;
+        return ln.map((i, j) => {
+          const w = words[i];
+          const left = cx + (j ? gap : 0);
+          cx = left + widths[i];
+          const local = f - w.at;
+          if (local < 0) return null;
+          const base: React.CSSProperties = { position: "absolute", left, top: top + li * LH, height: LH, display: "flex", alignItems: "center", whiteSpace: "pre" };
+          if (w.node) {
+            const p = outE(clamp01(local / (dur + 2)));
+            return (
+              <div key={i} style={{ ...base, width: widths[i], justifyContent: "center", opacity: clamp01(local / 5), transform: `translateY(${(1 - p) * 0.3 * size}px)`, filter: p < 0.99 ? `blur(${(1 - p) * blurMax}px)` : undefined }}>
+                {w.node(p, local)}
+              </div>
+            );
+          }
+          const letters = Array.from(w.t ?? "");
+          const blur = (1 - outC(clamp01(local / (dur * 0.9)))) * blurMax;
+          const fin = w.acc ? acc : ink;
+          return (
+            <div key={i} style={{ ...base, fontFamily: RFONT, fontWeight: 700, fontSize: size, letterSpacing: "-0.03em", lineHeight: 1, filter: blur > 0.2 ? `blur(${blur}px)` : undefined }}>
+              {letters.map((ch, c) => {
+                const l = local - c * 0.55;
+                const e = outE(clamp01(l / dur));
+                const wave = Math.sin(c * 0.85 + i * 3) * 0.12 + 0.36;
+                return (
+                  <span key={c} style={{ display: "inline-block", opacity: clamp01(l / 4), transform: `translateY(${(1 - e) * wave}em) rotate(${(1 - e) * Math.sin(c * 1.7 + i) * 5}deg)`, ...gradText(tint, fin, clamp01((l - 3) / 13)) }}>
+                    {ch}
+                  </span>
+                );
+              })}
+            </div>
+          );
+        });
+      })}
+    </div>
+  );
+};

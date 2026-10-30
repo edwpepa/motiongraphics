@@ -8,6 +8,7 @@ import { Sym } from "../tv/ios";
 import { Device, Pose, mixPose } from "../tv/kit";
 import { GREEN, io3, outExpo, spring } from "../tv3d/kit3d";
 import { GATA, MAP_IN, PHONE_BACK, PHONE_IN, PICK, STOP_F, SWOOSH, V, pEnd } from "./marks";
+import { HaloBack, HaloFront } from "./halo";
 import { LINES } from "./lines";
 import { KText } from "./type";
 import { cardShadow, CheckCircle, Cursor, IOSC, IOSGroup, IOSIcon, PillBtn, ProgressBar, Shards, Stack, UI } from "./ui";
@@ -94,6 +95,7 @@ export const AppShot: React.FC = () => {
   const paid = V("alegi", 14);
   return (
     <AbsoluteFill>
+      <HaloBack x={pose.x} y={pose.y} s={pose.s} t={f - (f < PHONE_BACK - 2 ? PHONE_IN : PHONE_BACK)} f={f} opacity={op} />
       <AbsoluteFill style={{ opacity: op }}>
         <Device pose={pose} dark={false}>
           <Stack
@@ -106,6 +108,7 @@ export const AppShot: React.FC = () => {
           />
         </Device>
       </AbsoluteFill>
+      <HaloFront x={pose.x} y={pose.y} s={pose.s} t={f - (f < PHONE_BACK - 2 ? PHONE_IN : PHONE_BACK)} f={f} opacity={op} />
 
       {/* posting: under a minute */}
       <Pop at={V("postezi", 4) - 2} from={[820, 520]} to={[1390, 500]} out={MAP_IN - 2}>

@@ -8,6 +8,7 @@ import { Mark } from "../tv3d/drop";
 import { io3, outExpo, Sparkle, spring } from "../tv3d/kit3d";
 import { leanBack } from "./act2";
 import { beatPulse, BREAK_F, BUILD, C1_END, C2_END, C3_END, CTA, END_FLY, F1_START, FINAL_F, STAR, V, bt2 } from "./marks";
+import { HaloBack, HaloFront } from "./halo";
 import { LINES } from "./lines";
 import { KText } from "./type";
 import { Card, Cursor, Heart, IOSC, IOSGroup, IOSIcon, PillBtn, UI } from "./ui";
@@ -99,6 +100,7 @@ export const TaskerShot: React.FC = () => {
   const b = clamp01((f - BUILD) / (BREAK_F - BUILD));
   return (
     <AbsoluteFill>
+      <HaloBack x={pose.x} y={pose.y} s={pose.s} t={f - P_IN} f={f} dark opacity={pop} />
       <AbsoluteFill style={{ opacity: pop }}>
       <Device pose={pose} dark glow="rgba(0,191,99,0.12)">
         <Stack2
@@ -112,6 +114,7 @@ export const TaskerShot: React.FC = () => {
         />
       </Device>
       </AbsoluteFill>
+      <HaloFront x={pose.x} y={pose.y} s={pose.s} t={f - P_IN} f={f} dark opacity={pop} />
       {/* account ready in minutes */}
       <DarkPop at={minute} from={[960, 700]} to={[1420, 360]} out={T_EARN + 6}>
         <IOSGroup dark w={600} k={1.75} rows={[{ icon: <IOSIcon n="user" color={IOSC.green} />, title: "Cont de tasker", sub: "gata în 3 minute", acc: "toggle", on: clamp01((f - minute - 4) / 6) }]} />

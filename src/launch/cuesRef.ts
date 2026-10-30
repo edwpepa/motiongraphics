@@ -2,15 +2,13 @@
 // Exported by `ENTRY=src/launch/cuesRef.ts OUT=cuesRef.json node tools/launch/cues.mjs`, played by tools/launch/mix.py.
 import { BREAK_F, BUILD, C3_END, CTA, D0, DROP_END, END_FLY, END_HIT, F1_START, FINAL_F, GATA, I, MAP_IN, PHONE_BACK, PHONE_IN, PICK, R2_END, R3_END, R5_END, R6_END, R8_END, STAR, STOP_F, SWOOSH, V, bt, bt2, pEnd, pStart } from "./ref/marks";
 import { BEATS, BRIDGE } from "./timeline";
-import { LINES, LineKey } from "./ref/lines";
 
 export type Cue = { f: number; k: string; g?: number };
 
 export const cues = (): Cue[] => {
   const c: Cue[] = [];
   const add = (f: number, k: string, g = 1) => c.push({ f: Math.round(f), k, g });
-  // the soft Apple "bop" under every word of on-screen text, as it appears
-  for (const k of Object.keys(LINES) as LineKey[]) for (const w of LINES[k]().words) if (w.t) add(w.at + 1, "bop", 1);
+  // (on-screen text has no sound of its own; only the things that happen do)
 
   // ---------------------------------------------------------------- act I
   [I("priza", 1) - 5, I("iarba", 0) - 5, I("dulap", 0) - 5].forEach((f) => { add(f, "whoosh", 0.35); add(f + 4, "expand", 0.5); });

@@ -1,5 +1,5 @@
 import TL from "./timeline.json";
-import IW from "./intro-words.json";
+import IW from "./intro-words-aligned.json";
 import { pStart, w } from "./timeline";
 
 // timing of the new opening (no React here: the cue sheet imports it too)

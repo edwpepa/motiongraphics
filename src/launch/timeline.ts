@@ -1,5 +1,5 @@
 import TL from "./timeline.json";
-import WORDS from "./vo-words.json";
+import WORDS from "./vo-words-aligned.json";
 import type { KWord } from "../explainer/components/KineticText";
 
 export const FPS = 30;

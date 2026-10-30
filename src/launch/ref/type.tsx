@@ -153,7 +153,7 @@ const outC = (t: number) => 1 - Math.pow(1 - clamp01(t), 3);
 
 export type Line = { words: RW[]; size?: number; x?: number; y?: number; maxW?: number; align?: "center" | "left"; dark?: boolean; lineHeight?: number; breaks?: number[] };
 
-export const KText: React.FC<Line & { out?: number; dur?: number }> = ({ words, size = 80, x = 960, y = 540, maxW = 1400, align = "center", dark = false, lineHeight = 1.16, breaks, out, dur = 13 }) => {
+export const KText: React.FC<Line & { out?: number; dur?: number }> = ({ words, size = 80, x = 960, y = 540, maxW = 1400, align = "center", dark = false, lineHeight = 1.16, breaks, out, dur = 8 }) => {
   const f = useCurrentFrame();
   const gap = size * 0.27;
   const widths = useMemo(() => words.map((w) => (w.node ? w.w ?? size : measure(w.t ?? "", size, 700, -0.03))), [words, size]);
@@ -211,21 +211,12 @@ export const KText: React.FC<Line & { out?: number; dur?: number }> = ({ words, 
               </div>
             );
           }
-          const letters = Array.from(w.t ?? "");
-          const blur = (1 - outC(clamp01(local / (dur * 0.9)))) * blurMax;
+          // the word resolves whole, quickly, right on its syllable: out of a light blur, a hair low, green for an instant
+          const e = outE(clamp01(local / dur));
           const fin = w.acc ? acc : ink;
           return (
-            <div key={i} style={{ ...base, fontFamily: RFONT, fontWeight: 700, fontSize: size, letterSpacing: "-0.03em", lineHeight: 1, filter: blur > 0.2 ? `blur(${blur}px)` : undefined }}>
-              {letters.map((ch, c) => {
-                const l = local - c * 0.55;
-                const e = outE(clamp01(l / dur));
-                const wave = Math.sin(c * 0.85 + i * 3) * 0.12 + 0.36;
-                return (
-                  <span key={c} style={{ display: "inline-block", opacity: clamp01(l / 4), transform: `translateY(${(1 - e) * wave}em) rotate(${(1 - e) * Math.sin(c * 1.7 + i) * 5}deg)`, ...gradText(tint, fin, clamp01((l - 3) / 13)) }}>
-                    {ch}
-                  </span>
-                );
-              })}
+            <div key={i} style={{ ...base, fontFamily: RFONT, fontWeight: 700, fontSize: size, letterSpacing: "-0.03em", lineHeight: 1, opacity: clamp01(local / 3), transform: `translateY(${(1 - e) * 0.16 * size}px)`, filter: e < 0.98 ? `blur(${(1 - e) * blurMax}px)` : undefined }}>
+              <span style={gradText(tint, fin, clamp01((local - 2) / 8))}>{w.t}</span>
             </div>
           );
         });

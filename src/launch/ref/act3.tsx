@@ -251,16 +251,7 @@ export const Cta: React.FC = () => {
         </div>
         <Cursor keys={[{ f: CTA + 8, x: 1500, y: 900 }, { f: click - 3, x: BX + 20, y: BY + 14 }, { f: click + 22, x: BX + 120, y: BY + 160 }]} clicks={[click]} hideAt={click + 12} />
       </AbsoluteFill>
-      {m > 0 && f < END_FLY + 2 && <Heart x={sx} y={sy} size={ssize} rot={Math.sin(m * Math.PI) * -10} opacity={clamp01(m * 3)} pulse={pulse} />}
-      {/* glints that twinkle round it on the beats */}
-      {m >= 1 &&
-        [0, 1, 2, 3].map((i) => {
-          const at = STAR + 6 + i * 4;
-          const t = clamp01((f - at) / 16);
-          if (t <= 0 || t >= 1) return null;
-          const a = -2.2 + i * 1.5;
-          return <Sparkle key={i} x={960 + Math.cos(a) * 250} y={540 + Math.sin(a) * 200} size={18 + 8 * (i % 2)} t={Math.sin(Math.PI * t)} rot={t * 90} opacity={Math.sin(Math.PI * t)} />;
-        })}
+      {/* the heart takes over from here: ref/finale.tsx */}
     </AbsoluteFill>
   );
 };

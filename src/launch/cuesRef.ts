@@ -92,10 +92,12 @@ export const cues = (): Cue[] => {
   add(CTA, "whoosh", 0.45);
   add(V("cta", 1) - 1, "click", 0.85);
   add(V("cta", 1) + 2, "success", 0.5);
-  add(STAR - 4, "morph", 0.55);
-  add(STAR, "sparkle", 0.6);
-  add(END_FLY, "whoosh", 0.35);
+  add(STAR - 4, "morph", 0.5);
+  add(STAR + 4, "shimmer", 0.45);
+  add(STAR + 28, "heart", 0.7);
+  add(END_HIT - 14, "whoosh", 0.3);
   add(END_HIT, "end");
+  add(END_HIT + 4, "sparkle", 0.4);
   // nothing may sound in the dead stop
   return c.filter((x) => x.f >= 0 && !(x.f >= STOP_F && x.f < BRIDGE)).sort((a, b) => a.f - b.f);
 };

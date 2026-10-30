@@ -6,12 +6,12 @@ import { Win } from "./kit";
 import { R1, R2, R3, R4, R5, R6, R7, R8, R9 } from "./ref/act1";
 import { AppShot, Done, MapShot, Track } from "./ref/act2";
 import { Break, C1, C2, C3, Cta, F1, TaskerShot } from "./ref/act3";
+import { Finale } from "./ref/finale";
 import { useInter400 } from "./ref/font";
-import { BREAK_F, BRIDGE, C1_END, C2_END, C3_END, CTA, D0, DROP_END, END_FLY, END_HIT, F1_START, FINAL_F, GATA, MAP_IN, PHONE_BACK, PHONE_IN, R1_END, R2_END, R3_END, R4_END, R5_END, R6_END, R7_END, R8_END, STOP_F, SWOOSH, TOTAL } from "./ref/marks";
+import { BREAK_F, BRIDGE, C1_END, C2_END, C3_END, CTA, D0, DROP_END, F1_START, STAR, FINAL_F, GATA, MAP_IN, PHONE_BACK, PHONE_IN, R1_END, R2_END, R3_END, R4_END, R5_END, R6_END, R7_END, R8_END, STOP_F, SWOOSH, TOTAL } from "./ref/marks";
 import { BG, RefBg } from "./ref/ui";
 import { Slam } from "./slam";
 import { BEATS } from "./timeline";
-import { EndCard } from "./tv3d/drop";
 import { DarkBg } from "./tv3d/kit3d";
 
 /** the launch ad, the reference's way: a light stage, centred type on the voice, iOS-native UI, the phone only while
@@ -64,10 +64,10 @@ export const HandlyLaunchRef: React.FC<{ audio?: boolean }> = ({ audio = true })
         <Explosion at={FINAL_F} cx={960} cy={560} />
       </Win>
       {/* the close, light again */}
-      {f >= F1_START && f < END_FLY && <RefBg />}
+      {f >= F1_START && <RefBg />}
       <Win from={F1_START} to={CTA + 4}><F1 /></Win>
-      <Win still from={CTA - 2} to={END_FLY + 2}><Cta /></Win>
-      <Win still from={END_FLY} to={TOTAL}><EndCard from={END_FLY} hit={END_HIT} end={TOTAL} bg={BG} heartFrom={[960, 540, 170]} /></Win>
+      <Win still from={CTA - 2} to={STAR + 8}><Cta /></Win>
+      <Win still from={STAR - 4} to={TOTAL}><Finale /></Win>
       {audio && <Audio src={staticFile("audio/launch-mix-ref.mp3")} />}
     </AbsoluteFill>
   );
